@@ -1,0 +1,63 @@
+
+This is an ALPHA release of JSPWiki v2.2  
+
+Most of the documentation is now contained in jspwiki_samplepages.zip
+
+Major changes since the 2.0 series are:
+
+- Much simplified templating (see WikiTemplates)
+
+- Wiki Forms
+
+- Page Filters
+
+- Muchos enhanced WeblogPlugin
+
+- Style support using the %%-directive
+
+- The default template now validates as XHTML 1.0 Transitional
+
+- Page variables (see SET-directive), also accessible on pages
+
+- Caching attachment provider integrated
+
+- OSCache integration
+
+- Printer-friendly stylesheet for the default template
+
+- Multiple Wikis with a single WAR-file -support.
+
+- In-page hyperlinks and TableOfContents
+
+- Multiply nested links now work
+
+- Much faster startup (after the first one)
+
+
+
+UPGRADE NOTES
+=============
+
+Drop the JSPWiki.war into place.  Modify your template according to
+the new stuff in the default template.  More precise docs to came
+later. 
+
+Please visit http://www.jspwiki.org/Wiki.jsp?page=Release2.2Discussion
+for further information.
+
+
+NOTE ABOUT AUTHENTICATION
+=========================
+
+This JSPWiki version includes an unsupported version of Authorization
+and Authentication.  AAA was supposed to be the major feature of the
+2.2 release, but unfortunately it turned out that the solution chosen
+was crappy and the coder (me) did not know what he was doing.  This
+dragged the work for the 2.2 release behind for many months, as I was
+not really interested in doing it.  So I decided to discard the entire
+solution and settle for something simpler.  This work is still
+ongoing, and a new solution is being drafted.
+
+The old auth system is still in place, but it is completely deprecated
+and largely undocumented.  You may use it if you want, but please do
+not report any bugs regarding it.
