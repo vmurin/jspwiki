@@ -1,0 +1,43 @@
+H1,H2,H3,H4 { font-family: Arial, Helvetica, sans-serif }
+DIV.small   { font-size: 70%; }
+H1.pagename { margin-top: 0; }
+IMG.inline  {}
+
+A.footnoteref { vertical-align: super; 
+                font-size: 70%; }
+A.footnote    { color: #0044AA; }
+P.versionnote { color: red;
+                font-size: 130%;
+                text-align: center; }
+
+/* Added in v1.5.1 */
+
+H3.leftmenuheading { margin-top: 0; }
+BODY.edit   { background-color: #FFD0FF; } /* Edit.jsp BODY element */
+TD.leftmenu { }                            /* Left menu */
+TD.page     { }                            /* Page data area */
+A.wikipage  { }                            /* Normal, internal wiki reference */
+A.external  { }                            /* External reference */
+A.interwiki { }                            /* Interwiki reference */
+
+
+
+/* Added in 1.6.3 */
+TD.diffadd  { background: #99FF99; 
+              font-family: monospace; }
+TD.diffrem  { background: #FF9933; 
+              font-family: monospace; }
+TD.diff     { background: #FFFFFF; 
+              font-family: monospace; }
+
+/* Added in 1.6.9 */
+
+TABLE.wikitable { }
+TABLE.wikitable * TD { text-align: left; }
+TABLE.wikitable * TH { }
+
+/* Added in 1.6.13 */
+
+/* This is the Edit.jsp editor style */
+TEXTAREA.editor {}
+
