@@ -51,6 +51,8 @@ public class AuthenticationManager
     /** If true, logs the IP address of the editor on saving. */
     public static final String                 PROP_STOREIPADDRESS = "jspwiki.storeIPAddress";
 
+    public static final String                 PROP_USE_CMS_AUTH   = "jspwiki.useContainerAuth";
+
     static Logger                              log                 = Logger.getLogger( AuthenticationManager.class );
 
     private String                             m_administrator     = null;
@@ -59,6 +61,8 @@ public class AuthenticationManager
 
     /** If true, logs the IP address of the editor */
     private boolean                            m_storeIPAddress    = true;
+    
+    private boolean                            m_containerAuth     = true;
 
     /**
      * Creates an AuthenticationManager instance for the given WikiEngine and
@@ -68,7 +72,7 @@ public class AuthenticationManager
     public void initialize( WikiEngine engine, Properties props ) throws WikiException
     {
         m_engine = engine;
-
+        m_containerAuth = Boolean.getBoolean( props.getProperty( PROP_USE_CMS_AUTH, "true").toLowerCase() );
         m_storeIPAddress = TextUtil.getBooleanProperty( props, PROP_STOREIPADDRESS, m_storeIPAddress );
     }
 
@@ -197,6 +201,18 @@ public class AuthenticationManager
     public boolean strictLogins()
     {
         return ( m_engine.getAuthorizationManager().checkPermission( null, PagePermission.VIEW ) );
+    }
+    
+    /**
+     * Returns true if this WikiEngine uses container-managed authentication.
+     * This method is used primarily for cosmetic purposes in the JSP tier,
+     * and performs no meaningful security function per se.
+     * Defaults to true unless property {@link #PROP_USE_CMS_AUTH} was set.
+     * @return 
+     */
+    public boolean isContainerAuthenticated()
+    {
+            return m_containerAuth;
     }
 
 }

@@ -2,6 +2,7 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="org.apache.log4j.*" %>
 <%@ page import="com.ecyrd.jspwiki.*" %>
+<%@ page import="com.ecyrd.jspwiki.WikiEngine" %>
 <%@ page import="com.ecyrd.jspwiki.tags.WikiTagBase" %>
 <%@ page import="com.ecyrd.jspwiki.auth.AuthenticationManager" %>
 <%@ page import="com.ecyrd.jspwiki.auth.NoSuchPrincipalException" %>
@@ -49,6 +50,8 @@
         UserDatabase database = wiki.getUserDatabase();
         UserProfile profile = null;
         boolean newProfile = false;
+        boolean containerAuth = mgr.isContainerAuthenticated();
+        
         try
         {
             profile = database.find( user.getName() );
@@ -66,7 +69,7 @@
             {
               inputErrors.add("Full name cannot be blank");
             }
-            if (loginname == null || loginname.length() < 1 )
+            if ( !containerAuth && ( loginname == null || loginname.length() < 1 ) )
             {
               inputErrors.add("Login name cannot be blank");
             }
@@ -78,7 +81,7 @@
         
         // Passwords for new accounts cannot be null
         // ARJ: TODO: we don't check for the policy yet, but we should..
-        if (newProfile && password == null)
+        if ( !containerAuth && newProfile && password == null)
         {
               inputErrors.add("Password cannot be blank");
         }
@@ -90,9 +93,12 @@
         }
         
         // Set the rest of the profile properties
+        if ( !containerAuth )
+        {
+            profile.setLoginName( loginname );
+            profile.setPassword( password );
+        }
         profile.setFullname( fullname );
-        profile.setLoginName( loginname );
-        profile.setPassword( password );
         profile.setWikiName( wikiname );
         pageContext.setAttribute("inputErrors", inputErrors);
         
