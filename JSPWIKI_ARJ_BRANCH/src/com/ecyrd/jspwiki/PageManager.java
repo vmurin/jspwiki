@@ -30,6 +30,8 @@ import java.util.ArrayList;
 
 import org.apache.log4j.Category;
 
+import com.ecyrd.jspwiki.attachment.Attachment;
+import com.ecyrd.jspwiki.auth.acl.Acl;
 import com.ecyrd.jspwiki.providers.WikiPageProvider;
 import com.ecyrd.jspwiki.providers.ProviderException;
 import com.ecyrd.jspwiki.providers.RepositoryModifiedException;
