@@ -39,6 +39,9 @@
     String loginname = request.getParameter("loginname");
     String password = request.getParameter("password");
     String wikiname = request.getParameter("wikiname");
+    
+    ArrayList inputErrors = new ArrayList();
+    session.setAttribute( "errors", inputErrors );
 
     if( ok != null || "save".equals(request.getParameter("action")) )
     {
@@ -57,7 +60,6 @@
         pageContext.setAttribute( "newProfile", new Boolean( newProfile ) );
         
         // Existing profiles can't change the loginname, fullname, or wiki name
-        ArrayList inputErrors = new ArrayList();
         if ( newProfile )
         {
             if ( fullname == null || fullname.length() < 1 )

@@ -1,8 +1,16 @@
 <%@ taglib uri="/WEB-INF/jspwiki.tld" prefix="wiki" %>
 <%@ page import="java.util.ArrayList" %>
 <%
-    ArrayList inputErrors = (ArrayList)pageContext.getAttribute( "inputErrors" );
-    boolean newProfile = ((Boolean)pageContext.getAttribute( "newProfile" )).booleanValue();
+    ArrayList inputErrors = new ArrayList();
+    boolean newProfile = false;
+    if ( session.getAttribute( "errors" ) != null)
+    {
+        inputErrors = (ArrayList)pageContext.getAttribute( "inputErrors" );
+    }
+    if ( pageContext.getAttribute( "newProfile" ) != null)
+    {
+        newProfile = ((Boolean)pageContext.getAttribute( "newProfile" )).booleanValue();
+    }
 %>
 
       <h3>Your Wiki profile</h3>
