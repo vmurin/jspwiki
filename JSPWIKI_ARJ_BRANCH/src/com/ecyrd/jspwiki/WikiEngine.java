@@ -1511,7 +1511,7 @@ public class WikiEngine
     //
     // FIXME: Should also have attributes attached.
     //
-    public Collection findPages( String query )
+    public Collection findPages( WikiContext context, String query )
     {
         StringTokenizer st = new StringTokenizer( query, " \t," );
 
@@ -1554,7 +1554,7 @@ public class WikiEngine
             items[word++].word = token;
         }
 
-        Collection results = m_pageManager.findPages( items );
+        Collection results = m_pageManager.findPages( context, items );
         
         return results;
     }
