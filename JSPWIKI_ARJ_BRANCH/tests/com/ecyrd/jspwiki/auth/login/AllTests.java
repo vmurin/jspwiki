@@ -6,7 +6,7 @@ import junit.framework.TestSuite;
 
 /**
  * @author Andrew R. Jaquith
- * @version $Revision: 1.1.2.1 $ $Date: 2005-02-01 00:42:35 $
+ * @version $Revision: 1.1.2.2 $ $Date: 2005-02-14 05:16:48 $
  */
 public class AllTests extends TestCase
 {
@@ -17,7 +17,7 @@ public class AllTests extends TestCase
 
     public static Test suite()
     {
-        TestSuite suite = new TestSuite( "Test for com.ecyrd.jspwiki.auth.login" );
+        TestSuite suite = new TestSuite( "Login module tests" );
         suite.addTestSuite( UserDatabaseLoginModuleTest.class );
         suite.addTestSuite( WebContainerLoginModuleTest.class );
         suite.addTestSuite( AnonymousLoginModuleTest.class );

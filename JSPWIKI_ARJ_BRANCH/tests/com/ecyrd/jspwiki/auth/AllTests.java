@@ -18,7 +18,6 @@ public class AllTests extends TestCase
         suite.addTest( com.ecyrd.jspwiki.auth.acl.AllTests.suite() );
         suite.addTest( com.ecyrd.jspwiki.auth.authorize.AllTests.suite() );
         suite.addTest( com.ecyrd.jspwiki.auth.login.AllTests.suite() );
-        suite.addTest( com.ecyrd.jspwiki.auth.modules.AllTests.suite() );
         suite.addTest( com.ecyrd.jspwiki.auth.permissions.AllTests.suite() );
         suite.addTest( com.ecyrd.jspwiki.auth.user.AllTests.suite() );
 
