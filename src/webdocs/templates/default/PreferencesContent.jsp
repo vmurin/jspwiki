@@ -5,7 +5,7 @@
     boolean newProfile = false;
     if ( session.getAttribute( "errors" ) != null)
     {
-        inputErrors = (ArrayList)pageContext.getAttribute( "inputErrors" );
+        inputErrors = (ArrayList)session.getAttribute( "inputErrors" );
     }
     if ( pageContext.getAttribute( "newProfile" ) != null)
     {
