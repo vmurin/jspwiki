@@ -1,13 +1,8 @@
 <%@page import="javax.servlet.http.Cookie" %>
+<%@page import="com.ecyrd.jspwiki.auth.AuthenticationManager" %>
 <%
-  // Kill the session
-  session.invalidate();
-
-  // Remove JSESSIONID in case it is still kicking around
-  Cookie sessionCookie = new Cookie("JSESSIONID", null);
-  sessionCookie.setMaxAge(0);
+  AuthenticationManager.logout( session );
   
   // Redirect to the webroot
-  response.addCookie(sessionCookie);
   response.sendRedirect(".");
 %>
