@@ -275,57 +275,70 @@ jspwiki.plugin.searchPath =
 #
 
 #  JSPWiki supports a plugin-based interface for talking to different
-#  kinds of authentication systems.  In JSPWiki talk, the term
-#  "Authenticator" means a module that basically checks if the
-#  username and password match. An "Authorizer" is a module that 
-#  is able to provide the user's permissions in the wiki.
+#  kinds of authentication and authorization systems. By "authentication," 
+#  we mean a system for logging in a user to establish their identity.
+#  By "authorization," we mean a system for figuring out what actions
+#  users can perform based on their authenticated identities.
 #
-#  Define here the WikiAuthorizer and WikiAuthenticator implementations
-#  you want to use. Specify the full classname, or the short names of
-#  implementations provided in the JSPWiki codebase 
-#  (com.ecyrd.jspwiki.auth.modules).
+#  For users looking to get started quickly, the default settings below
+#  should work fine.
 
-#
-#  PageAuthorizer is a simple default implementation that reads defaults
-#  from a WikiPage called 'DefaultPermissions'. 
-#  PageAuthorizer is used by default.
-#
-# jspwiki.authorizer = PageAuthorizer
+#  For authentication, JSPWiki uses JAAS (Java Authentication and Authorization
+#  Service). The Authentication system is configured in the jspwiki.jaas 
+#  file; by default it will attempt to leverage your servlet container's
+#  authentication services, if present. JSPWiki also can use its own
+#  authentication system, which is separate from the container.
+#  
+#  The following property is used as a "hint" by JSPWiki so that it knows
+#  which authentication system to use. By default, we use container
+#  authentication. If you use container authentication, you must also uncomment
+#  the security constraints in WEB-INF/web.xml.
 
-#
-#  FileAuthenticator is a simple authorizer that basically reads the 
-#  passwords from a file.
-#
-# jspwiki.authenticator = FileAuthenticator
+jspwiki.useContainerAuth    = true
 
-#
-#  FileAuthenticator supports the following options:
-#
-#  Define where the password file lives.  The password file is simply in
-#  a format "username = password", one entry per line.  This is a required
-#  attribute.
-#
-# jspwiki.fileAuthenticator.fileName = /tmp/mypasswordfile.txt
+#  For authorization, JSPWiki has a two-tier system. When we want to 
+#  determine whether a user has permission to perform a certain action,
+#  we first consult an external "authorizer" to determine if the user
+#  is a member of the required role. By default, JSPWiki uses the 
+#  servlet container's authorization service for this (that is, it
+#  calls HttpServletRequest.isUserInRole(String) ).
+#  However, you can use another Authorizer if you wish; specify that
+#  class here.
 
+jspwiki.authorizer          = com.ecyrd.jspwiki.auth.authorize.WebContainerAuthorizer
+
+#  If the external authorizer fails, we also consult JSPWiki's GroupManager.
+#  Groups are "ad hoc" roles defined by wiki users. By default, JSPWiki
+#  scans existing pages with the prefix "Group" to define groups.
+#  For example, the wiki page "GroupTest" with this markup:
 #
-#  Users are mapped to groups by a UserDatabase. The default UDB is
-#  the WikiDatabase, which looks for group members in page meta-data:
-#  the page name determines the group name, and a [{SET members=...}]
-#  adds members to that group. 
-#  WikiDatabase is used by default.
+#      [{SET members=Alice, Bob, Charlie}]
 #
+#  ...causes JSPWiki to create a group called "Test" with three members.
+#  If groups are defined elsewhere on your system, specify the GroupManager
+#  implementation class here:
+
+jspwiki.groupManager        = com.ecyrd.jspwiki.auth.authorize.DefaultGroupManager
+
+#  User's wiki profiles are stored in a UserDatabase. The default user database
+#  uses an XML file for persistent storage.
 #  Override with your own UserDatabase implementation with this property:
-#
-jspwiki.userdatabase = com.ecyrd.jspwiki.auth.user.XMLUserDatabase
-jspwiki.xmlUserDatabaseFile = userdatabase.xml
 
-#
-# By default, at least the LoginError page is readable by anyone, and
-# a failed login displays the usual JSPWiki view of that page. If you
-# want to have a completely closed site, with Login.jsp as a kind of
-# cover page, specify strict logins.
-#
-#jspwiki.policy.strictLogins = true
+jspwiki.userdatabase = com.ecyrd.jspwiki.auth.user.XMLUserDatabase
+
+#  The default user database implementation stores usernames and passwords
+#  in an XML file. Passwords are SHA-1 hashed. The location of this file
+#  should be in a secure directory in the filesystem; for example, in
+#  your servlet container's configuration directory.
+
+jspwiki.xmlUserDatabaseFile = /etc/tomcat/userdatabase.xml
+
+#  Last but not least, JSPWiki needs a way of reading and persisting page
+#  access control lists. The default implementation reads these from the page
+#  markup. For example: "[{ALLOW edit Charlie}]". If using a custom
+#  ACL manager, specify the AclManager implementation class here:
+
+jspwiki.aclManager          = com.ecyrd.jspwiki.auth.acl.DefaultAclManager
 
 #############################################################################
 #
