@@ -39,42 +39,27 @@
     String uid    = wiki.safeGetParameter( request,"uid" );
     String passwd = wiki.safeGetParameter( request,"passwd" );
 
-    UserManager mgr = wiki.getUserManager();
+    AuthenticationManager mgr = wiki.getAuthenticationManager();
 
     session.setAttribute("msg","");
 
     if( "login".equals(action) )
     {
-        mgr.setUserCookie( response, uid );
-
-        try
+        if( mgr.loginCustom( uid, passwd, request ) )
         {
-            if( mgr.login( uid, passwd, session ) )
+            response.sendRedirect( wiki.getViewURL(pagereq) );
+            return;
+        }
+        else
+        {
+            if( passwd.length() > 0 && passwd.toUpperCase().equals(passwd) )
             {
-                response.sendRedirect( wiki.getViewURL(pagereq) );
-                return;
+                session.setAttribute("msg", "Invalid login (please check your Caps Lock key)");
             }
             else
             {
-                if( passwd.length() > 0 && passwd.toUpperCase().equals(passwd) )
-                {
-                    session.setAttribute("msg", "Invalid login (please check your Caps Lock key)");
-                }
-                else
-                {
-                    session.setAttribute("msg", "Not a valid login.");
-                }
+                session.setAttribute("msg", "Not a valid login.");
             }
-        }
-        catch( PasswordExpiredException e )
-        {
-            session.setAttribute("msg", "Your password has expired!  Please enter a new one!");
-            response.sendRedirect( wiki.getViewURL("UserPreferences") );
-            return;
-        }
-        catch( WikiSecurityException e )
-        {
-            session.setAttribute("msg", e.getMessage());            
         }
     }
     else if( "logout".equals(action) )
