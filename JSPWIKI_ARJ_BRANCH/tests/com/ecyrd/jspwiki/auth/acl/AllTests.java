@@ -1,6 +1,8 @@
 package com.ecyrd.jspwiki.auth.acl;
 
-import junit.framework.*;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 public class AllTests extends TestCase
 {
@@ -15,6 +17,7 @@ public class AllTests extends TestCase
 
         suite.addTest( AclEntryImplTest.suite() );
         suite.addTest( AclImplTest.suite() );
+        suite.addTest( DefaultAclManagerTest.suite() );
 
         return suite;
     }
