@@ -95,8 +95,9 @@ public class DefaultGroupManager implements GroupManager
      * @see com.ecyrd.jspwiki.auth.authorize.GroupManager#add(DefaultGroup)
      * @throws IllegalArgumentException if the group name isn't allowed
      */
-    public void add( Group group )
+    public synchronized void add( Group group )
     {
+        //TODO: this should throw a checked exception so callers can recover
         for( int i = 0; i < Group.RESTRICTED_GROUPNAMES.length; i++ )
         {
             if ( group.equals( Group.RESTRICTED_GROUPNAMES[i] ) )
@@ -127,39 +128,16 @@ public class DefaultGroupManager implements GroupManager
 
     /**
      * <p>
-     * Returns a Group matching a given name. This method is guaranteed to
-     * always return a Group.
-     * </p>
-     * <p>
-     * The rules for group lookup are simple. First, look in the existing group
-     * cache to see if there is a group with that name. If not, create a new
-     * DefaultGroup with the name, and cache it.
+     * Returns a Group matching a given name. If a group cannot be found,
+     * return null.
      * </p>
      * @param name Name of the group. This is case-sensitive.
      * @return A DefaultGroup instance.
      * @see com.ecyrd.jspwiki.auth.authorize.GroupManager#find(java.lang.String)
      */
-    // FIXME: Should this really be case-sensitive?
-    // FIXME: Someone should really check when groups cease to be used,
-    //        and release groups that are not being used.
-    // FIXME: Error handling is still deficient.
-    public Group find( String name )
+    public Principal findRole( String name )
     {
-        Group group;
-
-        synchronized( m_groups )
-        {
-            group = (Group) m_groups.get( name );
-
-            if ( group == null )
-            {
-                log.debug( "Created Group " + name );
-                group = new DefaultGroup( name );
-                m_groups.put( name, group );
-            }
-        }
-
-        return group;
+        return (Group) m_groups.get( name );
     }
 
     /**
@@ -251,7 +229,7 @@ public class DefaultGroupManager implements GroupManager
      * @param group the group to remove
      * @see com.ecyrd.jspwiki.auth.authorize.GroupManager#remove(DefaultGroup)
      */
-    public void remove( Group group )
+    public synchronized void remove( Group group )
     {
         if ( group == null )
         {
@@ -299,7 +277,7 @@ public class DefaultGroupManager implements GroupManager
      * @param groupName the name of the group to update
      * @param memberList the members to add to the group definition
      */
-    protected void updateGroup( String groupName, List memberList )
+    protected synchronized void updateGroup( String groupName, List memberList )
     {
         Group group = (Group) m_groups.get( groupName );
 
