@@ -1,5 +1,15 @@
 <%@ taglib uri="/WEB-INF/jspwiki.tld" prefix="wiki" %>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="com.ecyrd.jspwiki.WikiEngine" %>
+<%! 
+    public void jspInit()
+    {
+        wiki = WikiEngine.getInstance( getServletConfig() );
+        containerAuth = wiki.getAuthenticationManager().isContainerAuthenticated();
+    }
+    WikiEngine wiki;
+    boolean containerAuth;
+%>
 <%
     ArrayList inputErrors = new ArrayList();
     boolean newProfile = false;
@@ -31,7 +41,7 @@
              </td>
              <td>
              <%
-               if ( newProfile ) 
+               if ( newProfile && !containerAuth ) 
                {
                   %> <input type="text" name="loginname" size="30" value="<wiki:UserProfile property='loginname'/>" /> <%
                }
@@ -66,6 +76,13 @@
                   authentication instead, setting the password here has no effect.</i>
              </td>
            </tr>
+           <% 
+              if ( !containerAuth )
+              {
+           %>
+           <%
+             }
+           %>
 
            <!-- Wiki name -->
            <tr>
