@@ -4,6 +4,7 @@ import java.security.Permission;
 import java.util.Arrays;
 
 import com.ecyrd.jspwiki.WikiPage;
+import com.ecyrd.jspwiki.auth.authorize.DefaultGroupManager;
 
 /**
  * <p>Represents a permission to perform an operation on a single page or collection of pages.
@@ -18,9 +19,9 @@ import com.ecyrd.jspwiki.WikiPage;
  * implies <code>comment</code>, <code>upload</code>, and <code>view</code>;
  * <code>comment</code> and <code>upload</code> imply <code>view</code>.</p>
  * @author Andrew R. Jaquith
- * @version $Revision: 1.1.2.2 $ $Date: 2005-02-01 03:26:17 $
+ * @version $Revision: 1.1.2.3 $ $Date: 2005-02-25 20:48:21 $
  */
-public class PagePermission extends Permission
+public final class PagePermission extends Permission
 {
 
     private static final String COMMENT_ACTION = "comment";
@@ -29,8 +30,6 @@ public class PagePermission extends Permission
 
     private static final String EDIT_ACTION    = "edit";
     
-    private static final String GROUP_SUFFIX   = "Group";
-
     private static final String RENAME_ACTION  = "rename";
 
     private static final String UPLOAD_ACTION  = "upload";
@@ -166,10 +165,14 @@ public class PagePermission extends Permission
      * considered a superset of the other if it contains a matching prefix plus
      * a wildcard, or a wildcard followed by a matching suffix.</li>
      * </ol>
-     * <p>Note: a significant (hard-coded) exception to the rule occurs
-     * with pages ending in "DefaultGroup," because these are group member list pages.
-     * For a permission whose target ends with "*", permission for all
-     * pages ending in "DefaultGroup" is <em>not</em> implied.</p>
+     * <p>
+     * Note: a significant (hard-coded) exception to the rule occurs with pages
+     * starting in {@link com.ecyrd.jspwiki.auth.authorize.DefaultGroupManager#GROUP_PREFIX},
+     * because these are group member list pages. For a permission whose target
+     * is the wildcard "*", permission for Group* pages is
+     * <em>not</em> implied. The target "Group*", however, works normally.
+     * This is most definitely a horrible hack.
+     * </p>
      * @see java.security.Permission#implies(java.security.Permission)
      */
     public final boolean implies( Permission permission )
@@ -242,10 +245,10 @@ public class PagePermission extends Permission
             return true;
         }
                 
-        // If super is "*", it's a subset unless sub has "DefaultGroup" suffix
+        // If super is "*", it's a subset unless its a group page
         if ( superSet.equals("*") )
         {
-            return ( !subSet.endsWith( GROUP_SUFFIX ) );
+            return (!subSet.startsWith(DefaultGroupManager.GROUP_PREFIX));
         }
         
         // If super starts with "*", sub must end with everything after the *
@@ -259,10 +262,7 @@ public class PagePermission extends Permission
         if ( superSet.endsWith("*")) 
         {
             String prefix = superSet.substring(0, superSet.length() - 2);
-            if ( !subSet.endsWith( GROUP_SUFFIX ) )
-            {
-                return subSet.startsWith( prefix );
-            }
+            return subSet.startsWith( prefix );
         }
 
         return false;
