@@ -26,14 +26,15 @@
 
     NDC.push( wiki.getApplicationName()+":"+pagereq );
 
+    AuthenticationManager authMgr = wiki.getAuthenticationManager();
     AuthorizationManager mgr = wiki.getAuthorizationManager();
-    Principal currentUser  = wiki.getUserManager().getUserProfile( request );
+    Principal currentUser  = wikiContext.getWikiSession().getUserPrincipal();
     Permission requiredPermission = new PagePermission( pagereq, "view" );
 
     if( !mgr.checkPermission( wikiContext,
                               requiredPermission ) )
     {
-        if( mgr.strictLogins() )
+        if( authMgr.strictLogins() )
         {
             log.info("User "+currentUser.getName()+" has no access - redirecting to login page.");
             String pageurl = wiki.encodeName( pagereq );
