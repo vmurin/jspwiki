@@ -56,13 +56,13 @@ public interface UserDatabase
      * If the user database does not contain a user with the supplied identifier,
      * throws a {@link NoSuchPrincipalException}.
      * @param name the name of the user to retrieve; this corresponds
-     * to value returned by the user profile's {@link DefaultUserProfile#getLoginName()} method.
+     * to value returned by the user profile's {@link UserProfile#getLoginName()} method.
      * @return the array of Principals representing the user
      */
     public Principal[] getPrincipals( String identifier ) throws NoSuchPrincipalException;
 
     /**
-     * Looks up and returns the first {@link DefaultUserProfile} in the user database
+     * Looks up and returns the first {@link UserProfile} in the user database
      * that whose login name, full name, or wiki name matches the supplied string.
      * This method provides a "forgiving" search algorithm for resolving
      * principal names when the exact profile attribute that supplied the name
@@ -72,7 +72,7 @@ public interface UserDatabase
     public UserProfile find( String index ) throws NoSuchPrincipalException;
     
     /**
-     * Looks up and returns the first {@link DefaultUserProfile} in the user database
+     * Looks up and returns the first {@link UserProfile} in the user database
      * that matches a profile having a given e-mail address.
      * If the user database does not contain a user with a matching attribute,
      * throws a {@link NoSuchPrincipalException}.
@@ -82,7 +82,7 @@ public interface UserDatabase
     public UserProfile findByEmail( String index ) throws NoSuchPrincipalException;
 
     /**
-     * Looks up and returns the first {@link DefaultUserProfile} in the user database
+     * Looks up and returns the first {@link UserProfile} in the user database
      * that matches a profile having a given login name.
      * If the user database does not contain a user with a matching attribute,
      * throws a {@link NoSuchPrincipalException}.
@@ -92,7 +92,7 @@ public interface UserDatabase
     public UserProfile findByLoginName( String index ) throws NoSuchPrincipalException;
 
     /**
-     * Looks up and returns the first {@link DefaultUserProfile} in the user database
+     * Looks up and returns the first {@link UserProfile} in the user database
      * that matches a profile having a given wiki name.
      * If the user database does not contain a user with a matching attribute,
      * throws a {@link NoSuchPrincipalException}.
@@ -102,7 +102,7 @@ public interface UserDatabase
     public UserProfile findByWikiName( String index ) throws NoSuchPrincipalException;
 
     /**
-     * Looks up and returns the first {@link DefaultUserProfile} in the user database
+     * Looks up and returns the first {@link UserProfile} in the user database
      * that matches a profile having a given full name.
      * If the user database does not contain a user with a matching attribute,
      * throws a {@link NoSuchPrincipalException}.
@@ -118,14 +118,23 @@ public interface UserDatabase
     public void initialize( WikiEngine engine, Properties props ) throws NoRequiredPropertyException;
 
     /**
-     * Saves a {@link DefaultUserProfile} to the user database, overwriting
+     * Saves a {@link UserProfile} to the user database, overwriting
      * the existing profile if it exists. The user name under which
      * the profile should be saved is returned by the supplied profile's
-     * {@link DefaultUserProfile#getLoginName()} method.
+     * {@link UserProfile#getLoginName()} method.
+     * The database implementation is responsible for detecting potential
+     * duplicate user profiles; specifically, the login name, wiki name, and
+     * full name must be unique.
+     * The implementation is not required to check for validity of passwords
+     * or e-mail addresses. Special case: if the profile already exists and the 
+     * password is null, it should retain its previous value, rather than
+     * being set to null. 
      * @param profile the user profile to save
      * @throws WikiSecurityException if the profile cannot be saved
+     * @throws DuplicateUserException if another user exists with the same
+     * login name, wiki name, or full name
      */
-    public void save( UserProfile profile ) throws WikiSecurityException;
+    public void save( UserProfile profile ) throws WikiSecurityException, DuplicateUserException;
 
     /**
      * Determines whether a supplied user password is valid, given
