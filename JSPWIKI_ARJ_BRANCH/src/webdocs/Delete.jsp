@@ -1,12 +1,14 @@
 <%@ page import="org.apache.log4j.*" %>
 <%@ page import="com.ecyrd.jspwiki.*" %>
+<%@ page import="java.security.Permission" %>
+<%@ page import="java.security.Principal" %>
 <%@ page import="java.util.*" %>
 <%@ page import="java.text.SimpleDateFormat" %>
 <%@ page import="com.ecyrd.jspwiki.tags.WikiTagBase" %>
 <%@ page import="com.ecyrd.jspwiki.WikiProvider" %>
 <%@ page import="com.ecyrd.jspwiki.auth.AuthorizationManager" %>
-<%@ page import="com.ecyrd.jspwiki.auth.UserProfile" %>
-<%@ page import="com.ecyrd.jspwiki.auth.permissions.EditPermission" %>
+<%@ page import="com.ecyrd.jspwiki.auth.permissions.PagePermission" %>
+<%@ page import="com.ecyrd.jspwiki.auth.permissions.WikiPermission" %>
 <%@ page errorPage="/Error.jsp" %>
 <%@ taglib uri="/WEB-INF/jspwiki.tld" prefix="wiki" %>
 
@@ -37,11 +39,12 @@
     }
 
     AuthorizationManager mgr = wiki.getAuthorizationManager();
-    UserProfile currentUser  = wikiContext.getCurrentUser();
+    Principal currentUser  = wikiContext.getCurrentUser();
+    Permission requiredPermission = new PagePermission( pagereq, "delete" );
 
     if( !mgr.checkPermission( wikiContext.getPage(),
-                              currentUser,
-                              WikiPermission.newInstance("delete") ) )
+                              wikiContext,
+                              requiredPermission ) )
     {
         log.info("User "+currentUser.getName()+" has no access - redirecting to login page.");
         String pageurl = wiki.encodeName( pagereq );
@@ -58,6 +61,9 @@
     //
 
     response.setContentType("text/html; charset="+wiki.getContentEncoding() );
+
+    // ARJ hack: so it will compile.
+    String delete = null;
 
     if( delete != null )
     {

@@ -1,7 +1,8 @@
+<%@ page import="java.security.Principal" %>
 <%@ page import="org.apache.log4j.*" %>
 <%@ page import="com.ecyrd.jspwiki.*" %>
 <%@ page import="com.ecyrd.jspwiki.tags.WikiTagBase" %>
-<%@ page import="com.ecyrd.jspwiki.auth.permissions.ViewPermission" %>
+<%@ page import="com.ecyrd.jspwiki.auth.permissions.PagePermission" %>
 <%@ page import="com.ecyrd.jspwiki.auth.*" %>
 <%@ page errorPage="/Error.jsp" %>
 <%@ taglib uri="/WEB-INF/jspwiki.tld" prefix="wiki" %>
@@ -31,11 +32,11 @@
     }
 
     AuthorizationManager mgr = wiki.getAuthorizationManager();
-    UserProfile currentUser  = wiki.getUserManager().getUserProfile( request );
+    Principal currentUser  = wiki.getUserManager().getUserProfile( request );
 
     if( !mgr.checkPermission( wikiContext.getPage(),
-                              currentUser,
-                              new ViewPermission() ) )
+                              wikiContext,
+                              new PagePermission( pagereq, "view" ) ) )
     {
         if( mgr.strictLogins() )
         {

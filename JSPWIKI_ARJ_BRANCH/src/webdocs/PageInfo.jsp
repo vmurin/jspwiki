@@ -1,8 +1,11 @@
 <%@ page import="org.apache.log4j.*" %>
 <%@ page import="com.ecyrd.jspwiki.*" %>
+<%@ page import="java.security.Permission" %>
+<%@ page import="java.security.Principal" %>
 <%@ page import="java.util.*" %>
 <%@ page import="com.ecyrd.jspwiki.tags.WikiTagBase" %>
 <%@ page import="com.ecyrd.jspwiki.auth.*" %>
+<%@ page import="com.ecyrd.jspwiki.auth.permissions.PagePermission" %>
 <%@ page import="com.ecyrd.jspwiki.auth.permissions.WikiPermission" %>
 <%@ page errorPage="/Error.jsp" %>
 <%@ taglib uri="/WEB-INF/jspwiki.tld" prefix="wiki" %>
@@ -24,11 +27,12 @@
     NDC.push( wiki.getApplicationName()+":"+pagereq );
 
     AuthorizationManager mgr = wiki.getAuthorizationManager();
-    UserProfile currentUser  = wiki.getUserManager().getUserProfile( request );
+    Principal currentUser  = wiki.getUserManager().getUserProfile( request );
+    Permission requiredPermission = new PagePermission( pagereq, "view" );
 
     if( !mgr.checkPermission( wikiContext.getPage(),
-                              currentUser,
-                              WikiPermission.newInstance("view") ) )
+                              wikiContext,
+                              requiredPermission ) )
     {
         if( mgr.strictLogins() )
         {

@@ -1,15 +1,15 @@
 <%@ page import="org.apache.log4j.*" %>
 <%@ page import="com.ecyrd.jspwiki.*" %>
 <%@ page import="com.ecyrd.jspwiki.filters.*" %>
+<%@ page import="java.security.Permission" %>
+<%@ page import="java.security.Principal" %>
 <%@ page import="java.util.*" %>
 <%@ page import="java.text.SimpleDateFormat" %>
 <%@ page import="com.ecyrd.jspwiki.tags.WikiTagBase" %>
 <%@ page import="com.ecyrd.jspwiki.WikiProvider" %>
 <%@ page import="com.ecyrd.jspwiki.auth.AuthorizationManager" %>
-<%@ page import="com.ecyrd.jspwiki.auth.UserProfile" %>
+<%@ page import="com.ecyrd.jspwiki.auth.permissions.PagePermission" %>
 <%@ page import="com.ecyrd.jspwiki.auth.permissions.WikiPermission" %>
-<%@ page import="com.ecyrd.jspwiki.auth.permissions.EditPermission" %>
-<%@ page import="com.ecyrd.jspwiki.auth.permissions.CreatePermission" %>
 <%@ page errorPage="/Error.jsp" %>
 <%@ taglib uri="/WEB-INF/jspwiki.tld" prefix="wiki" %>
 
@@ -40,7 +40,7 @@
     NDC.push( wiki.getApplicationName()+":"+pagereq );    
 
     WikiPage wikipage = wikiContext.getPage();
-    WikiPermission requiredPermission = null;
+    Permission requiredPermission = null;
     WikiPage latestversion = wiki.getPage( pagereq );
 
     if( latestversion == null )
@@ -49,18 +49,18 @@
     }
     if( wiki.pageExists( wikipage ) )
     {
-        requiredPermission = new EditPermission();
+        requiredPermission = new PagePermission( pagereq, "edit" );
     }
     else
     {
-        requiredPermission = new CreatePermission();
+        requiredPermission = new WikiPermission.CREATE_PAGES;
     }   
 
     AuthorizationManager mgr = wiki.getAuthorizationManager();
-    UserProfile currentUser  = wikiContext.getCurrentUser();
+    Principal currentUser  = wikiContext.getCurrentUser();
 
-    if( !mgr.checkPermission(  wikiContext.getPage(),
-                               currentUser,
+    if( !mgr.checkPermission(  wikipage,
+                               wikiContext,
                                requiredPermission ) )
     {
         log.info("User "+currentUser.getName()+" has no access - redirecting to login page.");

@@ -1,9 +1,11 @@
 package com.ecyrd.jspwiki.acl;
 
-import junit.framework.*;
-import java.util.*;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
-import com.ecyrd.jspwiki.auth.permissions.*;
+import com.ecyrd.jspwiki.auth.acl.AclEntryImpl;
+import com.ecyrd.jspwiki.auth.permissions.PagePermission;
 
 public class AclEntryImplTest
     extends TestCase
@@ -26,62 +28,61 @@ public class AclEntryImplTest
 
     public void testAddPermission()
     {
-        m_ae.addPermission( new ViewPermission() );
+        m_ae.addPermission( new PagePermission( "view" ) );
 
-        assertTrue( "no permission", m_ae.checkPermission( new ViewPermission() ) );
-        assertFalse( "permission found", m_ae.checkPermission( new EditPermission() ) );
+        assertTrue( "no permission", m_ae.checkPermission( new PagePermission( "view" ) ) );
+        assertFalse( "permission found", m_ae.checkPermission( new PagePermission( "edit" ) ) );
     }
 
 
     public void testAddPermission2()
     {
-        m_ae.addPermission( new ViewPermission() );
-        m_ae.addPermission( new EditPermission() );
+        m_ae.addPermission( new PagePermission( "view" ) );
+        m_ae.addPermission( new PagePermission( "edit" ) );
 
-        assertTrue( "no editpermission", m_ae.checkPermission( new EditPermission() ) );
-        assertTrue( "no viewpermission", m_ae.checkPermission( new ViewPermission() ) );
+        assertTrue( "no editpermission", m_ae.checkPermission( new PagePermission( "edit" ) ) );
+        assertTrue( "no viewpermission", m_ae.checkPermission( new PagePermission( "view" ) ) );
     }
 
     public void testAddPermission3()
     {
-        m_ae.addPermission( new CommentPermission() );
+        m_ae.addPermission( new PagePermission( "comment" ) );
 
-        assertFalse( "has editpermission", m_ae.checkPermission( new EditPermission() ) );
+        assertFalse( "has edit permission", m_ae.checkPermission( new PagePermission( "edit" ) ) );
     }
 
     public void testAddPermission4()
     {
-        m_ae.addPermission( new EditPermission() );
+        m_ae.addPermission( new PagePermission( "edit" ) );
 
-        assertTrue( "has not commentpermission", m_ae.checkPermission( new CommentPermission() ) );
+        assertTrue( "has comment permission", m_ae.checkPermission( new PagePermission( "comment" ) ) );
+    }
+    
+    public void testAddPermission5() {
+        m_ae.addPermission( new PagePermission( "view" ) );
+        
+        assertTrue( "has view all", m_ae.checkPermission( new PagePermission( "view" ) ) );
+        assertTrue( "has view on single page", m_ae.checkPermission( new PagePermission( "SamplePage", "view" ) ) );
     }
 
-    public void testRemPermission()
+    public void testRemovePermission()
     {
-        m_ae.addPermission( new ViewPermission() );
-        m_ae.addPermission( new EditPermission() );
+        m_ae.addPermission( new PagePermission( "view" ) );
+        m_ae.addPermission( new PagePermission( "edit" ) );
 
-        assertTrue( "no editpermission", m_ae.checkPermission( new EditPermission() ) );
-        assertTrue( "no viewpermission", m_ae.checkPermission( new ViewPermission() ) );
+        assertTrue( "has edit permission", m_ae.checkPermission( new PagePermission( "edit" ) ) );
+        assertTrue( "has view permission", m_ae.checkPermission( new PagePermission( "view" ) ) );
 
-        m_ae.removePermission( new EditPermission() );
+        m_ae.removePermission( new PagePermission( "edit" ) );
 
-        assertFalse( "editperm found", m_ae.checkPermission( new EditPermission() ) );
-        assertTrue( "viewperm disappeared", m_ae.checkPermission( new ViewPermission() ) );
+        assertFalse( "no edit permission", m_ae.checkPermission( new PagePermission( "edit" ) ) );
+        assertTrue( "has view permission", m_ae.checkPermission( new PagePermission( "view" ) ) );
     }
 
     public void testDefaults()
     {
-        assertFalse( "negative", m_ae.isNegative() );
         assertFalse( "elements", m_ae.permissions().hasMoreElements() );
         assertNull( "principal", m_ae.getPrincipal() );
-    }
-
-    public void testNegative()
-    {
-        m_ae.setNegativePermissions();
-
-        assertTrue( "not negative", m_ae.isNegative() );
     }
 
     public static Test suite()
