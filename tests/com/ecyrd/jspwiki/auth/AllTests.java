@@ -14,8 +14,6 @@ public class AllTests extends TestCase
     {
         TestSuite suite = new TestSuite("auth package tests");
 
-        suite.addTest( UserProfileTest.suite() );
-        suite.addTest( WikiGroupTest.suite() );
         suite.addTest( AuthorizationManagerTest.suite() );
         suite.addTest( com.ecyrd.jspwiki.auth.modules.AllTests.suite() );
 

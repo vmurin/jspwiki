@@ -1,17 +1,23 @@
 package com.ecyrd.jspwiki.acl;
 
-import junit.framework.*;
-import java.util.*;
+import java.security.Principal;
 
-import java.security.acl.*;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
-import com.ecyrd.jspwiki.auth.permissions.*;
-import com.ecyrd.jspwiki.auth.*;
+import com.ecyrd.jspwiki.auth.WikiPrincipal;
+import com.ecyrd.jspwiki.auth.acl.AclEntry;
+import com.ecyrd.jspwiki.auth.acl.AclEntryImpl;
+import com.ecyrd.jspwiki.auth.acl.AclImpl;
+import com.ecyrd.jspwiki.auth.authorize.DefaultGroup;
+import com.ecyrd.jspwiki.auth.authorize.Group;
+import com.ecyrd.jspwiki.auth.permissions.PagePermission;
 
-public class AclImplTest
-    extends TestCase
+public class AclImplTest extends TestCase
 {
     AclImpl m_acl;
+
     AclImpl m_aclGroup;
 
     public AclImplTest( String s )
@@ -20,232 +26,161 @@ public class AclImplTest
     }
 
     /**
-     *  We setup the following rules:
-     *  Alice = may view
-     *  Bob   = may view, may edit
-     *  Charlie = may view, may NOT edit
-     *  Dave = may view, may NOT edit, may create
-     *
-     *  groupAcl:
-     *  FooGroup = Alice, Bob - may edit
-     *  BarGroup = Bob, Charlie - may NOT edit
+     * We setup the following rules: Alice = may view Bob = may view, may edit
+     * Charlie = may view Dave = may view, may comment groupAcl: FooGroup =
+     * Alice, Bob - may edit BarGroup = Bob, Charlie - may view
      */
-
     public void setUp()
     {
         m_acl = new AclImpl();
         m_aclGroup = new AclImpl();
+        Principal u_alice = new WikiPrincipal( "Alice" );
+        Principal u_bob = new WikiPrincipal( "Bob" );
+        Principal u_charlie = new WikiPrincipal( "Charlie" );
+        Principal u_dave = new WikiPrincipal( "Dave" );
 
-        //  User 1
-
-        UserProfile u_alice = new UserProfile();
-        u_alice.setName( "Alice" );
-
-        UserProfile u_bob = new UserProfile();
-        u_bob.setName( "Bob" );
-        
-        UserProfile u_charlie = new UserProfile();
-        u_charlie.setName( "Charlie" );
-
-        UserProfile u_dave = new UserProfile();
-        u_dave.setName( "Dave" );
-
-
-        //  ALLOW VIEW
-
+        //  Alice can view
         AclEntry ae = new AclEntryImpl();
-        ae.addPermission( new ViewPermission() );
+        ae.addPermission( PagePermission.VIEW );
         ae.setPrincipal( u_alice );
 
-        //  DENY EDIT
-
+        //  Charlie can view
         AclEntry ae2 = new AclEntryImpl();
-        ae2.addPermission( new EditPermission() );
-        ae2.setNegativePermissions();
+        ae2.addPermission( PagePermission.VIEW );
         ae2.setPrincipal( u_charlie );
 
-        AclEntry ae2b = new AclEntryImpl();
-        ae2b.addPermission( new ViewPermission() );
-        ae2b.setPrincipal( u_charlie );
-
-        //  ALLOW VIEW, EDIT
-
+        //  Bob can view and edit (and by implication, comment)
         AclEntry ae3 = new AclEntryImpl();
-        ae3.addPermission( new ViewPermission() );
-        ae3.addPermission( new EditPermission() );
+        ae3.addPermission( PagePermission.VIEW );
+        ae3.addPermission( PagePermission.EDIT );
         ae3.setPrincipal( u_bob );
 
-	// ALLOW VIEW, CREATE, DENY EDIT
-
+        // Dave can view and comment
         AclEntry ae4 = new AclEntryImpl();
-        ae4.addPermission( new ViewPermission() );
-        ae4.addPermission( new CreatePermission() );
+        ae4.addPermission( PagePermission.VIEW );
+        ae4.addPermission( PagePermission.COMMENT );
         ae4.setPrincipal( u_dave );
 
-        AclEntry ae4b = new AclEntryImpl();
-        ae4b.addPermission( new EditPermission() );
-        ae4b.setNegativePermissions();
-        ae4b.setPrincipal( u_dave );
+        // Create ACL with Alice, Bob, Charlie, Dave
+        m_acl.addEntry( ae );
+        m_acl.addEntry( ae2 );
+        m_acl.addEntry( ae3 );
+        m_acl.addEntry( ae4 );
 
-        m_acl.addEntry( null, ae );
-        m_acl.addEntry( null, ae2 );
-        m_acl.addEntry( null, ae2b );
-        m_acl.addEntry( null, ae3 );
-        m_acl.addEntry( null, ae4 );
-        m_acl.addEntry( null, ae4b );
-
-        //  Groups
-
-        WikiGroup group1 = new WikiGroup();
-        group1.addMember( u_alice );
-        group1.addMember( u_bob );
-        group1.setName( "FooGroup" );
-
-        WikiGroup group2 = new WikiGroup();
-        group2.addMember( u_bob );
-        group2.addMember( u_charlie );
-        group2.setName( "BarGroup" );
-       
+        // Foo group includes Alice and Bob
+        Group group1 = new DefaultGroup( "FooGroup" );
+        group1.add( u_alice );
+        group1.add( u_bob );
         AclEntry ag1 = new AclEntryImpl();
-        ag1.addPermission( new EditPermission() );
         ag1.setPrincipal( group1 );
+        ag1.addPermission( PagePermission.EDIT );
+        m_aclGroup.addEntry( ag1 );
 
+        // Bar group includes Bob and Charlie
+        Group group2 = new DefaultGroup( "BarGroup" );
+        group2.add( u_bob );
+        group2.add( u_charlie );
         AclEntry ag2 = new AclEntryImpl();
-        ag2.addPermission( new EditPermission() );
-        ag2.setNegativePermissions();
         ag2.setPrincipal( group2 );
-
-        m_aclGroup.addEntry( null, ag1 );  // allow edit FooGroup
-        m_aclGroup.addEntry( null, ag2 );  // deny  edit BarGroup
-        m_aclGroup.addEntry( null, ae );   // allow view Alice
-        m_aclGroup.addEntry( null, ae2 );  // deny  edit Charlie
+        ag2.addPermission( PagePermission.VIEW );
+        m_aclGroup.addEntry( ag2 );
     }
 
     public void tearDown()
     {
     }
 
+    private boolean inArray( Object[] array, Object key )
+    {
+        for( int i = 0; i < array.length; i++ )
+        {
+            if ( array[i].equals( key ) )
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean inGroup( Object[] array, Principal key )
+    {
+        for( int i = 0; i < array.length; i++ )
+        {
+            if (array[i] instanceof Group) 
+            {
+                if (((Group)array[i]).isMember(key))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public void testAlice()
     {
-        UserProfile wup = new UserProfile();
-        wup.setName("Alice");
-
-        assertTrue( "view", m_acl.checkPermission( wup, new ViewPermission() ) );
-        assertFalse( "edit", m_acl.checkPermission( wup, new EditPermission() ) );
-        assertFalse( "comment", m_acl.checkPermission( wup, new CommentPermission() ) );
-
-        assertEquals( "edit none", AclImpl.NONE, 
-                      m_acl.findPermission( wup, new EditPermission() ) );
-
-        assertEquals( "comment none", AclImpl.NONE, 
-                      m_acl.findPermission( wup, new CommentPermission() ) );
-
-
-        assertEquals( "view allow", AclImpl.ALLOW, 
-                      m_acl.findPermission( wup, new ViewPermission() ) );
+        // Alice should be able to view but not edit or comment
+        Principal wup = new WikiPrincipal( "Alice" );
+        assertTrue( "view", inArray( m_acl.findPrincipals( PagePermission.VIEW ), wup ) );
+        assertFalse( "edit", inArray( m_acl.findPrincipals( PagePermission.EDIT ), wup ) );
+        assertFalse( "comment", inArray( m_acl.findPrincipals( PagePermission.COMMENT ), wup ) );
     }
 
     public void testBob()
     {
-        UserProfile wup = new UserProfile();
-        wup.setName("Bob");
-
-        assertTrue( "view", m_acl.checkPermission( wup, new ViewPermission() ) );
-        assertTrue( "edit", m_acl.checkPermission( wup, new EditPermission() ) );
-        assertTrue( "comment", m_acl.checkPermission( wup, new CommentPermission() ) );
-
-        assertEquals( "view allow", AclImpl.ALLOW, 
-                      m_acl.findPermission( wup, new ViewPermission() ) );
-        assertEquals( "edit allow", AclImpl.ALLOW, 
-                      m_acl.findPermission( wup, new EditPermission() ) );
-        assertEquals( "comment allow", AclImpl.ALLOW,
-                      m_acl.findPermission( wup, new CommentPermission() ) );
+        // Bob should be able to view, edit, and comment but not delete
+        Principal wup = new WikiPrincipal( "Bob" );
+        assertTrue( "view", inArray( m_acl.findPrincipals( PagePermission.VIEW ), wup ) );
+        assertTrue( "edit", inArray( m_acl.findPrincipals( PagePermission.EDIT ), wup ) );
+        assertTrue( "comment", inArray( m_acl.findPrincipals( PagePermission.COMMENT ), wup ) );
+        assertFalse( "delete", inArray( m_acl.findPrincipals( PagePermission.DELETE ), wup ) );
     }
 
     public void testCharlie()
     {
-        UserProfile wup = new UserProfile();
-        wup.setName("Charlie");
-
-        assertTrue( "view", m_acl.checkPermission( wup, new ViewPermission() ) );
-        assertFalse( "edit", m_acl.checkPermission( wup, new EditPermission() ) );
-
-        assertEquals( "view allow", AclImpl.ALLOW, 
-                      m_acl.findPermission( wup, new ViewPermission() ) );
-
-        assertEquals( "edit deny", AclImpl.DENY, 
-                      m_acl.findPermission( wup, new EditPermission() ) );
+        // Charlie should be able to view, but not edit, comment or delete
+        Principal wup = new WikiPrincipal( "Charlie" );
+        assertTrue( "view", inArray( m_acl.findPrincipals( PagePermission.VIEW ), wup ) );
+        assertFalse( "edit", inArray( m_acl.findPrincipals( PagePermission.EDIT ), wup ) );
+        assertFalse( "comment", inArray( m_acl.findPrincipals( PagePermission.COMMENT ), wup ) );
+        assertFalse( "delete", inArray( m_acl.findPrincipals( PagePermission.DELETE ), wup ) );
     }
 
     public void testDave()
     {
-        UserProfile wup = new UserProfile();
-        wup.setName("Dave");
-
-        assertTrue( "view", m_acl.checkPermission( wup, new ViewPermission() ) );
-        assertTrue( "create", m_acl.checkPermission( wup, new CreatePermission() ) );
-        assertFalse( "edit", m_acl.checkPermission( wup, new EditPermission() ) );
-
-        assertEquals( "view allow", AclImpl.ALLOW, 
-                      m_acl.findPermission( wup, new ViewPermission() ) );
-
-        assertEquals( "create allow", AclImpl.ALLOW, 
-                      m_acl.findPermission( wup, new CreatePermission() ) );
-
-        assertEquals( "edit deny", AclImpl.DENY, 
-                      m_acl.findPermission( wup, new EditPermission() ) );
+        // Dave should be able to view and comment but not edit or delete
+        Principal wup = new WikiPrincipal( "Dave" );
+        assertTrue( "view", inArray( m_acl.findPrincipals( PagePermission.VIEW ), wup ) );
+        assertFalse( "edit", inArray( m_acl.findPrincipals( PagePermission.EDIT ), wup ) );
+        assertTrue( "comment", inArray( m_acl.findPrincipals( PagePermission.COMMENT ), wup ) );
+        assertFalse( "delete", inArray( m_acl.findPrincipals( PagePermission.DELETE ), wup ) );
     }
 
-    public void testFooGroup()
+    public void testGroups()
     {
-        UserProfile wup = new UserProfile();
-        wup.setName( "Alice" );
+        Principal wup = new WikiPrincipal( "Alice" );
+        assertTrue( "Alice view", inGroup( m_aclGroup.findPrincipals( PagePermission.VIEW ), wup ) );
+        assertTrue( "Alice edit", inGroup( m_aclGroup.findPrincipals( PagePermission.EDIT ), wup ) );
+        assertTrue( "Alice comment", inGroup( m_aclGroup.findPrincipals( PagePermission.COMMENT ), wup ) );
+        assertFalse( "Alice delete", inGroup( m_aclGroup.findPrincipals( PagePermission.DELETE ), wup ) );
 
-        assertEquals( "view allow Alice", AclImpl.ALLOW,
-                      m_aclGroup.findPermission( wup, new ViewPermission() ) );
+        wup = new WikiPrincipal( "Bob" );
+        assertTrue( "Bob view", inGroup( m_aclGroup.findPrincipals( PagePermission.VIEW ), wup ) );
+        assertTrue( "Bob edit", inGroup( m_aclGroup.findPrincipals( PagePermission.EDIT ), wup ) );
+        assertTrue( "Bob comment", inGroup( m_aclGroup.findPrincipals( PagePermission.COMMENT ), wup ) );
+        assertFalse( "Bob delete", inGroup( m_aclGroup.findPrincipals( PagePermission.DELETE ), wup ) );
 
-        assertEquals( "edit allow Alice", AclImpl.ALLOW,
-                      m_aclGroup.findPermission( wup, new EditPermission() ) );
+        wup = new WikiPrincipal( "Charlie" );
+        assertTrue( "Charlie view", inGroup( m_aclGroup.findPrincipals( PagePermission.VIEW ), wup ) );
+        assertFalse( "Charlie edit", inGroup( m_aclGroup.findPrincipals( PagePermission.EDIT ), wup ) );
+        assertFalse( "Charlie comment", inGroup( m_aclGroup.findPrincipals( PagePermission.COMMENT ), wup ) );
+        assertFalse( "Charlie delete", inGroup( m_aclGroup.findPrincipals( PagePermission.DELETE ), wup ) );
 
-        wup.setName( "Bob" );
-
-        assertEquals( "allow edit Bob", AclImpl.ALLOW,
-                      m_aclGroup.findPermission( wup, new EditPermission() ) );
-        
-        assertEquals( "allow view Bob", AclImpl.NONE,
-                      m_aclGroup.findPermission( wup, new ViewPermission() ) );
-
-        wup.setName( "Charlie" );
-
-        assertEquals( "deny edit Charlie", AclImpl.DENY,
-                      m_aclGroup.findPermission( wup, new EditPermission() ) );
-        
-        assertEquals( "Default view Charlie", AclImpl.NONE,
-                      m_aclGroup.findPermission( wup, new ViewPermission() ) );        
-
-    }
-
-    public void testAllGroup()
-        throws Exception
-    {
-        UserProfile wup = new UserProfile();
-        wup.setName("Alice");
-
-        WikiGroup group1 = new AllGroup();
-        group1.setName( "All" );
-
-        AclEntry ae = new AclEntryImpl();
-        ae.setPrincipal( group1 );
-        ae.addPermission( new ViewPermission() );
-        ae.addPermission( new EditPermission() );
-
-        AccessControlList acl = new AclImpl();
-        acl.addEntry( null, ae );
-
-        assertEquals( "no view!", AclImpl.ALLOW, 
-                      acl.findPermission( wup, new ViewPermission() ) );
-        assertEquals( "no edit!", AclImpl.ALLOW, 
-                      acl.findPermission( wup, new EditPermission() ) );
+        wup = new WikiPrincipal( "Dave" );
+        assertFalse( "Dave view", inGroup( m_aclGroup.findPrincipals( PagePermission.VIEW ), wup ) );
+        assertFalse( "Dave edit", inGroup( m_aclGroup.findPrincipals( PagePermission.EDIT ), wup ) );
+        assertFalse( "Dave comment", inGroup( m_aclGroup.findPrincipals( PagePermission.COMMENT ), wup ) );
+        assertFalse( "Dave delete", inGroup( m_aclGroup.findPrincipals( PagePermission.DELETE ), wup ) );
     }
 
     public static Test suite()
