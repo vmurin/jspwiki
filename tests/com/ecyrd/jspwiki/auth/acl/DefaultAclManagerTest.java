@@ -8,12 +8,8 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import com.ecyrd.jspwiki.TestEngine;
-import com.ecyrd.jspwiki.WikiContext;
 import com.ecyrd.jspwiki.WikiPage;
-import com.ecyrd.jspwiki.WikiSession;
-import com.ecyrd.jspwiki.auth.AuthorizationManager;
 import com.ecyrd.jspwiki.auth.WikiPrincipal;
-import com.ecyrd.jspwiki.auth.authorize.Role;
 import com.ecyrd.jspwiki.auth.permissions.PagePermission;
 
 public class DefaultAclManagerTest
@@ -31,52 +27,45 @@ public class DefaultAclManagerTest
     {
         Properties props = new Properties();
         props.load( TestEngine.findTestProperties() );
-        
         m_engine = new TestEngine(props);
-
-        String text1 = "Foobar.\n\n[{SET defaultpermissions='ALLOW EDIT Charlie;DENY VIEW Bob'}]\n\nBlood.";
-        String text2 = "Foo";
-
-        m_engine.saveText( "DefaultPermissions", text1 );
-        m_engine.saveText( "TestPage", text2 );
+        
+        String text = "Foo";
+        m_engine.saveText( "TestDefaultPage", text );
+        
+        text = "Bar. [{ALLOW edit Charlie}] ";
+        m_engine.saveText( "TestAclPage", text );
     }
 
     public void tearDown()
     {
-        m_engine.deletePage( "DefaultPermissions" );
-        m_engine.deletePage( "TestPage" );
+        m_engine.deletePage( "TestDefaultPage" );
+        m_engine.deletePage( "TestAclPage" );
     }
-
-    public void testDefaultPermissions()
+    
+    public void testGetPermissions()
     {
-        AuthorizationManager mgr = m_engine.getAuthorizationManager();
-
-        WikiPage p = m_engine.getPage("TestPage");
-        WikiContext context = new WikiContext( m_engine, p );
-        WikiSession session = WikiSession.GUEST_SESSION;
-        context.setWikiSession( session );
-
-        // Charlie is anonymous
-        Principal principal = new WikiPrincipal( "Charlie");
-        session.getSubject().getPrincipals().clear();
-        session.getSubject().getPrincipals().add( principal );
-        session.getSubject().getPrincipals().add( Role.ANONYMOUS );
-        assertTrue( "Charlie", mgr.checkPermission( context,
-                new PagePermission( "TestPage", "view" ) ) );
-        assertFalse( "Charlie", mgr.checkPermission( context,
-                new PagePermission( "TestPage", "edit" ) ) );
-
-        // Bob is logged in
-        principal = new WikiPrincipal( "Bob");
-        session.getSubject().getPrincipals().clear();
-        session.getSubject().getPrincipals().add( principal );
-        session.getSubject().getPrincipals().add( Role.AUTHENTICATED );
-        assertTrue( "Bob", mgr.checkPermission( context,
-                new PagePermission( "TestPage", "view" ) ) );
-        assertTrue( "Bob", mgr.checkPermission( context,
-                new PagePermission( "TestPage", "edit" ) ) );
+        WikiPage page = m_engine.getPage( "TestDefaultPage" );
+        Acl acl = m_engine.getAclManager().getPermissions( page );
+        assertNull( page.getAcl() );
+        
+        page = m_engine.getPage( "TestAclPage" );
+        acl = m_engine.getAclManager().getPermissions( page );
+        assertNotNull( page.getAcl() );
+        
+        // Charlie is an editor; reading is therefore implied
+        Principal[] principals = acl.findPrincipals( new PagePermission( page, "view") );
+        assertEquals( 1, principals.length );
+        assertEquals( new WikiPrincipal("Charlie"), principals[0]);
+        
+        // Charlie should be in the ACL as an editor
+        principals = acl.findPrincipals( new PagePermission( page, "edit") );
+        assertEquals( 1, principals.length );
+        assertEquals( new WikiPrincipal("Charlie"), principals[0]);
+        
+        // Charlie should not be able to delete this page
+        principals = acl.findPrincipals( new PagePermission( page, "delete") );
+        assertEquals( 0, principals.length );
     }
-
 
     public static Test suite()
     {
