@@ -28,8 +28,6 @@ public interface GroupManager extends Authorizer {
   
   public boolean exists(Group group);
   
-  public Group find(String name);
-  
   public void commit();
   
   public void reload();
