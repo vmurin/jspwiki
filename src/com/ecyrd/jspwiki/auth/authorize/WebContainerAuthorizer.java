@@ -12,7 +12,7 @@ import com.ecyrd.jspwiki.auth.Authorizer;
  * Authorizes users by delegating role membership checks to the servlet
  * container.
  * @author Andrew R. Jaquith
- * @version $Revision: 1.1.2.2 $ $Date: 2005-02-14 05:24:42 $
+ * @version $Revision: 1.1.2.3 $ $Date: 2005-02-25 20:44:11 $
  */
 public class WebContainerAuthorizer implements Authorizer
 {
@@ -49,6 +49,9 @@ public class WebContainerAuthorizer implements Authorizer
             return false;
         }
         HttpServletRequest request = context.getHttpRequest();
+        if (request == null) {
+            return false;
+        }
         return request.isUserInRole( role.getName() );
     }
 
