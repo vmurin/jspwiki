@@ -2065,13 +2065,13 @@ public class WikiEngine
         }
         catch( ClassNotFoundException e )
         {
-            log.fatal( "UserDatabase " + dbClassName + " cannot be found", e );
-            throw new RuntimeException( "UserDatabase cannot be found" );
+            log.fatal( "UserDatabase class " + dbClassName + " cannot be found", e );
+            throw new RuntimeException( "UserDatabase class " + dbClassName + " cannot be found" );
         }
         catch( InstantiationException e )
         {
-            log.fatal( "UserDatabase " + dbClassName + " cannot be created", e );
-            throw new RuntimeException( "UserDatabase cannot be created" );
+            log.fatal( "UserDatabase class " + dbClassName + " cannot be created", e );
+            throw new RuntimeException( "UserDatabase class " + dbClassName + " cannot be created" );
         }
         catch( IllegalAccessException e )
         {
