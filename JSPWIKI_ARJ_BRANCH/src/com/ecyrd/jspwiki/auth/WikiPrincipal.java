@@ -20,10 +20,6 @@
 package com.ecyrd.jspwiki.auth;
 
 import java.security.Principal;
-import java.util.NoSuchElementException;
-import java.util.StringTokenizer;
-
-import com.ecyrd.jspwiki.TextUtil;
 
 /**
  *  This is a thin, basic, immutable Principal class.
@@ -50,37 +46,6 @@ public class WikiPrincipal
     public String getName()
     {
         return m_name;
-    }
-
-    public static Principal parseStringRepresentation( String res )
-        throws NoSuchElementException
-    {
-        Principal principal = null;
-    
-        if( res != null && res.length() > 0 )
-        {
-            //
-            //  Not all browsers or containers do proper cookie
-            //  decoding, which is why we can suddenly get stuff
-            //  like "username=3DJanneJalkanen", so we have to
-            //  do the conversion here.
-            //
-            res = TextUtil.urlDecodeUTF8( res );
-            StringTokenizer tok = new StringTokenizer( res, " ,=" );
-            
-            while( tok.hasMoreTokens() )
-            {
-                String param = tok.nextToken();
-                String value = tok.nextToken();
-                    
-                if( param.equals("username") )
-                {
-                    principal = new WikiPrincipal( value );
-                }
-            }
-        }
-    
-        return principal;
     }
 
     public boolean equals(Object obj) {
