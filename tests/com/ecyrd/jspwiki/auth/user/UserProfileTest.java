@@ -1,7 +1,6 @@
 package com.ecyrd.jspwiki.auth.user;
 
 import java.io.IOException;
-import java.security.Principal;
 import java.util.Properties;
 
 import junit.framework.Test;
@@ -11,8 +10,6 @@ import junit.framework.TestSuite;
 import org.apache.log4j.PropertyConfigurator;
 
 import com.ecyrd.jspwiki.TestEngine;
-import com.ecyrd.jspwiki.TextUtil;
-import com.ecyrd.jspwiki.auth.WikiPrincipal;
 
 /**
  *  Tests the DefaultUserProfile class.
@@ -62,43 +59,6 @@ public class UserProfileTest extends TestCase
 
         assertTrue( p.equals( p2 ) );
     }
-
-    public void testStringRepresentation()
-        throws Exception
-    {
-        Principal p = WikiPrincipal.parseStringRepresentation("username=JanneJalkanen");
-
-        assertEquals( "name", "JanneJalkanen",p.getName() );
-    }
-
-    /**
-     *  Sometimes not all servlet containers offer you correctly
-     *  decoded cookies.  Reported by KalleKivimaa.
-     */
-    public void testBrokenStringRepresentation()
-        throws Exception
-    {
-        Principal p = WikiPrincipal.parseStringRepresentation("username%3DJanneJalkanen");
-
-        assertEquals( "name", "JanneJalkanen",p.getName() );
-    }
-
-    public void testUTFStringRepresentation()
-        throws Exception
-    {
-        Principal p = new WikiPrincipal( "Määmöö" );
-        Principal p2 = WikiPrincipal.parseStringRepresentation( p.getName() );
-        assertEquals( "name", "Määmöö", p2.getName() );
-    }
-
-    public void testUTFURLStringRepresentation()
-        throws Exception
-    {
-        Principal p = WikiPrincipal.parseStringRepresentation("username="+TextUtil.urlEncodeUTF8("Määmöö"));
-
-        assertEquals( "name", "Määmöö",p.getName() );
-    }
-
 
     public static Test suite()
     {
