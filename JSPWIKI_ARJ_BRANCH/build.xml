@@ -46,7 +46,7 @@
         |___com 
             |___[...and the rest of the test source code]
                   
-    $Id: build.xml,v 1.38.2.8 2005-02-27 23:08:47 arj Exp $
+    $Id: build.xml,v 1.38.2.9 2005-02-28 06:52:02 arj Exp $
 -->    
        
 <!--   
@@ -288,7 +288,7 @@
            of the WAR-file.
    -->
 
-  <target name="war" depends="installinit,jar"
+  <target name="war" depends="installinit,jar,sign"
           description="Builds the WAR file for installation.">
 
     <property name="warfile" value="${install.fulldir}/${ant.project.name}.war" />
@@ -652,6 +652,67 @@
         <include name="**/*.png" />
       </tarfileset>
     </tar>
+  </target>
+ 
+  <!-- Code signing for enforcing J2SE security policy -->
+  
+  <target name="sign" depends="jar,sign-init,createjks,jkspassword">
+    <echo message="Signing code with this certificate:" />
+    <exec dir="${basedir}" executable="keytool" failonerror="true">
+      <arg line="-list"/>
+      <arg line="-v"/>
+      <arg line="-alias"/>
+      <arg line="${jks.alias}"/>
+      <arg line="-keystore"/>
+      <arg line="${jks.keystore}"/>
+      <arg line="-storepass"/>
+      <arg line="${jks.password}"/>
+    </exec>
+    <signjar jar="${jarfile}" alias="jspwiki" keystore="${basedir}/jspwiki.jks"
+      storepass="${jks.password}" verbose="false"/>
+  </target>
+  
+  <target name="sign-init">
+    <property name="jks.keystore" value="${basedir}/jspwiki.jks" />
+    <property name="jks.alias" value="jspwiki" />
+    <available file="${basedir}/jspwiki.jks" property="jks.exists" />
+  </target>
+  
+  <target name="jkspassword" unless="jks.password">
+    <input message="Keystore password:" addproperty="jks.password" />
+  </target>
+  
+  <target name="createjks" unless="jks.exists">
+    <echo>
+JSPWiki needs a digital certificate for code signing its JAR files. 
+Since you don't appear to have one, we need to generate a new certificate.
+Once generated, it will be used to sign the JSPWiki.jar file. To create
+the certificate, we need to ask you for your name and a few other things.
+
+The certificate file will be generated at: ${jks.keystore}.
+You should copy this file to your container's configuration directory,
+or wherever your jspwiki.policy file lives.
+
+If something in this process goes wrong, you can simply delete
+${jks.keystore} and execute this target again... no harm done.
+    </echo>
+    <input message="Your name (example: Simon Bar Sinister):" addproperty="jks.cn" />
+    <input message="Your organization (example: ecyrd.com):" addproperty="jks.o" />
+    <input message="Your country (example: US, FI, AU):" addproperty="jks.c" />
+    <input message="Keystore password (>6 characters):" addproperty="jks.password" />
+    <exec dir="${basedir}" executable="keytool" failonerror="true">
+      <arg line="-genkey"/>
+      <arg line="-keysize"/>
+      <arg line="1024"/>
+      <arg line="-alias"/>
+      <arg line="${jks.alias}"/>
+      <arg line="-keystore"/>
+      <arg line="${jks.keystore}"/>
+      <arg line="-storepass"/>
+      <arg line="${jks.password}"/>
+      <arg line="-dname"/>
+      <arg line="'cn=${jks.cn}, ou=JSPWiki Code Signing Division, o=${jks.o}, c=${jks.c}'"/>
+    </exec>
   </target>
  
 </project>
