@@ -16,14 +16,15 @@ import com.ecyrd.jspwiki.auth.permissions.PagePermission;
 
 /**
  * @author Andrew R. Jaquith
- * @version $Revision: 1.1.2.3 $ $Date: 2005-02-20 23:38:20 $
+ * @version $Revision: 1.1.2.4 $ $Date: 2005-02-25 20:42:30 $
  */
 public class DefaultAclManager implements AclManager
 {
     static Logger                log    = Logger.getLogger( DefaultAclManager.class );
 
     private AuthorizationManager m_auth = null;
-
+    private WikiEngine m_engine = null;
+    
     /**
      * @see com.ecyrd.jspwiki.auth.acl.AclManager#initialize(com.ecyrd.jspwiki.WikiEngine,
      *      java.util.Properties)
@@ -31,11 +32,12 @@ public class DefaultAclManager implements AclManager
     public void initialize( WikiEngine engine, Properties props )
     {
         m_auth = engine.getAuthorizationManager();
+        m_engine = engine;
     }
 
     /**
      * A helper method for parsing textual AccessControlLists. The line is in
-     * form "(ALLOW) <permission><principal>, <principal>, <principal>". This
+     * form "ALLOW <permission> <principal>, <principal>, <principal>". This
      * method was moved from Authorizer.
      * @param page The current wiki page. If the page already has an ACL, it
      *            will be used as a basis for this ACL in order to avoid the
@@ -90,11 +92,6 @@ public class DefaultAclManager implements AclManager
             log.warn( "Invalid access rule: " + ruleLine + " - defaults will be used." );
             throw new WikiSecurityException( "Invalid access rule: " + ruleLine );
         }
-        //        catch( NotOwnerException noe )
-        //        {
-        //            throw new InternalWikiException("Someone has implemented access
-        // control on access control lists without telling me.");
-        //        }
         catch( IllegalArgumentException iae )
         {
             throw new WikiSecurityException( "Invalid permission type: " + ruleLine );
