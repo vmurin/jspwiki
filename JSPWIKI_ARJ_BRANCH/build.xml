@@ -46,7 +46,7 @@
         |___com 
             |___[...and the rest of the test source code]
                   
-    $Id: build.xml,v 1.38.2.4 2005-02-26 04:36:46 arj Exp $
+    $Id: build.xml,v 1.38.2.5 2005-02-27 07:03:12 arj Exp $
 -->    
        
 <!--   
@@ -539,15 +539,17 @@
        user "apache" group and "daemon".
   -->
 
-  <target name="war-tomcat"      depends="build-tomcat-war,staticzip" />
+  <target name="war-tomcat"      depends="build-tomcat-war,staticzip"
+    description="Builds the WAR file for Tomcat (with pre-compiled JSPs)"/>
 
   <target name="war-tomcat-init" depends="init">
     <property environment="env" />
     <property name="war"               value="${code.build}/${ant.project.name}" />
     <property name="war.tomcat"        value="${ant.project.name}-tomcat.war" />
     <property name="tar.static"        value="${ant.project.name}-static.tar.gz" />
-    <fail unless="${env.CATALINA_HOME}">You need to supply the property "tomcat.home"!</fail>
+    <fail unless="env.CATALINA_HOME">Couldn't find CATALINA_HOME. Did you set it?</fail>
     <property name="tomcat.home"       value="${env.CATALINA_HOME}" />
+    <echo message="Detected Tomcat: ${env.CATALINA_HOME}" />
   </target>
 
   <!-- Use Jasper to generate Java class files for the JSPs.
@@ -606,8 +608,7 @@
   
   <!-- Create a new war file with the new JSP jar and amended web.xml -->
   
-  <target name="build-tomcat-war" depends="compile-tomcat"
-    description="Builds the WAR file for Tomcat (with pre-compiled JSPs)">
+  <target name="build-tomcat-war" depends="compile-tomcat">
     <war warfile="${code.build}/${war.tomcat}" webxml="${code.build}/web-merged.xml" defaultexcludes="true">
       <webinf dir="${war}/WEB-INF">
         <exclude name="web.xml" />
