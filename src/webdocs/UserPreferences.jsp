@@ -98,6 +98,7 @@
         try
         {
             database.save( profile );
+            database.commit();
             mgr.logout( session );
             if ( mgr.loginCustom( loginname, password, request ) )
             {
