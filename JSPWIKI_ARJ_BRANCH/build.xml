@@ -46,7 +46,7 @@
         |___com 
             |___[...and the rest of the test source code]
                   
-    $Id: build.xml,v 1.38.2.5 2005-02-27 07:03:12 arj Exp $
+    $Id: build.xml,v 1.38.2.6 2005-02-27 18:43:11 arj Exp $
 -->    
        
 <!--   
@@ -399,7 +399,7 @@
         </classpath>
 
         <sysproperty key="java.security.auth.login.config" value="${basedir}/etc/jaas.config"/>
-        <sysproperty key="java.security.policy" value="${basedir}/tests/etc/jspwiki.policy"/>
+        <sysproperty key="java.security.policy" value="${basedir}/etc/jspwiki.policy"/>
 
         <formatter type="plain" />
 
@@ -424,7 +424,7 @@
         </classpath>
 
         <sysproperty key="java.security.auth.login.config" value="${basedir}/etc/jaas.config"/>
-        <sysproperty key="java.security.policy" value="${basedir}/tests/etc/jspwiki.policy"/>
+        <sysproperty key="java.security.policy" value="${basedir}/etc/jspwiki.policy"/>
 
         <formatter type="plain" />
 
@@ -449,7 +449,7 @@
         </classpath>
 
         <sysproperty key="java.security.auth.login.config" value="${basedir}/etc/jaas.config"/>
-        <sysproperty key="java.security.policy" value="${basedir}/tests/etc/jspwiki.policy"/>
+        <sysproperty key="java.security.policy" value="${basedir}/etc/jspwiki.policy"/>
 
         <formatter type="xml" />
 
@@ -483,7 +483,7 @@
         </classpath>
 
         <sysproperty key="java.security.auth.login.config" value="${basedir}/etc/jaas.config"/>
-        <sysproperty key="java.security.policy" value="${basedir}/tests/etc/jspwiki.policy"/>
+        <sysproperty key="java.security.policy" value="${basedir}/etc/jspwiki.policy"/>
 
         <arg value="com.ecyrd.jspwiki.AllTests" />
      </java>
