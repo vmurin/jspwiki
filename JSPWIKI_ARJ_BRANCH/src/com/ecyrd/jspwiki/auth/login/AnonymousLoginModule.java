@@ -105,9 +105,15 @@ public class AnonymousLoginModule extends AbstractLoginModule
      */
     public static void setUserCookie( HttpServletResponse response, String name )
     {
-        Cookie userId = new Cookie( AnonymousLoginModule.PREFS_COOKIE_NAME, name );
+        Cookie userId = new Cookie( PREFS_COOKIE_NAME, name );
         userId.setMaxAge( 1001 * 24 * 60 * 60 ); // 1001 days is default.
         response.addCookie( userId );
     }
 
+    public static void clearUserCookie( HttpServletResponse response )
+    {
+        Cookie userId = new Cookie( PREFS_COOKIE_NAME, "" );
+        userId.setMaxAge( 0 );
+        response.addCookie( userId );
+    }
 }
