@@ -13,12 +13,14 @@
  */
 package com.ecyrd.jspwiki.auth;
 
+import java.security.Permission;
 import java.util.Properties;
 
 import javax.security.auth.Subject;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
@@ -31,6 +33,7 @@ import com.ecyrd.jspwiki.WikiException;
 import com.ecyrd.jspwiki.WikiSession;
 import com.ecyrd.jspwiki.auth.login.WebContainerCallbackHandler;
 import com.ecyrd.jspwiki.auth.login.WikiCallbackHandler;
+import com.ecyrd.jspwiki.auth.permissions.PagePermission;
 
 /**
  * @author Andrew R. Jaquith
@@ -47,8 +50,6 @@ public class AuthenticationManager
 
     /** If true, logs the IP address of the editor on saving. */
     public static final String                 PROP_STOREIPADDRESS = "jspwiki.storeIPAddress";
-
-    private static final AuthenticationManager c_instance          = new AuthenticationManager();
 
     static Logger                              log                 = Logger.getLogger( AuthenticationManager.class );
 
@@ -140,9 +141,11 @@ public class AuthenticationManager
      * Wiki context. As a consequence, this will also automatically unbind the
      * WikiSession, and with it all of its Principal objects and Subject. This
      * is a cheap-and-cheerful way to do it without invoking JAAS LoginModules.
+     * The logout operation will also remove the JSESSIONID cookie from
+     * the user's browser session, if it was set.
      * @param context the current wiki context
      */
-    public void logout( HttpSession session )
+    public static void logout( HttpSession session )
     {
         if ( session == null )
         {
@@ -151,6 +154,10 @@ public class AuthenticationManager
         }
         // Clear the session
         session.invalidate();
+
+        // Remove JSESSIONID in case it is still kicking around
+        Cookie sessionCookie = new Cookie("JSESSIONID", null);
+        sessionCookie.setMaxAge(0);
     }
 
     /**
@@ -180,9 +187,16 @@ public class AuthenticationManager
         }
     }
 
-    public static final AuthenticationManager getInstance()
+    /**
+     * Determines whether authentication is required to view wiki pages. This is
+     * done by checking for the PagePermission.VIEW permission using a null
+     * WikiContext. It delegates the check to
+     * {@link AuthorizationManager#checkPermission(WikiContext, Permission)}.
+     * @return <code>true</code> if logins are required
+     */
+    public boolean strictLogins()
     {
-        return c_instance;
+        return ( m_engine.getAuthorizationManager().checkPermission( null, PagePermission.VIEW ) );
     }
 
 }
