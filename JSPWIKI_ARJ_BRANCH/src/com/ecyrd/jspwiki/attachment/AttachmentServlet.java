@@ -27,14 +27,12 @@ import java.security.Permission;
 import java.security.Principal;
 import java.text.SimpleDateFormat;
 import java.text.DateFormat;
-import java.text.ParseException;
 
 import org.apache.log4j.Logger;
 
 import com.ecyrd.jspwiki.*;
 import com.ecyrd.jspwiki.util.HttpUtil;
 import com.ecyrd.jspwiki.auth.permissions.PagePermission;
-import com.ecyrd.jspwiki.auth.user.DefaultUserProfile;
 import com.ecyrd.jspwiki.auth.AuthorizationManager;
 import com.ecyrd.jspwiki.providers.ProviderException;
 import com.ecyrd.jspwiki.filters.RedirectException;

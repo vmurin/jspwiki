@@ -1949,7 +1949,7 @@ public class WikiEngine
         context.setRequestContext( requestContext );
         context.setHttpRequest( request );
         context.setTemplate( template );
-        
+
         return context;
     }
 
