@@ -158,7 +158,7 @@ public class XMLUserDatabase implements UserDatabase
     
     
     /**
-     * Looks up and returns the first {@link DefaultUserProfile} in the user database
+     * Looks up and returns the first {@link UserProfile} in the user database
      * that whose login name, full name, or wiki name matches the supplied string.
      * This method provides a "forgiving" search algorithm for resolving
      * principal names when the exact profile attribute that supplied the name
@@ -188,7 +188,7 @@ public class XMLUserDatabase implements UserDatabase
     }
     
     /**
-     * Looks up and returns the first {@link DefaultUserProfile}in the user database
+     * Looks up and returns the first {@link UserProfile}in the user database
      * that matches a profile having a given e-mail address. If the user
      * database does not contain a user with a matching attribute, throws a
      * {@link NoSuchPrincipalException}.
@@ -207,7 +207,7 @@ public class XMLUserDatabase implements UserDatabase
     }
 
     /**
-     * Looks up and returns the first {@link DefaultUserProfile} in the user database
+     * Looks up and returns the first {@link UserProfile} in the user database
      * that matches a profile having a given full name.
      * If the user database does not contain a user with a matching attribute,
      * throws a {@link NoSuchPrincipalException}.
@@ -226,7 +226,7 @@ public class XMLUserDatabase implements UserDatabase
     }
 
     /**
-     * Looks up and returns the first {@link DefaultUserProfile}in the user database
+     * Looks up and returns the first {@link UserProfile}in the user database
      * that matches a profile having a given login name. If the user database
      * does not contain a user with a matching attribute, throws a
      * {@link NoSuchPrincipalException}.
@@ -245,7 +245,7 @@ public class XMLUserDatabase implements UserDatabase
     }
 
     /**
-     * Looks up and returns the first {@link DefaultUserProfile}in the user database
+     * Looks up and returns the first {@link UserProfile}in the user database
      * that matches a profile having a given wiki name. If the user database
      * does not contain a user with a matching attribute, throws a
      * {@link NoSuchPrincipalException}.
@@ -270,7 +270,7 @@ public class XMLUserDatabase implements UserDatabase
      * If the user database does not contain a user with the supplied identifier,
      * throws a {@link NoSuchPrincipalException}.
      * @param name the name of the principal to retrieve; this corresponds
-     * to value returned by the user profile's {@link DefaultUserProfile#getLoginName()} method.
+     * to value returned by the user profile's {@link UserProfile#getLoginName()} method.
      * @return the array of Principals representing the user
      * @see com.ecyrd.jspwiki.auth.user.UserDatabase#getPrincipals(java.lang.String)
      */
@@ -353,10 +353,10 @@ public class XMLUserDatabase implements UserDatabase
     }
 
     /**
-     * Saves a {@link DefaultUserProfile}to the user database, overwriting the
+     * Saves a {@link UserProfile}to the user database, overwriting the
      * existing profile if it exists. The user name under which the profile
      * should be saved is returned by the supplied profile's
-     * {@link DefaultUserProfile#getLoginName()}method.
+     * {@link UserProfile#getLoginName()}method.
      * @param profile the user profile to save
      * @throws WikiSecurityException if the profile cannot be saved
      */
@@ -387,14 +387,13 @@ public class XMLUserDatabase implements UserDatabase
 
         // Hash and save the new password if it's different from old one
         String newPassword = profile.getPassword();
-        if ( newPassword == null )
+        if ( newPassword != null && !newPassword.equals("") )
         {
-            newPassword = "";
-        }
-        String oldPassword = user.getAttribute( PASSWORD );
-        if ( !oldPassword.equals( newPassword ) )
-        {
-            setAttribute( user, PASSWORD, SHA_PREFIX + getHash( newPassword ) );
+            String oldPassword = user.getAttribute( PASSWORD );
+            if ( !oldPassword.equals( newPassword ) )
+            {
+                setAttribute( user, PASSWORD, SHA_PREFIX + getHash( newPassword ) );
+            }
         }
 
     }
@@ -423,7 +422,7 @@ public class XMLUserDatabase implements UserDatabase
     }
 
     /**
-     * Private method that returns the first {@link DefaultUserProfile}matching a
+     * Private method that returns the first {@link UserProfile}matching a
      * &lt;user&gt; element's supplied attribute.
      * @param matchAttribute
      * @param index
