@@ -25,7 +25,6 @@ import com.ecyrd.jspwiki.WikiEngine;
 import com.ecyrd.jspwiki.WikiPage;
 import com.ecyrd.jspwiki.WikiProvider;
 import com.ecyrd.jspwiki.auth.AuthorizationManager;
-import com.ecyrd.jspwiki.auth.UserProfile;
 
 /**
  *  Tells if a page may be edited.  This tag takes care of all possibilities,
@@ -51,7 +50,6 @@ public class PermissionTag
         WikiPage    page           = m_wikiContext.getPage();
         AuthorizationManager mgr   = engine.getAuthorizationManager();
         boolean     got_permission = false;
-        UserProfile userprofile    = m_wikiContext.getCurrentUser();
         
         if( page != null )
         {
@@ -70,7 +68,7 @@ public class PermissionTag
             }
 
             got_permission = mgr.checkPermission( page,
-                                                  userprofile,
+                                                  m_wikiContext,
                                                   m_permission );
         }
 

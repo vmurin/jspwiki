@@ -2,10 +2,10 @@
 <%@ page import="com.ecyrd.jspwiki.*" %>
 <%@ page import="java.util.*" %>
 <%@ page import="java.text.SimpleDateFormat" %>
+<%@ page import="java.security.Principal" %>
 <%@ page import="com.ecyrd.jspwiki.tags.WikiTagBase" %>
 <%@ page import="com.ecyrd.jspwiki.WikiProvider" %>
 <%@ page import="com.ecyrd.jspwiki.auth.AuthorizationManager" %>
-<%@ page import="com.ecyrd.jspwiki.auth.UserProfile" %>
 <%@ page import="com.ecyrd.jspwiki.auth.permissions.CommentPermission" %>
 <%@ page errorPage="/Error.jsp" %>
 <%@ taglib uri="/WEB-INF/jspwiki.tld" prefix="wiki" %>
@@ -45,10 +45,10 @@
     }
 
     AuthorizationManager mgr = wiki.getAuthorizationManager();
-    UserProfile currentUser  = wikiContext.getCurrentUser();
+    Principal currentUser  = wikiContext.getCurrentUser();
 
     if( !mgr.checkPermission( wikiContext.getPage(),
-                              currentUser,
+                              wikiContext,
                               new CommentPermission() ) )
     {
         log.info("User "+currentUser.getName()+" has no access - redirecting to login page.");
