@@ -41,6 +41,8 @@ import com.ecyrd.jspwiki.auth.acl.Acl;
 import com.ecyrd.jspwiki.auth.authorize.Group;
 import com.ecyrd.jspwiki.auth.authorize.Role;
 import com.ecyrd.jspwiki.auth.permissions.PagePermission;
+import com.ecyrd.jspwiki.auth.user.UserDatabase;
+import com.ecyrd.jspwiki.auth.user.UserProfile;
 import com.ecyrd.jspwiki.util.ClassUtil;
 
 /**
@@ -381,6 +383,74 @@ public class AuthorizationManager
         catch( AccessControlException e )
         {
             return false;
+        }
+    }
+    
+    /**
+     * <p>Given a supplied string representing a principal name from an ACL, this
+     * method resolves the correct type of Principal (role, group, or user).
+     * This method is guaranteed to always return a Principal.
+     * The algorithm is straightforward:</p>
+     * <ol>
+     * <li>If the name matches one of the built-in Role names,
+     * return the built-in Role</li>
+     * <li>If the name matches one supplied by the current
+     * Authorizer, return the Role</li>
+     * <li>If the name matches a group managed by the 
+     * current GroupManager, return the Group</li>
+     * <li>Otherwise, assume that the name represents a user
+     * principal. Using the current UserDatabase, find the
+     * first user whose login name, full name, or wiki name
+     * matches the supplied name</li>
+     * <li>Finally, if a user cannot be found, manufacture
+     * and return a generic WikiPrincipal</li>
+     * </ol>
+     * @param name the name of the principal
+     * @return the fully-resolved principal
+     */
+    public Principal resolvePrincipal( String name ) {
+        
+        // Check built-in Roles first
+        Role role = new Role(name);
+        if (Role.isBuiltInRole(role)) {
+            return role;
+        }
+        
+        // Check Authorizer Roles
+        Principal principal = m_authorizer.findRole( name );
+        if (principal != null) 
+        {
+            return principal;
+        }
+        
+        // Check Groups
+        principal = m_engine.getGroupManager().findRole( name );
+        if (principal != null)
+        {
+            return principal;
+        }
+        
+        // Ok, no luck---this must be a user principal
+        Principal[] principals = null;
+        UserProfile profile = null;
+        UserDatabase db = m_engine.getUserDatabase();
+        try
+        {
+            profile = db.find( name );
+            principals = db.getPrincipals( profile.getLoginName() );
+            for (int i = 0; i < principals.length; i++) 
+            {
+                principal = principals[i];
+                if (principal.getName().equals( name ))
+                {
+                    return principal;
+                }
+            }
+            return new WikiPrincipal( name );
+        }
+        catch( NoSuchPrincipalException e )
+        {
+            return new WikiPrincipal( name );
         }
     }
 
