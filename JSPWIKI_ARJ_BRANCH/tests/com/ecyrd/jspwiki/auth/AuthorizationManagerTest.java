@@ -26,6 +26,8 @@ import com.ecyrd.jspwiki.auth.authorize.GroupManager;
 import com.ecyrd.jspwiki.auth.authorize.Role;
 import com.ecyrd.jspwiki.auth.permissions.PagePermission;
 import com.ecyrd.jspwiki.auth.permissions.WikiPermission;
+import com.ecyrd.jspwiki.auth.user.DefaultUserProfile;
+import com.ecyrd.jspwiki.auth.user.UserProfile;
 
 /**
  * Tests the AuthorizationManager class.
@@ -197,6 +199,63 @@ public class AuthorizationManagerTest extends TestCase
         return session;
     }
 
+    /**
+     * Any principal strings that have same names as built-in
+     * roles should resolve as built-in roles!
+     */
+    public void testResolveBuiltInRoles()
+    {
+        Principal principal = Role.ADMIN;
+        assertEquals( principal, m_auth.resolvePrincipal( "Admin" ) );
+        principal = Role.AUTHENTICATED;
+        assertEquals( principal, m_auth.resolvePrincipal( "Authenticated" ) );
+        principal = Role.ASSERTED;
+        assertEquals( principal, m_auth.resolvePrincipal( "Asserted" ) );
+        principal = Role.ALL;
+        assertEquals( principal, m_auth.resolvePrincipal( "All" ) );
+        principal = Role.ADMIN;
+        assertEquals( principal, m_auth.resolvePrincipal( "Admin" ) );
+        
+        // This should NOT resolve
+        principal = new WikiPrincipal("Admin");
+        assertFalse( principal.equals( m_auth.resolvePrincipal( "Admin" ) ) );
+    }
+    
+    public void testResolveGroups()
+    {
+        Group group1 = new DefaultGroup("SampleGroup");
+        m_engine.getGroupManager().add( group1 );
+        assertEquals( group1, m_auth.resolvePrincipal( "SampleGroup" ) );
+        
+        // We shouldn't resolve a group if the manager doesn't know about it
+        Group group2 = new DefaultGroup("NonExistentGroup");
+        assertFalse( group2.equals( m_auth.resolvePrincipal( "NonExistentGroup" ) ) );
+    }
+    
+    public void testResolveUsers()
+    {
+        // We should be able to resolve a user by login, user, or wiki name
+        UserProfile profile = new DefaultUserProfile();
+        profile.setEmail("janne@jalkanen.net");
+        profile.setFullname("Janne Jalkanen");
+        profile.setLoginName("janne");
+        profile.setWikiName("JanneJalkanen");
+        try {
+            m_engine.getUserDatabase().save( profile );
+        }
+        catch (WikiSecurityException e)
+        {
+            assertFalse("Failed save: " + e.getLocalizedMessage(), true);
+        }
+        assertEquals( new WikiPrincipal( "janne" ), m_auth.resolvePrincipal( "janne" ) );
+        assertEquals( new WikiPrincipal( "Janne Jalkanen" ), m_auth.resolvePrincipal( "Janne Jalkanen" ) );
+        assertEquals( new WikiPrincipal( "JanneJalkanen" ), m_auth.resolvePrincipal( "JanneJalkanen" ) );
+        
+        // An unknown user should resolve to a generic WikiPrincipal
+        Principal principal = new WikiPrincipal("Bart Simpson");
+        assertEquals( principal, m_auth.resolvePrincipal("Bart Simpson"));
+    }
+    
     public void testSimplePermissions() throws Exception
     {
         String src = "[{ALLOW edit FooBar}] ";
@@ -213,14 +272,16 @@ public class AuthorizationManagerTest extends TestCase
         session.getSubject().getPrincipals().add( principal );
         session.getSubject().getPrincipals().add( Role.AUTHENTICATED );
         assertTrue( "read 1", m_auth.checkPermission( context, new PagePermission( "Test", "view" ) ) );
+        assertFalse( "read 2", m_auth.checkPermission( context, PagePermission.VIEW ) );
         assertTrue( "edit 1", m_auth.checkPermission( context, new PagePermission( "Test", "edit" ) ) );
+        assertFalse( "edit 2", m_auth.checkPermission( context, PagePermission.EDIT ) );
 
         principal = new WikiPrincipal( "GobbleBlat" );
         session.getSubject().getPrincipals().clear();
         session.getSubject().getPrincipals().add( principal );
         session.getSubject().getPrincipals().add( Role.ANONYMOUS );
-        assertTrue( "read 2", m_auth.checkPermission( context, new PagePermission( "Test", "view" ) ) );
-        assertFalse( "edit 2", m_auth.checkPermission( context, new PagePermission( "Test", "edit" ) ) );
+        assertTrue( "read 3", m_auth.checkPermission( context, new PagePermission( "Test", "view" ) ) );
+        assertFalse( "edit 3", m_auth.checkPermission( context, new PagePermission( "Test", "edit" ) ) );
     }
 
     /**
@@ -260,6 +321,8 @@ public class AuthorizationManagerTest extends TestCase
 
     public static Test suite()
     {
-        return new TestSuite( AuthorizationManagerTest.class );
+        TestSuite suite = new TestSuite("Authorization Manager test");
+        suite.addTestSuite( AuthorizationManagerTest.class );
+        return suite;
     }
 }
