@@ -1450,6 +1450,11 @@ public class WikiEngine
         // Hook into cross reference collection.
         
         m_pageManager.putPageText( page, text );
+        
+        // ARJ HACK: reload the page so we parse ACLs, among other things
+        page = getPage( page.getName() );
+        context.setPage( page );
+        textToHTML( context, text );
 
         m_filterManager.doPostSaveFiltering( context, text );
     }
