@@ -22,12 +22,22 @@ public class TestEngine extends WikiEngine
 
     public static final InputStream findTestProperties()
     {
-        return findTestProperties( "/jspwiki.properties" );
+        return findTestProperties( "etc/jspwiki.properties" );
     }
 
     public static final InputStream findTestProperties( String properties )
     {
-        return TestEngine.class.getResourceAsStream( properties );
+        File file = new File( properties );
+        try
+        {
+            URL url = file.toURL();
+            return url.openStream();
+        }
+        catch( IOException e )
+        {
+            System.err.println( "IO exception: " + e.getMessage() );
+        }
+        return null;
     }
 
     /**
@@ -125,7 +135,8 @@ public class TestEngine extends WikiEngine
     public void saveText( String pageName, String content )
         throws WikiException
     {
-        WikiContext context = new WikiContext( this, new WikiPage(pageName) );
+        HttpServletRequest request = new TestHttpServletRequest();
+        WikiContext context = new WikiContext( this, request, new WikiPage(pageName) );
 
         saveText( context, content );
     }

@@ -1,10 +1,20 @@
 package com.ecyrd.jspwiki.auth.modules;
 
-import junit.framework.*;
-import java.util.*;
-import com.ecyrd.jspwiki.*;
-import com.ecyrd.jspwiki.auth.*;
-import com.ecyrd.jspwiki.auth.permissions.*;
+import java.security.Principal;
+import java.util.Properties;
+
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
+import com.ecyrd.jspwiki.TestEngine;
+import com.ecyrd.jspwiki.WikiContext;
+import com.ecyrd.jspwiki.WikiPage;
+import com.ecyrd.jspwiki.WikiSession;
+import com.ecyrd.jspwiki.auth.AuthorizationManager;
+import com.ecyrd.jspwiki.auth.WikiPrincipal;
+import com.ecyrd.jspwiki.auth.authorize.Role;
+import com.ecyrd.jspwiki.auth.permissions.WikiPermission;
 
 public class PageAuthorizerTest
     extends TestCase
@@ -41,21 +51,26 @@ public class PageAuthorizerTest
     {
         AuthorizationManager mgr = m_engine.getAuthorizationManager();
 
-        UserProfile wup = new UserProfile();
-        wup.setName( "Charlie" );
-        wup.setLoginStatus( UserProfile.PASSWORD );
+        WikiPage p = m_engine.getPage("TestPage");
+        WikiContext context = new WikiContext( m_engine, p );
+        WikiSession session = WikiSession.GUEST_SESSION;
+        context.setWikiSession( session );
 
-        assertTrue( "Charlie", mgr.checkPermission( m_engine.getPage( "TestPage" ),
-                                                    wup,
-                                                    WikiPermission.newInstance( "edit" ) ) );
+        Principal principal = new WikiPrincipal( "Charlie");
+        session.getSubject().getPrincipals().clear();
+        session.getSubject().getPrincipals().add( principal );
+        session.getSubject().getPrincipals().add( Role.ANONYMOUS );
+        assertTrue( "Charlie", mgr.checkPermission( p,
+                                                    context,
+                                                    "edit" ) );
 
-        wup.setName( "Bob" );
-        assertTrue( "Bob", mgr.checkPermission( m_engine.getPage( "TestPage" ),
-                                                wup,
-                                                WikiPermission.newInstance( "view" ) ) );
-
-
-                                                    
+        principal = new WikiPrincipal( "Bob");
+        session.getSubject().getPrincipals().clear();
+        session.getSubject().getPrincipals().add( principal );
+        session.getSubject().getPrincipals().add( Role.ANONYMOUS );
+        assertTrue( "Bob", mgr.checkPermission( p,
+                                                context,
+                                                "view" ) );
     }
 
 
