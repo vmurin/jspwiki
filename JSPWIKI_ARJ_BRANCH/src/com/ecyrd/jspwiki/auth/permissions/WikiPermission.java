@@ -12,7 +12,7 @@ import java.util.Arrays;
  * <code>createGroups</code> implies <code>createPages</code>.</p>
  * @author Andrew R. Jaquith
  */
-public class WikiPermission extends Permission
+public final class WikiPermission extends Permission
 {
 
     private static final String CREATE_GROUPS_ACTION = "createGroups";
