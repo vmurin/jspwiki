@@ -18,11 +18,16 @@ import com.ecyrd.jspwiki.auth.authorize.Role;
  * minimal, default-deny values: authentication is set to false, and the user
  * principal is set to null.
  * @author Andrew R. Jaquith
- * @version $Revision: 1.1.2.1 $ $Date: 2005-02-01 02:34:47 $
+ * @version $Revision: 1.1.2.2 $ $Date: 2005-02-14 05:06:52 $
  */
 public class WikiSession
 {
 
+    /**
+     * Anonymous session that contains a user principal
+     * of {@link com.ecyrd.jspwiki.auth.WikiPrincipal#GUEST}
+     * and a role of {@link com.ecyrd.jspwiki.auth.authorize.Role#ANONYMOUS}.
+     */
     public static final WikiSession GUEST_SESSION;
 
     public static final String      ANONYMOUS           = "anonymous";
@@ -47,6 +52,7 @@ public class WikiSession
     {
         GUEST_SESSION = new WikiSession();
         GUEST_SESSION.getSubject().getPrincipals().add( WikiPrincipal.GUEST );
+        GUEST_SESSION.getSubject().getPrincipals().add( Role.ANONYMOUS );
     }
 
     protected boolean hasPrincipal( Principal principal )
