@@ -30,8 +30,7 @@
     Principal currentUser  = wiki.getUserManager().getUserProfile( request );
     Permission requiredPermission = new PagePermission( pagereq, "view" );
 
-    if( !mgr.checkPermission( wikiContext.getPage(),
-                              wikiContext,
+    if( !mgr.checkPermission( wikiContext,
                               requiredPermission ) )
     {
         if( mgr.strictLogins() )

@@ -47,8 +47,7 @@
     AuthorizationManager mgr = wiki.getAuthorizationManager();
     Principal currentUser  = wikiContext.getCurrentUser();
 
-    if( !mgr.checkPermission( wikiContext.getPage(),
-                              wikiContext,
+    if( !mgr.checkPermission( wikiContext,
                               new CommentPermission() ) )
     {
         log.info("User "+currentUser.getName()+" has no access - redirecting to login page.");
