@@ -9,13 +9,14 @@ import org.apache.log4j.Logger;
 
 import com.ecyrd.jspwiki.WikiEngine;
 import com.ecyrd.jspwiki.WikiPage;
+import com.ecyrd.jspwiki.attachment.Attachment;
 import com.ecyrd.jspwiki.auth.AuthorizationManager;
 import com.ecyrd.jspwiki.auth.WikiSecurityException;
 import com.ecyrd.jspwiki.auth.permissions.PagePermission;
 
 /**
  * @author Andrew R. Jaquith
- * @version $Revision: 1.1.2.2 $ $Date: 2005-02-14 05:12:38 $
+ * @version $Revision: 1.1.2.3 $ $Date: 2005-02-20 23:38:20 $
  */
 public class DefaultAclManager implements AclManager
 {
@@ -100,6 +101,41 @@ public class DefaultAclManager implements AclManager
         }
 
         return acl;
+    }
+
+
+    /**
+     * Returns the access control list for the page.
+     * If the ACL has not been parsed yet, it is done
+     * on-the-fly. If the page has a parent page, then that is tried also.
+     * This method was moved from Authorizer;
+     * it was consolidated with some code from AuthorizationManager.
+     * @param page
+     * @since 2.2.121
+     * @return
+     */
+    public Acl getPermissions( WikiPage page )
+    {
+      //
+      //  Does the page already have cached ACLs?
+      //
+      Acl acl = page.getAcl();
+      log.debug( "page="+page.getName()+"\n"+acl );
+
+      if( acl == null )
+      {
+          //
+          //  If null, try the parent.
+          //
+          if( acl == null && page instanceof Attachment )
+          {
+              WikiPage parent = m_engine.getPage( ((Attachment)page).getParentName() );
+
+              acl = getPermissions( parent );
+          }
+      }
+
+      return acl;
     }
 
 }
