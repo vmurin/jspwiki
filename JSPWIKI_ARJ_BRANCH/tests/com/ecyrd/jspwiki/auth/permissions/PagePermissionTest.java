@@ -4,7 +4,7 @@ import junit.framework.TestCase;
 
 /**
  * @author Andrew R. Jaquith
- * @version $Revision: 1.1.2.2 $ $Date: 2005-02-01 03:31:46 $
+ * @version $Revision: 1.1.2.3 $ $Date: 2005-02-25 20:53:15 $
  */
 public class PagePermissionTest extends TestCase
 {
@@ -137,20 +137,20 @@ public class PagePermissionTest extends TestCase
         assertTrue(p1.implies(p2));
         assertFalse(p2.implies(p1));
         
-        // View action on collection shouldn't imply view on *Group page
+        // View action on wildcard collection shouldn't imply view on GroupConfiguration page
         p1 = new PagePermission("*", "view");
-        p2 = new PagePermission("AdminGroup", "view");
+        p2 = new PagePermission("GroupConfiguration", "view");
         assertFalse(p1.implies(p2));
         assertFalse(p2.implies(p1));
 
-        p1 = new PagePermission("Admin*", "view");
-        p2 = new PagePermission("AdminGroup", "view");
-        assertFalse(p1.implies(p2));
+        // However, pre- and post- wildcards should be fine
+        p1 = new PagePermission("Group*", "view");
+        p2 = new PagePermission("GroupConfiguration", "view");
+        assertTrue(p1.implies(p2));
         assertFalse(p2.implies(p1));
         
-        // But this is okay...
-        p1 = new PagePermission("*Group", "view");
-        p2 = new PagePermission("AdminGroup", "view");
+        p1 = new PagePermission("*Configuration", "view");
+        p2 = new PagePermission("GroupConfiguration", "view");
         assertTrue(p1.implies(p2));
         assertFalse(p2.implies(p1));
     }
