@@ -17,7 +17,9 @@ import com.ecyrd.jspwiki.WikiContext;
 import com.ecyrd.jspwiki.WikiEngine;
 import com.ecyrd.jspwiki.WikiException;
 import com.ecyrd.jspwiki.WikiPage;
+import com.ecyrd.jspwiki.auth.AuthorizationManager;
 import com.ecyrd.jspwiki.auth.WikiPrincipal;
+import com.ecyrd.jspwiki.auth.permissions.WikiPermission;
 import com.ecyrd.jspwiki.filters.BasicPageFilter;
 import com.ecyrd.jspwiki.providers.ProviderException;
 
@@ -63,20 +65,22 @@ public class DefaultGroupManager implements GroupManager
     {
         public void postSave( WikiContext context, String content )
         {
-            WikiPage p = context.getPage();
-            
-            // Parse groups if name starts with GROUP_PREFIX
-            if (p.getName().startsWith(DefaultGroupManager.GROUP_PREFIX)) {
-                log.debug( "Skimming through page " + p.getName() + " to see if there are new groups..." );
-
-                m_engine.textToHTML( context, content );
+            AuthorizationManager auth = m_engine.getAuthorizationManager();
+            if (auth.checkPermission( context, WikiPermission.CREATE_GROUPS )) {
                 
-                String groupName = p.getName().substring(DefaultGroupManager.GROUP_PREFIX.length());
-                String members = (String) p.getAttribute( ATTR_MEMBERLIST );
+                // Parse groups if name starts with GROUP_PREFIX
+                WikiPage p = context.getPage();
+                if (p.getName().startsWith(DefaultGroupManager.GROUP_PREFIX)) {
+                    log.debug( "Skimming through page " + p.getName() + " to see if there are new groups..." );
 
-                updateGroup( groupName, parseMemberList( members ) );
+                    m_engine.textToHTML( context, content );
+                    
+                    String groupName = p.getName().substring(DefaultGroupManager.GROUP_PREFIX.length());
+                    String members = (String) p.getAttribute( ATTR_MEMBERLIST );
+
+                    updateGroup( groupName, parseMemberList( members ) );
+                }
             }
-            
         }
     }
 
