@@ -18,7 +18,7 @@ import com.ecyrd.jspwiki.WikiPage;
  * implies <code>comment</code>, <code>upload</code>, and <code>view</code>;
  * <code>comment</code> and <code>upload</code> imply <code>view</code>.</p>
  * @author Andrew R. Jaquith
- * @version $Revision: 1.1.2.1 $ $Date: 2005-02-01 02:56:15 $
+ * @version $Revision: 1.1.2.2 $ $Date: 2005-02-01 03:26:17 $
  */
 public class PagePermission extends Permission
 {
@@ -37,29 +37,29 @@ public class PagePermission extends Permission
 
     private static final String VIEW_ACTION    = "view";
 
-    protected static final int    COMMENT        = 0x4;
+    protected static final int    COMMENT_MASK        = 0x4;
 
-    protected static final int    DELETE         = 0x10;
+    protected static final int    DELETE_MASK         = 0x10;
 
-    protected static final int    EDIT           = 0x2;
+    protected static final int    EDIT_MASK           = 0x2;
 
-    protected static final int    RENAME         = 0x20;
+    protected static final int    RENAME_MASK         = 0x20;
 
-    protected static final int    UPLOAD         = 0x8;
+    protected static final int    UPLOAD_MASK         = 0x8;
 
-    protected static final int    VIEW           = 0x1;
+    protected static final int    VIEW_MASK           = 0x1;
     
-    public static final PagePermission COMMENT_ALL    = new PagePermission( COMMENT_ACTION );
+    public static final PagePermission COMMENT    = new PagePermission( COMMENT_ACTION );
 
-    public static final PagePermission DELETE_ALL     = new PagePermission( DELETE_ACTION );
+    public static final PagePermission DELETE     = new PagePermission( DELETE_ACTION );
 
-    public static final PagePermission EDIT_ALL       = new PagePermission( EDIT_ACTION );
+    public static final PagePermission EDIT       = new PagePermission( EDIT_ACTION );
 
-    public static final PagePermission RENAME_ALL     = new PagePermission( RENAME_ACTION );
+    public static final PagePermission RENAME     = new PagePermission( RENAME_ACTION );
 
-    public static final PagePermission UPLOAD_ALL     = new PagePermission( UPLOAD_ACTION );
+    public static final PagePermission UPLOAD     = new PagePermission( UPLOAD_ACTION );
 
-    public static final PagePermission VIEW_ALL       = new PagePermission( VIEW_ACTION );
+    public static final PagePermission VIEW       = new PagePermission( VIEW_ACTION );
 
     private final String        m_actionString;
 
@@ -210,20 +210,20 @@ public class PagePermission extends Permission
      */
     protected static final int impliedMask( int mask )
     {
-        if ( ( mask & DELETE ) > 0 ) {
-            mask |= EDIT;
+        if ( ( mask & DELETE_MASK ) > 0 ) {
+            mask |= EDIT_MASK;
         }
-        if ( ( mask & RENAME ) > 0 ) {
-            mask |= EDIT;
+        if ( ( mask & RENAME_MASK ) > 0 ) {
+            mask |= EDIT_MASK;
         }
-        if ( ( mask & EDIT ) > 0 ) {
-            mask |= ( COMMENT | UPLOAD );
+        if ( ( mask & EDIT_MASK ) > 0 ) {
+            mask |= ( COMMENT_MASK | UPLOAD_MASK );
         }
-        if ( ( mask & COMMENT ) > 0 ) {
-            mask |= VIEW;
+        if ( ( mask & COMMENT_MASK ) > 0 ) {
+            mask |= VIEW_MASK;
         }
-        if ( ( mask & UPLOAD ) > 0 ) {
-            mask |= VIEW;
+        if ( ( mask & UPLOAD_MASK ) > 0 ) {
+            mask |= VIEW_MASK;
         }
         return mask;
     }
@@ -287,27 +287,27 @@ public class PagePermission extends Permission
             String action = actionList[i];
             if ( action.equalsIgnoreCase( VIEW_ACTION ) )
             {
-                mask |= VIEW;
+                mask |= VIEW_MASK;
             }
             else if ( action.equalsIgnoreCase( EDIT_ACTION ) )
             {
-                mask |= EDIT;
+                mask |= EDIT_MASK;
             }
             else if ( action.equalsIgnoreCase( COMMENT_ACTION ) )
             {
-                mask |= COMMENT;
+                mask |= COMMENT_MASK;
             }
             else if ( action.equalsIgnoreCase( UPLOAD_ACTION ) )
             {
-                mask |= UPLOAD;
+                mask |= UPLOAD_MASK;
             }
             else if ( action.equalsIgnoreCase( DELETE_ACTION ) )
             {
-                mask |= DELETE;
+                mask |= DELETE_MASK;
             }
             else if ( action.equalsIgnoreCase( RENAME_ACTION ) )
             {
-                mask |= RENAME;
+                mask |= RENAME_MASK;
             }
             else
             {

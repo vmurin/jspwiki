@@ -21,11 +21,17 @@ public class WikiPermission extends Permission
 
     private static final String REGISTER_ACTION      = "registerUser";
     
-    protected static final int  CREATE_GROUPS = 0x1;
+    protected static final int  CREATE_GROUPS_MASK = 0x1;
 
-    protected static final int  CREATE_PAGES  = 0x2;
+    protected static final int  CREATE_PAGES_MASK  = 0x2;
 
-    protected static final int  REGISTER      = 0x4;
+    protected static final int  REGISTER_MASK      = 0x4;
+
+    public static final WikiPermission CREATE_GROUPS = new WikiPermission( CREATE_GROUPS_ACTION );
+    
+    public static final WikiPermission CREATE_PAGES = new WikiPermission( CREATE_PAGES_ACTION );
+
+    public static final WikiPermission REGISTER = new WikiPermission( REGISTER_ACTION );
 
     private final String        m_actionString;
 
@@ -133,8 +139,8 @@ public class WikiPermission extends Permission
      */
     protected static final int impliedMask( int mask )
     {
-        if ( ( mask & CREATE_GROUPS ) > 0 ) {
-            mask |= CREATE_PAGES;
+        if ( ( mask & CREATE_GROUPS_MASK ) > 0 ) {
+            mask |= CREATE_PAGES_MASK;
         }
         return mask;
     }
@@ -158,15 +164,15 @@ public class WikiPermission extends Permission
             String action = actionList[i];
             if ( action.equalsIgnoreCase( CREATE_GROUPS_ACTION ) )
             {
-                mask |= CREATE_GROUPS;
+                mask |= CREATE_GROUPS_MASK;
             }
             else if ( action.equalsIgnoreCase( CREATE_PAGES_ACTION ) )
             {
-                mask |= CREATE_PAGES;
+                mask |= CREATE_PAGES_MASK;
             }
             else if ( action.equalsIgnoreCase( REGISTER_ACTION ) )
             {
-                mask |= REGISTER;
+                mask |= REGISTER_MASK;
             }
             else
             {
