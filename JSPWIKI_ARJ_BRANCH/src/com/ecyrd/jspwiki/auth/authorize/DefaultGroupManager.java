@@ -1,0 +1,338 @@
+package com.ecyrd.jspwiki.auth.authorize;
+
+import java.security.Principal;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
+import java.util.StringTokenizer;
+
+import javax.security.auth.Subject;
+
+import org.apache.log4j.Logger;
+
+import com.ecyrd.jspwiki.WikiContext;
+import com.ecyrd.jspwiki.WikiEngine;
+import com.ecyrd.jspwiki.WikiPage;
+import com.ecyrd.jspwiki.auth.WikiPrincipal;
+import com.ecyrd.jspwiki.filters.BasicPageFilter;
+import com.ecyrd.jspwiki.providers.ProviderException;
+
+/**
+ * <p>
+ * This default UserDatabase implementation provides groups to JSPWiki.
+ * </p>
+ * <p>
+ * Groups are based on WikiPages. The name of the page determines the group name
+ * (as a convention, we suggest the name of the page ends in DefaultGroup, e.g.
+ * EditorGroup). By setting attribute 'members' on the page, the named members
+ * are added to the group:
+ * 
+ * <pre>
+ * 
+ *  
+ *   [{SET members fee fie foe foo}]
+ *   
+ *  
+ * </pre>
+ * 
+ * <p>
+ * The list of members can be separated by commas or spaces.
+ * <p>
+ * TODO: are 'named members' supposed to be usernames, or are group names
+ * allowed? (Suggestion: both)
+ * @since 2.3
+ * @author Janne Jalkanen
+ * @author Andrew R. Jaquith
+ */
+public class DefaultGroupManager implements GroupManager
+
+{
+
+    /**
+     * This special filter class is used to refresh the database after a page
+     * has been changed.
+     */
+
+    // FIXME: JSPWiki should really take care of itself that any metadata
+    //        relevant to a page is refreshed.
+    public class SaveFilter extends BasicPageFilter
+    {
+        public void postSave( WikiContext context, String content )
+        {
+            WikiPage p = context.getPage();
+
+            log.debug( "Skimming through page " + p.getName() + " to see if there are new users..." );
+
+            m_engine.textToHTML( context, content );
+
+            String members = (String) p.getAttribute( ATTR_MEMBERLIST );
+
+            updateGroup( p.getName(), parseMemberList( members ) );
+        }
+    }
+
+    /**
+     * The attribute to set on a page - [{SET members ...}] - to define members
+     * of the group named by that page.
+     */
+    public static final String ATTR_MEMBERLIST = "members";
+
+    static final Logger        log             = Logger.getLogger( DefaultGroupManager.class );
+
+    private WikiEngine         m_engine;
+
+    private final HashMap      m_groups        = new HashMap();
+
+    /**
+     * Adds a Group to the group cache. Note that this method fail, and will
+     * throw an <code>IllegalArgumentException</code>, if the proposed group
+     * is the same name as one of the built-in Roles: e.g., Admin,
+     * Authenticated, etc.
+     * @param group the Group to add
+     * @see com.ecyrd.jspwiki.auth.authorize.GroupManager#add(DefaultGroup)
+     * @throws IllegalArgumentException if the group name isn't allowed
+     */
+    public void add( Group group )
+    {
+        for( int i = 0; i < Group.RESTRICTED_GROUPNAMES.length; i++ )
+        {
+            if ( group.equals( Group.RESTRICTED_GROUPNAMES[i] ) )
+            {
+                throw new IllegalArgumentException( "Group name " + group.getName() + " is not allowed." );
+            }
+        }
+        m_groups.put( group.getName(), group );
+    }
+
+    /**
+     * Commits the groups to disk. This method is a no-op, since the wiki's page
+     * SaveFilter does this.
+     * @see com.ecyrd.jspwiki.auth.authorize.GroupManager#commit()
+     */
+    public void commit()
+    {
+    }
+
+    /**
+     * @see com.ecyrd.jspwiki.auth.authorize.GroupManager#exists(DefaultGroup)
+     */
+    public boolean exists( Group group )
+    {
+        Object found = m_groups.get( group.getName() );
+        return ( found != null );
+    }
+
+    /**
+     * <p>
+     * Returns a Group matching a given name. This method is guaranteed to
+     * always return a Group.
+     * </p>
+     * <p>
+     * The rules for group lookup are simple. First, look in the existing group
+     * cache to see if there is a group with that name. If not, create a new
+     * DefaultGroup with the name, and cache it.
+     * </p>
+     * @param name Name of the group. This is case-sensitive.
+     * @return A DefaultGroup instance.
+     * @see com.ecyrd.jspwiki.auth.authorize.GroupManager#find(java.lang.String)
+     */
+    // FIXME: Should this really be case-sensitive?
+    // FIXME: Someone should really check when groups cease to be used,
+    //        and release groups that are not being used.
+    // FIXME: Error handling is still deficient.
+    public Group find( String name )
+    {
+        Group group;
+
+        synchronized( m_groups )
+        {
+            group = (Group) m_groups.get( name );
+
+            if ( group == null )
+            {
+                log.debug( "Created Group " + name );
+                group = new DefaultGroup( name );
+                m_groups.put( name, group );
+            }
+        }
+
+        return group;
+    }
+
+    /**
+     * Initializes the group cache by adding a {@link SaveFilter}to the page
+     * manager, so that groups are updated when pages are saved. This method
+     * also calls {@link #reload()}.
+     * @see com.ecyrd.jspwiki.auth.authorize.GroupManager#initialize(com.ecyrd.jspwiki.WikiEngine,
+     *      java.util.Properties)
+     */
+    public void initialize( WikiEngine engine, Properties props )
+    {
+        m_engine = engine;
+
+        m_engine.getFilterManager().addPageFilter( new SaveFilter(), 1000000 );
+
+        reload();
+    }
+
+    /**
+     * Determines whether a particular Subject is considered a member of a given
+     * Group. This method simply finds the group in question, then delegates to
+     * {@link Group#isMember(Principal)}for each of the principals in the
+     * Subject's principal set.
+     * @param context the wiki context. Not used in this implementation, so
+     *            <code>null</code> is permitted
+     * @param subject the subject about whom membership statis is sought
+     * @param role the Group to search. If null, this method always returns false
+     * @see com.ecyrd.jspwiki.auth.Authorizer#isUserInRole(com.ecyrd.jspwiki.WikiContext,
+     *      java.security.Principal, java.lang.String)
+     */
+    public boolean isUserInRole( WikiContext context, Subject subject, Principal role )
+    {
+        Object group = m_groups.get( role.getName() );
+        if ( group != null && subject != null )
+        {
+            for( Iterator it = subject.getPrincipals().iterator(); it.hasNext(); )
+            {
+                Principal principal = (Principal) it.next();
+                if ( ( (Group) group ).isMember( principal ) )
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Reloads the group cache by iterating through all wiki pages and updating
+     * groups whenever a [{SET members ...}] tag is found. For each group
+     * definition found, the protected method {@link #updateGroup(String, List)}
+     * is called.
+     * @see com.ecyrd.jspwiki.auth.authorize.GroupManager#reload()
+     */
+    public void reload()
+    {
+        log.info( "Loading user database group information from wiki pages..." );
+
+        try
+        {
+            Collection allPages = m_engine.getPageManager().getAllPages();
+
+            m_groups.clear();
+
+            for( Iterator i = allPages.iterator(); i.hasNext(); )
+            {
+                WikiPage p = (WikiPage) i.next();
+
+                // lazy loading of pages with ACLManager not possible,
+                // because the authentication information must be
+                // present on wiki initialization
+
+                List memberList = parseMemberList( (String) p.getAttribute( ATTR_MEMBERLIST ) );
+
+                if ( memberList != null )
+                {
+                    updateGroup( p.getName(), memberList );
+                }
+            }
+        }
+        catch( ProviderException e )
+        {
+            log.fatal( "Cannot start database", e );
+        }
+    }
+
+    /**
+     * Removes a Group from the group cache.
+     * @param group the group to remove
+     * @see com.ecyrd.jspwiki.auth.authorize.GroupManager#remove(DefaultGroup)
+     */
+    public void remove( Group group )
+    {
+        if ( group == null )
+        {
+            throw new IllegalArgumentException( "Group cannot be null." );
+        }
+        m_groups.remove( group.getName() );
+    }
+
+    /**
+     * Protected method that parses through the group membership list on a wiki
+     * page, and returns a List containing the member names as Strings.
+     * @param memberLine the line of text containing the group membership list
+     * @return the member names, as a List of Strings
+     */
+    protected List parseMemberList( String memberLine )
+    {
+        if ( memberLine == null )
+            return null;
+
+        log.debug( "Parsing member list: " + memberLine );
+
+        StringTokenizer tok = new StringTokenizer( memberLine, ", " );
+
+        ArrayList members = new ArrayList();
+
+        while( tok.hasMoreTokens() )
+        {
+            String uid = tok.nextToken();
+
+            log.debug( "  Adding member: " + uid );
+
+            members.add( uid );
+        }
+
+        return members;
+    }
+
+    /**
+     * Updates a named group with a List of new members. The List is a
+     * collection of Strings that denotes members of this group. Each member is
+     * added to the group as a WikiPrincipal. If the group already exists in the
+     * cache, the List contents are added to the existing membership. If the
+     * group doesn't exist, it is created. If the List contains no members, the
+     * group is removed from the cache.
+     * @param groupName the name of the group to update
+     * @param memberList the members to add to the group definition
+     */
+    protected void updateGroup( String groupName, List memberList )
+    {
+        Group group = (Group) m_groups.get( groupName );
+
+        if ( group == null && memberList == null )
+        {
+            return;
+        }
+
+        if ( group == null && memberList != null )
+        {
+            log.debug( "Adding new group: " + groupName );
+
+            group = new DefaultGroup( groupName );
+        }
+
+        if ( group != null && memberList == null )
+        {
+            log.debug( "Detected removed group: " + groupName );
+
+            m_groups.remove( groupName );
+
+            return;
+        }
+
+        for( Iterator j = memberList.iterator(); j.hasNext(); )
+        {
+            Principal udp = new WikiPrincipal( (String) j.next() );
+
+            group.add( udp );
+
+            log.debug( "** Added member: " + udp.getName() );
+        }
+
+        add( group );
+    }
+}
