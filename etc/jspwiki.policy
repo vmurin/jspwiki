@@ -1,4 +1,4 @@
-// $Id: jspwiki.policy,v 1.1.2.2 2005-02-27 18:38:35 arj Exp $
+// $Id: jspwiki.policy,v 1.1.2.3 2005-02-27 18:40:46 arj Exp $
 //
 // This file contains the Java 2 security policy for JSPWiki.
 // It provides the permissions rules for the JSPWiki
