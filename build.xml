@@ -46,7 +46,7 @@
         |___com 
             |___[...and the rest of the test source code]
                   
-    $Id: build.xml,v 1.38.2.7 2005-02-27 18:48:53 arj Exp $
+    $Id: build.xml,v 1.38.2.8 2005-02-27 23:08:47 arj Exp $
 -->    
        
 <!--   
@@ -295,7 +295,7 @@
 
     <delete file="${warfile}" />
 
-    <war warfile="${install.fulldir}/${ant.project.name}.war"
+    <war warfile="${warfile}"
          webxml="etc/web.xml">
        <lib dir="lib" includes="*.jar" excludes="servlet.jar,junit.jar,servlet-api.jar,jsp-api.jar"/>
        <lib dir="${code.build}" includes="*.jar" />
@@ -500,7 +500,8 @@
        ahead of time (instead of having Tomcat do it on-the-fly
        at runtime), we provide a slight runtime speed bump. In
        addition, in security-conscious environments this means
-       that we can eliminate the need for the Jasper JSP compiler.
+       that we can eliminate the need for the Jasper JSP compiler,
+       and can run Tomcat using just a JRE instead of a full JDK.
        
        Pre-compilation involves three steps:
        1) Generating the .java files that correspond to JSPWiki's JSPs.
@@ -510,13 +511,16 @@
        3) Injecting servlet mappings into the WEB-INF/web.xml
           file so that requests for the JSPs are mapped to the 
           servlets generated in step 1.
+
+       All of these steps are performed automatically by the
+       target "war-tomcat."
           
-       To use Tomcat pre-compilation, you must set the property
-       "tomcat.home" in build.properties to the directory
-       containing a runtime install of Tomcat. Typically this is 
-       the value of environment variable CATALINA_HOME. 
-       Note that tomcat.home must point to a directory that 
-       resides on the machine used to build JSPWiki.
+       To use Tomcat pre-compilation, you need to specify
+       where Tomcat lives on your machine. This can be done
+       two ways:
+        1. Export the environment variable CATALINA_HOME, or:
+        2. Set the property "tomcat.home" in build.properties to 
+           Tomcat's installation directory (e.g., /usr/local/tomcat)
        
        NOTE: The Jasper compiler on older versions of Tomcat
        (earlier than ~June 2004) is known to have bugs 
@@ -524,19 +528,22 @@
        successfully. So, you should probably try to use
        a relatively recent build.
 
-       In addition to the pre-compilation per se, an optional
-       fourth task that generates a tarball with static content
-       is also run. This task is quite handy for environments that
-       use Tomcat in conjunction with a front-end web server such
-       as Apache (via mod_jk/jk2 or mod_proxy). This task strips
-       out the static content and adds it to a separate tar file
-       This can be deployed to the web server.
+       In addition to pre-compiling the servlets, "war-tomcat"
+       executes a sub-target that generates a tarball containing
+       all of JSPWiki's static content. This is quite handy for 
+       environments that use Tomcat in conjunction with a front-end 
+       web server such as Apache (via mod_jk/jk2 or mod_proxy). 
+       The target strips out the static content (images, css, etc) 
+       and adds it to a separate tar file that can be unpacked
+       in one of Apache's content directories.
        
        To generate static content, set the properties
        "static.user" and "static.group" in build.properties.
        These should be set to the Unix runtime user and group
        that should own the static files, for example the
-       user "apache" group and "daemon".
+       user "apache" and "daemon" group. If the "static.user"
+       property is not supplied, war-tomcat skips the static
+       content generation step.
   -->
 
   <target name="war-tomcat"      depends="build-tomcat-war,staticzip"
@@ -553,7 +560,7 @@
   </target>
 
   <!-- Use Jasper to generate Java class files for the JSPs.
-       The compile and jar 'em up. Note that Tomcat's
+       Then compile and jar 'em up. Note that Tomcat's
        Jasper task creates a web.xml "fragment" containing
        the JSP-to-servlet mappings. We need to copy this into
        our existing web.xml, which we do using a file
@@ -612,6 +619,7 @@
     <war warfile="${code.build}/${war.tomcat}" webxml="${code.build}/web-merged.xml" defaultexcludes="true">
       <webinf dir="${war}/WEB-INF">
         <exclude name="web.xml" />
+        <exclude name="lib/*" />
       </webinf>
       <lib dir="${war}/WEB-INF/lib" excludes="servlet-api.jar,j2ee.jar"/>
       <lib dir="${code.build}" includes="jsp.jar" />
@@ -624,14 +632,17 @@
 
   <!-- Create a tarball containing the static content.
        User must set at least ${static.user} and preferably ${static.group}. 
-       If not present, the target is skipped. -->
+       If not present, the target is skipped. 
+       File permissions are owner and group read (440),
+       and for directories, owner and group read
+       and execute (550). -->
        
   <target name="staticzip" depends="build-tomcat-war" if="static.user">
     <property name="static.group" value="${static.user}" />
     <tar destfile="${code.build}/${tar.static}" longfile="fail" compression="gzip">
       <tarfileset dir="${war}" defaultexcludes="yes"
         username="${static.user}" group="${static.group}"
-        mode="550" dirmode="770">
+        mode="440" dirmode="550">
         <include name="**/*.css" />
         <include name="**/*.gif" />
         <include name="**/*.htm" />
