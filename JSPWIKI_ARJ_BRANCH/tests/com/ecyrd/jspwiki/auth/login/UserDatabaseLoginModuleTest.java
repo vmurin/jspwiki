@@ -18,7 +18,7 @@ import com.ecyrd.jspwiki.auth.user.XMLUserDatabase;
 
 /**
  * @author Andrew R. Jaquith
- * @version $Revision: 1.1.2.1 $ $Date: 2005-02-01 00:42:35 $
+ * @version $Revision: 1.1.2.2 $ $Date: 2005-02-26 04:34:59 $
  */
 public class UserDatabaseLoginModuleTest extends TestCase
 {
@@ -88,7 +88,7 @@ public class UserDatabaseLoginModuleTest extends TestCase
     protected void setUp() throws Exception
     {
         Properties props = new Properties();
-        props.put( XMLUserDatabase.PROP_USERDATABASE, "./etc/userdatabase.xml" );
+        props.put( XMLUserDatabase.PROP_USERDATABASE, "tests/etc/userdatabase.xml" );
         db = new XMLUserDatabase();
         subject = new Subject();
         try

@@ -21,7 +21,7 @@ public class XMLUserDatabaseTest extends TestCase {
   protected void setUp() throws Exception {
     super.setUp();
     Properties props = new Properties();
-    props.put(XMLUserDatabase.PROP_USERDATABASE, "./etc/userdatabase.xml");
+    props.put(XMLUserDatabase.PROP_USERDATABASE, "tests/etc/userdatabase.xml");
     db = new XMLUserDatabase();
     db.initialize(null, props);
   }
