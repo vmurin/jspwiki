@@ -26,6 +26,7 @@ import com.ecyrd.jspwiki.auth.authorize.Role;
 import com.ecyrd.jspwiki.auth.permissions.PagePermission;
 import com.ecyrd.jspwiki.auth.permissions.WikiPermission;
 import com.ecyrd.jspwiki.auth.user.DefaultUserProfile;
+import com.ecyrd.jspwiki.auth.user.DuplicateUserException;
 import com.ecyrd.jspwiki.auth.user.UserProfile;
 
 /**
@@ -247,6 +248,10 @@ public class AuthorizationManagerTest extends TestCase
         profile.setWikiName("JanneJalkanen");
         try {
             m_engine.getUserDatabase().save( profile );
+        }
+        catch (DuplicateUserException e)
+        {
+            assertFalse("Duplicate user: " + e.getLocalizedMessage(), true);
         }
         catch (WikiSecurityException e)
         {
