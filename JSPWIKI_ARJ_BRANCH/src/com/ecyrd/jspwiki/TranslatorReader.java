@@ -31,11 +31,9 @@ import com.ecyrd.jspwiki.plugin.PluginException;
 import com.ecyrd.jspwiki.attachment.AttachmentManager;
 import com.ecyrd.jspwiki.attachment.Attachment;
 import com.ecyrd.jspwiki.providers.ProviderException;
-import com.ecyrd.jspwiki.acl.AccessControlList;
-import com.ecyrd.jspwiki.auth.modules.PageAuthorizer;
+import com.ecyrd.jspwiki.auth.acl.Acl;
 import com.ecyrd.jspwiki.auth.WikiSecurityException;
-import com.ecyrd.jspwiki.auth.UserProfile;
-import com.ecyrd.jspwiki.auth.UserManager;
+import com.ecyrd.jspwiki.auth.user.UserDatabase;
 
 /**
  *  Handles conversion from Wiki format into fully featured HTML.
@@ -782,9 +780,9 @@ public class TranslatorReader extends Reader
     private String handleAccessRule( String ruleLine )
     {
         if( !m_parseAccessRules ) return "";
-        AccessControlList acl;
+        Acl acl;
         WikiPage          page = m_context.getPage();
-        UserManager       mgr  = m_context.getEngine().getUserManager();
+        UserDatabase      db = m_context.getEngine().getUserDatabase();
 
         if( ruleLine.startsWith( "{" ) )
             ruleLine = ruleLine.substring( 1 );
@@ -795,7 +793,7 @@ public class TranslatorReader extends Reader
         
         try
         {
-            acl = PageAuthorizer.parseAcl( page, mgr, ruleLine );
+            acl = m_engine.getAclManager().parseAcl( page, ruleLine );
 
             page.setAcl( acl );
 

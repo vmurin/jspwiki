@@ -20,21 +20,24 @@
 package com.ecyrd.jspwiki.auth;
 
 import java.security.Principal;
+import java.util.NoSuchElementException;
+import java.util.StringTokenizer;
+
+import com.ecyrd.jspwiki.TextUtil;
 
 /**
- *  This is the master class for all wiki UserProfiles and WikiGroups.
+ *  This is a thin, basic, immutable Principal class.
  *
  *  @author Janne Jalkanen
  *  @since  2.2
  */
-public abstract class WikiPrincipal
+public class WikiPrincipal
     implements Principal
 {
-    private String m_name;
 
-    public WikiPrincipal()
-    {
-    }
+    public static final Principal GUEST = new WikiPrincipal("Guest");
+   
+    private final String m_name;
 
     public WikiPrincipal( String name )
     {
@@ -49,12 +52,46 @@ public abstract class WikiPrincipal
         return m_name;
     }
 
-    /**
-     *  Is used to set the WikiName of the principal.
-     */
-    public void setName( String arg )
+    public static Principal parseStringRepresentation( String res )
+        throws NoSuchElementException
     {
-        m_name = arg;
+        Principal principal = null;
+    
+        if( res != null && res.length() > 0 )
+        {
+            //
+            //  Not all browsers or containers do proper cookie
+            //  decoding, which is why we can suddenly get stuff
+            //  like "username=3DJanneJalkanen", so we have to
+            //  do the conversion here.
+            //
+            res = TextUtil.urlDecodeUTF8( res );
+            StringTokenizer tok = new StringTokenizer( res, " ,=" );
+            
+            while( tok.hasMoreTokens() )
+            {
+                String param = tok.nextToken();
+                String value = tok.nextToken();
+                    
+                if( param.equals("username") )
+                {
+                    principal = new WikiPrincipal( value );
+                }
+            }
+        }
+    
+        return principal;
+    }
+
+    public boolean equals(Object obj) {
+        if (obj == null || !(obj instanceof WikiPrincipal)) {
+           return false; 
+        }
+        return (m_name.equals(((WikiPrincipal)obj).getName()));
+    }
+    
+    public String toString() {
+        return "WikiPrincipal: " + getName();
     }
 
 }

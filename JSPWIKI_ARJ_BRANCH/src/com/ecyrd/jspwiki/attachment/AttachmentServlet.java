@@ -23,6 +23,7 @@ import javax.servlet.*;
 import javax.servlet.http.*;
 import java.util.*;
 import java.io.*;
+import java.security.Principal;
 import java.text.SimpleDateFormat;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -31,7 +32,7 @@ import org.apache.log4j.Logger;
 
 import com.ecyrd.jspwiki.*;
 import com.ecyrd.jspwiki.util.HttpUtil;
-import com.ecyrd.jspwiki.auth.UserProfile;
+import com.ecyrd.jspwiki.auth.user.DefaultUserProfile;
 import com.ecyrd.jspwiki.auth.AuthorizationManager;
 import com.ecyrd.jspwiki.providers.ProviderException;
 import com.ecyrd.jspwiki.filters.RedirectException;
@@ -128,7 +129,6 @@ public class AttachmentServlet
         AttachmentManager mgr = m_engine.getAttachmentManager();
         AuthorizationManager authmgr = m_engine.getAuthorizationManager();
 
-        UserProfile wup = m_engine.getUserManager().getUserProfile( req );
 
         WikiContext context = m_engine.createContext( req, WikiContext.ATTACH );
         String page = context.getPage().getName();
@@ -157,7 +157,7 @@ public class AttachmentServlet
                     //  Check if the user has permission for this attachment
                     //
 
-                    if( !authmgr.checkPermission( att, wup, "view" ) )
+                    if( !authmgr.checkPermission( att, context, "view" ) )
                     {
                         log.debug("User does not have permission for this");
                         res.sendError( HttpServletResponse.SC_FORBIDDEN );
@@ -335,7 +335,7 @@ public class AttachmentServlet
                                              errorPage );
             }
 
-            UserProfile user    = context.getCurrentUser();
+            Principal user    = context.getCurrentUser();
 
             //
             //  Go through all files being uploaded.
@@ -418,7 +418,7 @@ public class AttachmentServlet
                     //
 
                     if( m_engine.getAuthorizationManager().checkPermission( att,
-                                                                            user,
+                                                                            context,
                                                                             "upload" ) )
                     {
                         if( user != null )
