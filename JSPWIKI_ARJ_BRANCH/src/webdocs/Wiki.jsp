@@ -31,13 +31,14 @@
         return;
     }
 
+    AuthenticationManager authMgr = wiki.getAuthenticationManager();
     AuthorizationManager mgr = wiki.getAuthorizationManager();
-    Principal currentUser  = wiki.getUserManager().getUserProfile( request );
+    Principal currentUser  = wikiContext.getWikiSession().getUserPrincipal();
 
     if( !mgr.checkPermission( wikiContext,
                               new PagePermission( pagereq, "view" ) ) )
     {
-        if( mgr.strictLogins() )
+        if( authMgr.strictLogins() )
         {
             log.info("User "+currentUser.getName()+" has no access - redirecting to login page.");
             String msg = "Unknown user or password.<br>Please try again.";

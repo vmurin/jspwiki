@@ -66,7 +66,7 @@
 
     if( delete != null )
     {
-        log.info("Deleting page "+pagereq+". User="+request.getRemoteUser()+", host="+request.getRemoteAddr() );
+        log.info("Deleting page "+pagereq+". User="+currentUser.getName()+", host="+request.getRemoteAddr() );
 
         response.sendRedirect(wiki.getViewURL(pagereq));
         return;
