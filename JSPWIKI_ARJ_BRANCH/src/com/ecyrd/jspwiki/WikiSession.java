@@ -1,5 +1,7 @@
 package com.ecyrd.jspwiki;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -18,7 +20,7 @@ import com.ecyrd.jspwiki.auth.authorize.Role;
  * minimal, default-deny values: authentication is set to false, and the user
  * principal is set to null.
  * @author Andrew R. Jaquith
- * @version $Revision: 1.1.2.2 $ $Date: 2005-02-14 05:06:52 $
+ * @version $Revision: 1.1.2.3 $ $Date: 2005-02-27 06:52:15 $
  */
 public class WikiSession
 {
@@ -87,6 +89,30 @@ public class WikiSession
         return ( hasPrincipal( Role.AUTHENTICATED ) );
     }
 
+    /**
+     * Determines whether the current user principal represents an 
+     * anonymous user represented by an IP
+     * address. If the user is not authenticated, this might be the case.
+     * This method works with either IPv4 or IPv6 addresses.
+     * @return whether the current user's identity is equivalent to an IP address
+     */
+    public boolean isAnonymous() {
+        boolean isAddress = false;
+        if ( getUserPrincipal() != null )
+        {
+            byte[] addr = new byte[4];
+            try
+            {
+                InetAddress ip = InetAddress.getByAddress( getUserPrincipal().getName(), addr );
+                isAddress = true;
+            }
+            catch( UnknownHostException e )
+            {
+            }
+        }
+        return isAddress;
+    }
+    
     /**
      * Returns the primary user Principal associated with this session. The
      * primary user principal is the first one in the Subject's principal
