@@ -200,7 +200,7 @@ public class RPCHandlerTest extends TestCase
     public void testPermissions()
         throws Exception
     {
-        String text ="Blaa. [{DENY view Guest}] [{ALLOW view NamedGuest}]";
+        String text ="Blaa. [{ALLOW view NamedGuest}]";
 
         m_engine.saveText( NAME1, text );
 

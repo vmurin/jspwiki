@@ -14,7 +14,7 @@ import com.ecyrd.jspwiki.WikiSession;
 import com.ecyrd.jspwiki.auth.AuthorizationManager;
 import com.ecyrd.jspwiki.auth.WikiPrincipal;
 import com.ecyrd.jspwiki.auth.authorize.Role;
-import com.ecyrd.jspwiki.auth.permissions.WikiPermission;
+import com.ecyrd.jspwiki.auth.permissions.PagePermission;
 
 public class PageAuthorizerTest
     extends TestCase
@@ -56,21 +56,25 @@ public class PageAuthorizerTest
         WikiSession session = WikiSession.GUEST_SESSION;
         context.setWikiSession( session );
 
+        // Charlie is anonymous
         Principal principal = new WikiPrincipal( "Charlie");
         session.getSubject().getPrincipals().clear();
         session.getSubject().getPrincipals().add( principal );
         session.getSubject().getPrincipals().add( Role.ANONYMOUS );
-        assertTrue( "Charlie", mgr.checkPermission( p,
-                                                    context,
-                                                    "edit" ) );
+        assertTrue( "Charlie", mgr.checkPermission( context,
+                new PagePermission( "TestPage", "view" ) ) );
+        assertFalse( "Charlie", mgr.checkPermission( context,
+                new PagePermission( "TestPage", "edit" ) ) );
 
+        // Bob is logged in
         principal = new WikiPrincipal( "Bob");
         session.getSubject().getPrincipals().clear();
         session.getSubject().getPrincipals().add( principal );
-        session.getSubject().getPrincipals().add( Role.ANONYMOUS );
-        assertTrue( "Bob", mgr.checkPermission( p,
-                                                context,
-                                                "view" ) );
+        session.getSubject().getPrincipals().add( Role.AUTHENTICATED );
+        assertTrue( "Bob", mgr.checkPermission( context,
+                new PagePermission( "TestPage", "view" ) ) );
+        assertTrue( "Bob", mgr.checkPermission( context,
+                new PagePermission( "TestPage", "edit" ) ) );
     }
 
 
