@@ -70,6 +70,10 @@ public class AuthorizationManager
      */
     public boolean checkPermission( WikiContext context, Permission permission )
     {
+        if ( context == null ) 
+        {
+            return checkPermission( null, context, permission );
+        }
         return checkPermission( context.getPage(), context, permission );
     }
     
@@ -279,19 +283,14 @@ public class AuthorizationManager
 
     /**
      * Determines whether authentication is required to view wiki pages. This is
-     * done by checking the securuity policy, using a subject with an
-     * {@link com.ecyrd.jspwiki.auth.authorize.Role#ANONYMOUS}principal and a
-     * "view" {@link com.ecyrd.jspwiki.auth.permissions.PagePermission}on a
-     * wildcard target ("*"). It delegates the check to
-     * {@link #checkStaticPermission(Subject, Permission)}.
+     * done by checking for the PagePermission.VIEW permission using a null
+     * WikiContext. It delegates the check to
+     * {@link #checkPermission(WikiContext, Permission)}.
      * @return <code>true</code> if logins are required
      */
     public boolean strictLogins()
     {
-        Subject subject = new Subject();
-        subject.getPrincipals().add( Role.ANONYMOUS );
-        PagePermission permission = new PagePermission( "view", "*" );
-        return ( !checkStaticPermission( subject, permission ) );
+        return ( checkPermission( null, PagePermission.VIEW ) );
     }
 
     /**
