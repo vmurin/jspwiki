@@ -46,7 +46,7 @@
         |___com 
             |___[...and the rest of the test source code]
                   
-    $Id: build.xml,v 1.38.2.6 2005-02-27 18:43:11 arj Exp $
+    $Id: build.xml,v 1.38.2.7 2005-02-27 18:48:53 arj Exp $
 -->    
        
 <!--   
@@ -398,7 +398,7 @@
            <pathelement path="${java.class.path}" />
         </classpath>
 
-        <sysproperty key="java.security.auth.login.config" value="${basedir}/etc/jaas.config"/>
+        <sysproperty key="java.security.auth.login.config" value="${basedir}/etc/jspwiki.jaas"/>
         <sysproperty key="java.security.policy" value="${basedir}/etc/jspwiki.policy"/>
 
         <formatter type="plain" />
@@ -423,7 +423,7 @@
            <pathelement path="${java.class.path}" />
         </classpath>
 
-        <sysproperty key="java.security.auth.login.config" value="${basedir}/etc/jaas.config"/>
+        <sysproperty key="java.security.auth.login.config" value="${basedir}/etc/jspwiki.jaas"/>
         <sysproperty key="java.security.policy" value="${basedir}/etc/jspwiki.policy"/>
 
         <formatter type="plain" />
@@ -448,7 +448,7 @@
            <pathelement path="${java.class.path}" />
         </classpath>
 
-        <sysproperty key="java.security.auth.login.config" value="${basedir}/etc/jaas.config"/>
+        <sysproperty key="java.security.auth.login.config" value="${basedir}/etc/jspwiki.jaas"/>
         <sysproperty key="java.security.policy" value="${basedir}/etc/jspwiki.policy"/>
 
         <formatter type="xml" />
@@ -482,7 +482,7 @@
            <pathelement path="${java.class.path}" />
         </classpath>
 
-        <sysproperty key="java.security.auth.login.config" value="${basedir}/etc/jaas.config"/>
+        <sysproperty key="java.security.auth.login.config" value="${basedir}/etc/jspwiki.jaas"/>
         <sysproperty key="java.security.policy" value="${basedir}/etc/jspwiki.policy"/>
 
         <arg value="com.ecyrd.jspwiki.AllTests" />
