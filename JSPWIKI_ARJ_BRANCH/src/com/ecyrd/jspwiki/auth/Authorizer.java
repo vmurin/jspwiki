@@ -9,7 +9,7 @@ import com.ecyrd.jspwiki.WikiContext;
 /**
  * Interface for service providers of authorization information.
  * @author Andrew R. Jaquith
- * @version $Revision: 1.1.4.1 $ $Date: 2005-02-01 02:38:57 $
+ * @version $Revision: 1.1.4.2 $ $Date: 2005-02-14 05:08:58 $
  */
 public interface Authorizer
 {
@@ -26,4 +26,14 @@ public interface Authorizer
      */
     public boolean isUserInRole( WikiContext context, Subject subject, Principal role );
 
+    /**
+     * Looks up and returns a role principal matching a given string.
+     * If a matching role cannot be found, this method returns null.
+     * Note that it may not be feasible for an Authorizer implementation
+     * to return a role principal.
+     * @param role the name of the role to retrieve
+     * @return the role principal
+     */
+    public Principal findRole( String role );
+    
 }
