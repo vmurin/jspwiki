@@ -284,18 +284,6 @@ public class AuthorizationManager
     }
 
     /**
-     * Determines whether authentication is required to view wiki pages. This is
-     * done by checking for the PagePermission.VIEW permission using a null
-     * WikiContext. It delegates the check to
-     * {@link #checkPermission(WikiContext, Permission)}.
-     * @return <code>true</code> if logins are required
-     */
-    public boolean strictLogins()
-    {
-        return ( checkPermission( null, PagePermission.VIEW ) );
-    }
-
-    /**
      * Attempts to locate and initialize a Authorizer to use with this manager.
      * Throws a WikiException if no entry is found, or if one fails to
      * initialize.
