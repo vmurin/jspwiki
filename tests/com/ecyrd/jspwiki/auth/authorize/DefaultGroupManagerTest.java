@@ -54,17 +54,23 @@ public class DefaultGroupManagerTest extends TestCase
         assertFalse( m_manager.isUserInRole( null, s, new DefaultGroup( "TestGroup2" ) ) );
         assertFalse( m_manager.isUserInRole( null, s, new DefaultGroup( "NonExistantGroup" ) ) );
 
+        s = new Subject();
         p = new WikiPrincipal( "Bob" );
+        s.getPrincipals().add(p);
         assertTrue( m_manager.isUserInRole( null, s, new DefaultGroup( "TestGroup" ) ) );
         assertTrue( m_manager.isUserInRole( null, s, new DefaultGroup( "TestGroup2" ) ) );
         assertFalse( m_manager.isUserInRole( null, s, new DefaultGroup( "NonExistantGroup" ) ) );
 
+        s = new Subject();
         p = new WikiPrincipal( "Charlie" );
+        s.getPrincipals().add(p);
         assertTrue( m_manager.isUserInRole( null, s, new DefaultGroup( "TestGroup" ) ) );
         assertFalse( m_manager.isUserInRole( null, s, new DefaultGroup( "TestGroup2" ) ) );
         assertFalse( m_manager.isUserInRole( null, s, new DefaultGroup( "NonExistantGroup" ) ) );
 
+        s = new Subject();
         p = new WikiPrincipal( "Biff" );
+        s.getPrincipals().add(p);
         assertFalse( m_manager.isUserInRole( null, s, new DefaultGroup( "TestGroup" ) ) );
         assertFalse( m_manager.isUserInRole( null, s, new DefaultGroup( "TestGroup2" ) ) );
         assertFalse( m_manager.isUserInRole( null, s, new DefaultGroup( "NonExistantGroup" ) ) );

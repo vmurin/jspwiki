@@ -24,22 +24,12 @@ public class TestEngine extends WikiEngine
 
     public static final InputStream findTestProperties()
     {
-        return findTestProperties( "etc/jspwiki.properties" );
+        return findTestProperties( "/jspwiki.properties" );
     }
 
     public static final InputStream findTestProperties( String properties )
     {
-        File file = new File( properties );
-        try
-        {
-            URL url = file.toURL();
-            return url.openStream();
-        }
-        catch( IOException e )
-        {
-            System.err.println( "IO exception: " + e.getMessage() );
-        }
-        return null;
+        return TestEngine.class.getResourceAsStream( properties );
     }
 
     /**

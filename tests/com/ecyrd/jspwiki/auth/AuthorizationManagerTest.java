@@ -6,6 +6,8 @@ import java.util.Enumeration;
 import java.util.Properties;
 import java.util.Set;
 
+import javax.security.auth.Subject;
+
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -23,6 +25,7 @@ import com.ecyrd.jspwiki.auth.authorize.Group;
 import com.ecyrd.jspwiki.auth.authorize.GroupManager;
 import com.ecyrd.jspwiki.auth.authorize.Role;
 import com.ecyrd.jspwiki.auth.permissions.PagePermission;
+import com.ecyrd.jspwiki.auth.permissions.WikiPermission;
 
 /**
  * Tests the AuthorizationManager class.
@@ -116,6 +119,57 @@ public class AuthorizationManagerTest extends TestCase
         assertFalse("Alice has Bob", m_auth.hasRoleOrPrincipal( context, new TestPrincipal("Bob")));
     }
     
+    public void testStaticPermission()
+    {
+        Subject s = new Subject();
+        s.getPrincipals().add( Role.ANONYMOUS );
+        assertTrue( "Anonymous view",     AuthorizationManager.checkStaticPermission( s, PagePermission.VIEW ) );
+        assertFalse( "Anonymous edit",    AuthorizationManager.checkStaticPermission( s, PagePermission.EDIT ) );
+        assertTrue( "Anonymous comment",  AuthorizationManager.checkStaticPermission( s, PagePermission.COMMENT ) );
+        assertFalse( "Anonymous upload",  AuthorizationManager.checkStaticPermission( s, PagePermission.UPLOAD ) );
+        assertFalse( "Anonymous rename",  AuthorizationManager.checkStaticPermission( s, PagePermission.RENAME ) );
+        assertFalse( "Anonymous delete",  AuthorizationManager.checkStaticPermission( s, PagePermission.DELETE ) );
+        assertTrue( "Anonymous register", AuthorizationManager.checkStaticPermission( s, WikiPermission.REGISTER ) );
+        assertFalse( "Anonymous pages",   AuthorizationManager.checkStaticPermission( s, WikiPermission.CREATE_PAGES ) );
+        assertFalse( "Anonymous groups",  AuthorizationManager.checkStaticPermission( s, WikiPermission.CREATE_GROUPS ) );
+        
+        s = new Subject();
+        s.getPrincipals().add( Role.ASSERTED );
+        assertTrue( "Asserted view",     AuthorizationManager.checkStaticPermission( s, PagePermission.VIEW ) );
+        assertTrue( "Asserted edit",     AuthorizationManager.checkStaticPermission( s, PagePermission.EDIT ) );
+        assertTrue( "Asserted comment",  AuthorizationManager.checkStaticPermission( s, PagePermission.COMMENT ) );
+        assertTrue( "Asserted upload",   AuthorizationManager.checkStaticPermission( s, PagePermission.UPLOAD ) );
+        assertFalse( "Asserted rename",  AuthorizationManager.checkStaticPermission( s, PagePermission.RENAME ) );
+        assertFalse( "Asserted delete",  AuthorizationManager.checkStaticPermission( s, PagePermission.DELETE ) );
+        assertFalse( "Asserted register",AuthorizationManager.checkStaticPermission( s, WikiPermission.REGISTER ) );
+        assertTrue( "Asserted pages",    AuthorizationManager.checkStaticPermission( s, WikiPermission.CREATE_PAGES ) );
+        assertFalse( "Asserted groups",  AuthorizationManager.checkStaticPermission( s, WikiPermission.CREATE_GROUPS ) );
+        
+        s = new Subject();
+        s.getPrincipals().add( Role.AUTHENTICATED );
+        assertTrue( "Authenticated view",     AuthorizationManager.checkStaticPermission( s, PagePermission.VIEW ) );
+        assertTrue( "Authenticated edit",     AuthorizationManager.checkStaticPermission( s, PagePermission.EDIT ) );
+        assertTrue( "Authenticated comment",  AuthorizationManager.checkStaticPermission( s, PagePermission.COMMENT ) );
+        assertTrue( "Authenticated upload",   AuthorizationManager.checkStaticPermission( s, PagePermission.UPLOAD ) );
+        assertTrue( "Authenticated rename",   AuthorizationManager.checkStaticPermission( s, PagePermission.RENAME ) );
+        assertFalse( "Authenticated delete",  AuthorizationManager.checkStaticPermission( s, PagePermission.DELETE ) );
+        assertFalse( "Authenticated register",AuthorizationManager.checkStaticPermission( s, WikiPermission.REGISTER ) );
+        assertTrue( "Authenticated pages",    AuthorizationManager.checkStaticPermission( s, WikiPermission.CREATE_PAGES ) );
+        assertTrue( "Authenticated groups",   AuthorizationManager.checkStaticPermission( s, WikiPermission.CREATE_GROUPS ) );
+        
+        s = new Subject();
+        s.getPrincipals().add( Role.ADMIN );
+        assertTrue( "Admin view",     AuthorizationManager.checkStaticPermission( s, PagePermission.VIEW ) );
+        assertTrue( "Admin edit",     AuthorizationManager.checkStaticPermission( s, PagePermission.EDIT ) );
+        assertTrue( "Admin comment",  AuthorizationManager.checkStaticPermission( s, PagePermission.COMMENT ) );
+        assertTrue( "Admin upload",   AuthorizationManager.checkStaticPermission( s, PagePermission.UPLOAD ) );
+        assertTrue( "Admin rename",   AuthorizationManager.checkStaticPermission( s, PagePermission.RENAME ) );
+        assertTrue( "Admin delete",   AuthorizationManager.checkStaticPermission( s, PagePermission.DELETE ) );
+        assertFalse( "Admin register",AuthorizationManager.checkStaticPermission( s, WikiPermission.REGISTER ) );
+        assertTrue( "Admin pages",    AuthorizationManager.checkStaticPermission( s, WikiPermission.CREATE_PAGES ) );
+        assertTrue( "Admin groups",   AuthorizationManager.checkStaticPermission( s, WikiPermission.CREATE_GROUPS ) );
+    }
+    
     private static class TestPrincipal implements Principal
     {
         private final String m_name;
@@ -158,15 +212,15 @@ public class AuthorizationManagerTest extends TestCase
         session.getSubject().getPrincipals().clear();
         session.getSubject().getPrincipals().add( principal );
         session.getSubject().getPrincipals().add( Role.AUTHENTICATED );
-        assertTrue( "read 1", m_auth.checkPermission( p, context, new PagePermission( "view" ) ) );
-        assertTrue( "edit 1", m_auth.checkPermission( p, context, new PagePermission( "edit" ) ) );
+        assertTrue( "read 1", m_auth.checkPermission( context, new PagePermission( "Test", "view" ) ) );
+        assertTrue( "edit 1", m_auth.checkPermission( context, new PagePermission( "Test", "edit" ) ) );
 
         principal = new WikiPrincipal( "GobbleBlat" );
         session.getSubject().getPrincipals().clear();
         session.getSubject().getPrincipals().add( principal );
         session.getSubject().getPrincipals().add( Role.ANONYMOUS );
-        assertTrue( "read 2", m_auth.checkPermission( p, context, new PagePermission( "view" ) ) );
-        assertFalse( "edit 2", m_auth.checkPermission( p, context, new PagePermission( "edit" ) ) );
+        assertTrue( "read 2", m_auth.checkPermission( context, new PagePermission( "Test", "view" ) ) );
+        assertFalse( "edit 2", m_auth.checkPermission( context, new PagePermission( "Test", "edit" ) ) );
     }
 
     /**
