@@ -387,6 +387,10 @@ public class XMLUserDatabase implements UserDatabase
 
         // Hash and save the new password if it's different from old one
         String newPassword = profile.getPassword();
+        if ( newPassword == null )
+        {
+            newPassword = "";
+        }
         String oldPassword = user.getAttribute( PASSWORD );
         if ( !oldPassword.equals( newPassword ) )
         {
