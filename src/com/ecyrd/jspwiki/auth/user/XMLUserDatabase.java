@@ -39,6 +39,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.apache.catalina.util.HexUtils;
+import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -52,11 +53,11 @@ import com.ecyrd.jspwiki.auth.WikiPrincipal;
 import com.ecyrd.jspwiki.auth.WikiSecurityException;
 
 /**
- * Manages {@see DefaultUserProfile}objects using XML files for persistence. Passwords
- * are hashed using SHA1. User entries are simple &lt;user&gt; elements under
- * the root. User profile properties are attributes of the element. For example:
- * <users><user loginName="janne" fullName="Janne Jalkanen"
- * wikiName="JanneJalkanen" email="janne@ecyrd.com"
+ * Manages {@see DefaultUserProfile}objects using XML files for persistence.
+ * Passwords are hashed using SHA1. User entries are simple &lt;user&gt;
+ * elements under the root. User profile properties are attributes of the
+ * element. For example: <users><user loginName="janne" fullName="Janne
+ * Jalkanen" wikiName="JanneJalkanen" email="janne@ecyrd.com"
  * password="{SHA}457b08e825da547c3b77fbc1ff906a1d00a7daee"/> </users> Passwords
  * are hashed without salt. In this example, the password is "myP@5sw0rd".
  * @author Andrew Jaquith
@@ -66,6 +67,8 @@ public class XMLUserDatabase implements UserDatabase
 {
 
     public static final String    PROP_USERDATABASE = "jspwiki.xmlUserDatabaseFile";
+
+    private static final Logger   log               = Logger.getLogger( XMLUserDatabase.class );
 
     protected static final String EMAIL             = "email";
 
@@ -86,12 +89,14 @@ public class XMLUserDatabase implements UserDatabase
     protected File                c_file            = null;
 
     /**
-     * Persists the database. The profile changed is looked up by the user ID,
-     * which must exist.
+     * Persists database changes to disk.
      */
-    public synchronized void commit()
+    public synchronized void commit() throws WikiSecurityException
     {
-        if ( c_dom == null ) { throw new IllegalStateException( "FATAL: database doesn't exist in memory" ); }
+        if ( c_dom == null )
+        {
+            log.fatal( "User database doesn't exist in memory." );
+        }
 
         // First, neaten up the DOM by adding carriage returns before each
         // element
@@ -112,9 +117,10 @@ public class XMLUserDatabase implements UserDatabase
                 if ( i == ( nodes.getLength() - 1 ) )
                 {
                     if ( node.getNodeType() != Node.TEXT_NODE )
-                    ;
-                    Node whitespace = c_dom.createTextNode( "\n" );
-                    c_dom.getDocumentElement().appendChild( whitespace );
+                    {
+                        Node whitespace = c_dom.createTextNode( "\n" );
+                        c_dom.getDocumentElement().appendChild( whitespace );
+                    }
                 }
             }
         }
@@ -131,11 +137,11 @@ public class XMLUserDatabase implements UserDatabase
         }
         catch( TransformerConfigurationException e )
         {
-            System.err.println( e.getMessage() );
+            log.error( "Could not save user database (problem configuring XML parser): " + e.getMessage() );
         }
         catch( TransformerException e )
         {
-            System.err.println( e.getMessage() );
+            log.error( "Could not save user database: " + e.getMessage() );
         }
 
         // Copy new file over old version
@@ -143,24 +149,30 @@ public class XMLUserDatabase implements UserDatabase
         File backup = new File( c_file.getAbsolutePath() + ".old" );
         if ( backup.exists() )
         {
-            if ( !backup.delete() ) { throw new IllegalStateException( "Could not delete old backup: " + backup ); }
+            if ( !backup.delete() )
+            {
+                log.error( "Could not delete old user database backup: " + backup );
+            }
         }
-        if ( !c_file.renameTo( backup ) ) { throw new IllegalStateException( "Could not create backup: " + backup ); }
+        if ( !c_file.renameTo( backup ) )
+        {
+            log.error( "Could not create user database backup: " + backup );
+        }
         if ( !newFile.renameTo( c_file ) )
         {
-            System.err.println( "Could not save database: " + backup + " restoring backup." );
-            if ( backup.renameTo( c_file ) ) { throw new IllegalStateException(
-                    "Restore failed. Check the file permissions." ); }
-            throw new IllegalStateException( "Could not save database: " + c_file + ". Check the file permissions" );
+            log.error( "Could not save database: " + backup + " restoring backup." );
+            if ( backup.renameTo( c_file ) )
+            {
+                log.error( "Restore failed. Check the file permissions." );
+            }
+            log.error( "Could not save database: " + c_file + ". Check the file permissions" );
         }
     }
 
-    
-    
     /**
-     * Looks up and returns the first {@link UserProfile} in the user database
-     * that whose login name, full name, or wiki name matches the supplied string.
-     * This method provides a "forgiving" search algorithm for resolving
+     * Looks up and returns the first {@link UserProfile}in the user database
+     * that whose login name, full name, or wiki name matches the supplied
+     * string. This method provides a "forgiving" search algorithm for resolving
      * principal names when the exact profile attribute that supplied the name
      * is unknown.
      * @param index the login name, full name, or wiki name
@@ -184,9 +196,9 @@ public class XMLUserDatabase implements UserDatabase
         {
             return profile;
         }
-        throw new NoSuchPrincipalException("Not in database: " + index);
+        throw new NoSuchPrincipalException( "Not in database: " + index );
     }
-    
+
     /**
      * Looks up and returns the first {@link UserProfile}in the user database
      * that matches a profile having a given e-mail address. If the user
@@ -203,14 +215,14 @@ public class XMLUserDatabase implements UserDatabase
         {
             return profile;
         }
-        throw new NoSuchPrincipalException("Not in database: " + index);
+        throw new NoSuchPrincipalException( "Not in database: " + index );
     }
 
     /**
-     * Looks up and returns the first {@link UserProfile} in the user database
-     * that matches a profile having a given full name.
-     * If the user database does not contain a user with a matching attribute,
-     * throws a {@link NoSuchPrincipalException}.
+     * Looks up and returns the first {@link UserProfile}in the user database
+     * that matches a profile having a given full name. If the user database
+     * does not contain a user with a matching attribute, throws a
+     * {@link NoSuchPrincipalException}.
      * @param index the fill name of the desired user profile
      * @return the user profile
      * @see com.ecyrd.jspwiki.auth.user.UserDatabase#findByFullName(java.lang.String)
@@ -222,7 +234,7 @@ public class XMLUserDatabase implements UserDatabase
         {
             return profile;
         }
-        throw new NoSuchPrincipalException("Not in database: " + index);
+        throw new NoSuchPrincipalException( "Not in database: " + index );
     }
 
     /**
@@ -241,7 +253,7 @@ public class XMLUserDatabase implements UserDatabase
         {
             return profile;
         }
-        throw new NoSuchPrincipalException("Not in database: " + index);
+        throw new NoSuchPrincipalException( "Not in database: " + index );
     }
 
     /**
@@ -260,17 +272,17 @@ public class XMLUserDatabase implements UserDatabase
         {
             return profile;
         }
-        throw new NoSuchPrincipalException("Not in database: " + index);
+        throw new NoSuchPrincipalException( "Not in database: " + index );
     }
 
     /**
-     * Looks up the Principals representing a user from the user database.
-     * These are defined as a set of WikiPrincipals manufactured from
-     * the login name, full name, and wiki name.
-     * If the user database does not contain a user with the supplied identifier,
-     * throws a {@link NoSuchPrincipalException}.
-     * @param name the name of the principal to retrieve; this corresponds
-     * to value returned by the user profile's {@link UserProfile#getLoginName()} method.
+     * Looks up the Principals representing a user from the user database. These
+     * are defined as a set of WikiPrincipals manufactured from the login name,
+     * full name, and wiki name. If the user database does not contain a user
+     * with the supplied identifier, throws a {@link NoSuchPrincipalException}.
+     * @param name the name of the principal to retrieve; this corresponds to
+     *            value returned by the user profile's
+     *            {@link UserProfile#getLoginName()}method.
      * @return the array of Principals representing the user
      * @see com.ecyrd.jspwiki.auth.user.UserDatabase#getPrincipals(java.lang.String)
      */
@@ -292,7 +304,7 @@ public class XMLUserDatabase implements UserDatabase
             {
                 principals.add( new WikiPrincipal( profile.getWikiName() ) );
             }
-            return (Principal[])principals.toArray(new Principal[principals.size()]);
+            return (Principal[]) principals.toArray( new Principal[principals.size()] );
         }
         catch( NoSuchPrincipalException e )
         {
@@ -311,9 +323,16 @@ public class XMLUserDatabase implements UserDatabase
     {
         // Get database file location
         String file = props.getProperty( PROP_USERDATABASE );
-        if ( file == null ) { throw new IllegalStateException( "Could not initialize user database; property "
-                + PROP_USERDATABASE + " not found" ); }
+        if ( file == null )
+        {
+            throw new IllegalStateException( "Could not initialize user database; property " + PROP_USERDATABASE
+                    + " not found" );
+        }
         c_file = new File( file );
+        if ( !c_file.exists() )
+        {
+            throw new IllegalArgumentException( "XML user database " + file + " does not exist!" );
+        }
 
         // Read DOM
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -324,30 +343,30 @@ public class XMLUserDatabase implements UserDatabase
         try
         {
             c_dom = factory.newDocumentBuilder().parse( c_file );
-            System.out.println( "User database successfully initialized." );
+            log.info( "User database " + file + " successfully initialized." );
         }
         catch( ParserConfigurationException e )
         {
-            System.err.println( "Configuration error: " + e.getMessage() );
+            log.error( "Configuration error: " + e.getMessage() );
         }
         catch( SAXException e )
         {
-            System.err.println( "SAX error: " + e.getMessage() );
+            log.error( "SAX error: " + e.getMessage() );
         }
         catch( IOException e )
         {
-            System.err.println( "IO error: " + e.getMessage() );
+            log.error( "IO error: " + e.getMessage() );
         }
         if ( c_dom == null )
         {
             try
             {
-                System.out.println( "Creating in-memory DOM." );
+                log.info( "Could not load file from disk: creating in-memory DOM." );
                 c_dom = factory.newDocumentBuilder().newDocument();
             }
             catch( ParserConfigurationException e )
             {
-                System.err.println( "FATAL: could not create in-memory DOM" );
+                log.fatal( "Could not create in-memory DOM" );
             }
         }
     }
@@ -362,7 +381,11 @@ public class XMLUserDatabase implements UserDatabase
      */
     public void save( UserProfile profile ) throws WikiSecurityException
     {
-        if ( c_dom == null ) { throw new IllegalStateException( "FATAL: database does not exist" ); }
+        if ( c_dom == null )
+        {
+            log.fatal( "Could not save profile " + profile + " database does not exist" );
+            throw new IllegalStateException( "FATAL: database does not exist" );
+        }
         String index = profile.getLoginName();
         NodeList users = c_dom.getElementsByTagName( USER_TAG );
         Element user = null;
@@ -376,7 +399,7 @@ public class XMLUserDatabase implements UserDatabase
         }
         if ( user == null )
         {
-            System.out.println( "Creating new user " + index );
+            log.info( "Creating new user " + index );
             user = c_dom.createElement( USER_TAG );
             c_dom.getDocumentElement().appendChild( user );
         }
@@ -387,7 +410,7 @@ public class XMLUserDatabase implements UserDatabase
 
         // Hash and save the new password if it's different from old one
         String newPassword = profile.getPassword();
-        if ( newPassword != null && !newPassword.equals("") )
+        if ( newPassword != null && !newPassword.equals( "" ) )
         {
             String oldPassword = user.getAttribute( PASSWORD );
             if ( !oldPassword.equals( newPassword ) )
@@ -430,7 +453,10 @@ public class XMLUserDatabase implements UserDatabase
      */
     private UserProfile findByAttribute( String matchAttribute, String index )
     {
-        if ( c_dom == null ) { throw new IllegalStateException( "FATAL: database does not exist" ); }
+        if ( c_dom == null )
+        {
+            throw new IllegalStateException( "FATAL: database does not exist" );
+        }
         NodeList users = c_dom.getElementsByTagName( USER_TAG );
         for( int i = 0; i < users.getLength(); i++ )
         {
@@ -467,7 +493,7 @@ public class XMLUserDatabase implements UserDatabase
         }
         catch( NoSuchAlgorithmException e )
         {
-            System.out.println( "Error creating hash!" );
+            log.error( "Error creating SHA password hash:" + e.getMessage() );
             hash = text;
         }
         return hash;
