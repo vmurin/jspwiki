@@ -34,8 +34,7 @@
     AuthorizationManager mgr = wiki.getAuthorizationManager();
     Principal currentUser  = wiki.getUserManager().getUserProfile( request );
 
-    if( !mgr.checkPermission( wikiContext.getPage(),
-                              wikiContext,
+    if( !mgr.checkPermission( wikiContext,
                               new PagePermission( pagereq, "view" ) ) )
     {
         if( mgr.strictLogins() )

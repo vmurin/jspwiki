@@ -74,8 +74,7 @@ public class InsertPage
             {
                 AuthorizationManager mgr = engine.getAuthorizationManager();
 
-                if( !mgr.checkPermission( page,
-                                          context,
+                if( !mgr.checkPermission( context,
                                           new PagePermission( page, "view") ) )
                 {
                     res.append("<span class=\"error\">You do not have permission to view this included page.</span>");

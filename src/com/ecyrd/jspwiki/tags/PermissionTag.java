@@ -20,11 +20,13 @@
 package com.ecyrd.jspwiki.tags;
 
 import java.io.IOException;
+import java.security.Permission;
 
 import com.ecyrd.jspwiki.WikiEngine;
 import com.ecyrd.jspwiki.WikiPage;
 import com.ecyrd.jspwiki.WikiProvider;
 import com.ecyrd.jspwiki.auth.AuthorizationManager;
+import com.ecyrd.jspwiki.auth.permissions.PagePermission;
 
 /**
  *  Tells if a page may be edited.  This tag takes care of all possibilities,
@@ -67,9 +69,9 @@ public class PermissionTag
                 }
             }
 
-            got_permission = mgr.checkPermission( page,
-                                                  m_wikiContext,
-                                                  m_permission );
+            Permission permission = new PagePermission( page.getName(), m_permission );
+            got_permission = mgr.checkPermission( m_wikiContext,
+                                                  permission );
         }
 
         return got_permission ? EVAL_BODY_INCLUDE : SKIP_BODY;

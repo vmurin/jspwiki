@@ -42,8 +42,7 @@
     Principal currentUser  = wikiContext.getCurrentUser();
     Permission requiredPermission = new PagePermission( pagereq, "delete" );
 
-    if( !mgr.checkPermission( wikiContext.getPage(),
-                              wikiContext,
+    if( !mgr.checkPermission( wikiContext,
                               requiredPermission ) )
     {
         log.info("User "+currentUser.getName()+" has no access - redirecting to login page.");
