@@ -5,9 +5,10 @@ import com.ecyrd.jspwiki.attachment.Attachment;
 import com.ecyrd.jspwiki.providers.*;
 import junit.framework.*;
 import java.io.*;
+import java.security.Principal;
 import java.util.*;
 import javax.servlet.*;
-import com.ecyrd.jspwiki.acl.*;
+import com.ecyrd.jspwiki.auth.acl.*;
 import com.ecyrd.jspwiki.auth.permissions.*;
 import com.ecyrd.jspwiki.auth.*;
 
@@ -1558,13 +1559,12 @@ public class TranslatorReaderTest extends TestCase
 
         assertEquals("Page text", "Foobar.", res);
 
-        AccessControlList acl = p.getAcl();
+        Acl acl = p.getAcl();
 
-        UserProfile prof = new UserProfile();
-        prof.setName("JanneJalkanen");
+        Principal prof = new WikiPrincipal("JanneJalkanen");
 
-        assertTrue(  "no read", acl.checkPermission( prof, new ViewPermission() ) );
-        assertFalse( "has edit", acl.checkPermission( prof, new EditPermission() ) );
+        assertTrue(  "no read", acl.checkPermission( prof, new PagePermission( "view" ) ) );
+        assertFalse( "has edit", acl.checkPermission( prof, new PagePermission( "edit" ) ) );
     }
 
     public void testSimpleACL2()
@@ -1580,23 +1580,22 @@ public class TranslatorReaderTest extends TestCase
 
         assertEquals("Page text", "Foobar.\n\n", res);
 
-        AccessControlList acl = p.getAcl();
+        Acl acl = p.getAcl();
 
-        UserProfile prof = new UserProfile();
-        prof.setName("JanneJalkanen");
+        Principal prof = new WikiPrincipal("JanneJalkanen");
 
-        assertTrue( "no read for JJ", acl.checkPermission( prof, new ViewPermission() ) );
-        assertTrue( "no edit for JJ", acl.checkPermission( prof, new EditPermission() ) );
+        assertTrue( "no read for JJ", acl.checkPermission( prof, new PagePermission( "view" ) ) );
+        assertTrue( "no edit for JJ", acl.checkPermission( prof, new PagePermission( "edit" ) ) );
 
-        prof.setName("ErikBunn");
+        prof = new WikiPrincipal("ErikBunn");
 
-        assertFalse(  "read for EB", acl.checkPermission( prof, new ViewPermission() ) );
-        assertFalse( "has edit for EB", acl.checkPermission( prof, new EditPermission() ) );
+        assertFalse(  "read for EB", acl.checkPermission( prof, new PagePermission( "view" ) ) );
+        assertFalse( "has edit for EB", acl.checkPermission( prof, new PagePermission( "edit" ) ) );
 
-        prof.setName("SuloVilen");
+        prof = new WikiPrincipal("SuloVilen");
 
-        assertFalse("read for SV", acl.checkPermission( prof, new ViewPermission() ) );
-        assertTrue( "no edit for SV", acl.checkPermission( prof, new EditPermission() ) );
+        assertFalse("read for SV", acl.checkPermission( prof, new PagePermission( "view" ) ) );
+        assertTrue( "no edit for SV", acl.checkPermission( prof, new PagePermission( "edit" ) ) );
     }
 
     private boolean containsGroup( List l, String name )

@@ -22,7 +22,7 @@ package com.ecyrd.jspwiki.tags;
 import java.io.IOException;
 
 import com.ecyrd.jspwiki.WikiEngine;
-import com.ecyrd.jspwiki.auth.UserProfile;
+import com.ecyrd.jspwiki.WikiSession;
 
 /**
  *  Includes the content if an user check validates.  This has
@@ -91,44 +91,44 @@ public class UserCheckTag
     }
 
 
+    /**
+     * ARJ: This method is somewhat re-written. I am not sure I got this 
+     * right...
+     * @see com.ecyrd.jspwiki.tags.WikiTagBase#doWikiStartTag()
+     */
     public final int doWikiStartTag()
         throws IOException
     {
         WikiEngine  engine = m_wikiContext.getEngine();
-        UserProfile wup    = m_wikiContext.getCurrentUser();
+        WikiSession session = m_wikiContext.getWikiSession();
+        String status = session.getStatus();
 
         if( m_status != null )
         {
-            if( wup == null )
-            {
-                // This may happen when strict login policy is used.
-                return( SKIP_BODY );
-            }
-
-            if( "unknown".equals( m_status ) && 
-                wup.getLoginStatus() == UserProfile.NONE )
-            {
+            if ( "unknown".equals( m_status )) {
+              if (status.equals(WikiSession.ANONYMOUS)) {
                 return EVAL_BODY_INCLUDE;
+              }
             }
-            else if( "known".equals( m_status ) && 
-                     wup.getLoginStatus() > UserProfile.NONE )
-            {
+            else if( "known".equals( m_status )) { 
+              if (status.equals(WikiSession.AUTHENTICATED)) {
                 return EVAL_BODY_INCLUDE;
+              }
             }
-            else if( "named".equals( m_status ) && 
-                     wup.getLoginStatus() == UserProfile.COOKIE )
-            {
-                return EVAL_BODY_INCLUDE;
+            else if( "named".equals( m_status )) { 
+                if (status.equals(WikiSession.ASSERTED)) {
+                  return EVAL_BODY_INCLUDE;
+                }
             }
-            else if( "validated".equals( m_status ) && 
-                     wup.getLoginStatus() > UserProfile.CONTAINER )
-            {
+            else if( "unvalidated".equals( m_status )) {
+              if (status.equals(WikiSession.UNVALIDATED)) {
                 return EVAL_BODY_INCLUDE;
+              }
             }
-            else if( "unvalidated".equals( m_status ) && 
-                     wup.getLoginStatus() < UserProfile.CONTAINER )
-            {
+            else if( "validated".equals( m_status )) { 
+              if (status.equals(WikiSession.AUTHENTICATED)) {
                 return EVAL_BODY_INCLUDE;
+              }
             }
         }
 
