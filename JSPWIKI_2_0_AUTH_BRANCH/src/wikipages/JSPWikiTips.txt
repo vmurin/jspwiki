@@ -1,0 +1,29 @@
+!!Editing the menu on the left hand side
+
+The menu on the left hand side (over there <--) is just a standard Wiki page, called [LeftMenu].
+
+If you (the administrator) don't want anyone else to modify it, you can always edit [LeftMenu], then make the page read-only on the hard drive itself ;-).
+
+The lower part of the left hand side is similarly called [LeftMenuFooter], and it is fully editable as well.
+
+!!Editing pages directly
+
+By setting up an InterWiki link called "Edit" in {{jspwiki.properties}} you can make direct edit links.  For example, this link here (assuming you're using the default configuration from the JSPWiki archive), will take you
+to the edit mode of this page: [Edit:JSPWikiTips].
+
+The magical incantation in the {{jspwiki.properties}} file is:
+{{{
+jspwiki.interWikiRef.Edit = Edit.jsp?page=%s
+}}}
+
+!!How do I enable the [RSS|http://blogspace.com/rss/] feed?
+
+In your jspwiki.properties -file, you'll need to set the "jspwiki.rss.generate" to "true", and also set the "jspwiki.baseURL" to point at your Wiki.  Otherwise the RSS generator can't figure out how its links should go... :-)
+
+!!I don't like ThingsSquashedTogether in the page titles.  What can I do?
+
+As Finns say, "voe tokkiinsa", meaning "yes, of course".  Just set the "jspwiki.breakTitleWithSpaces" property to "true" in your jspwiki.properties-file.
+
+!!I have a question you have not answered!
+
+Well, the easiest thing to do is go directly to the [JSPWiki main site|JSPWiki:Main] and ask your question there.  Or you could also [email me|About], but it's better for all if you go and publicly post your query.  It does not hurt to take a peek at JSPWiki site anyway, since your question might already be answered there...
