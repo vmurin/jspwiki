@@ -1,3 +1,5 @@
+// $Id: jspwiki.policy,v 1.1.2.2 2005-02-27 18:38:35 arj Exp $
+//
 // This file contains the Java 2 security policy for JSPWiki.
 // It provides the permissions rules for the JSPWiki
 // environment, and should be suitable for most 
@@ -32,47 +34,50 @@
 // And now, for the security policy
 //
 
+// JSPWiki itself needs some basic privileges in order to operate.
+// Don't change these, because it will b0rk the system.
 
-// Unauthenticted users are allowed to view all pages. If you don't
-// want anonymous users to be able to view pages, or if you
-// need "strict logins," comment out or delete this entry.
 
-grant principal com.ecyrd.jspwiki.auth.Role "Anonymous" {
-    permission com.ecyrd.jspwiki.auth.permissions.ViewPermission "*";
+// Unauthenticted users are allowed to view all pages (except group
+// pages. If you don't want anonymous users to be able to view pages,
+// or if you need "strict logins," comment out or delete this entry.
+
+grant principal com.ecyrd.jspwiki.auth.authorize.Role "Anonymous" {
+    permission com.ecyrd.jspwiki.auth.permissions.PagePermission "*", "view,comment";
+    permission com.ecyrd.jspwiki.auth.permissions.WikiPermission "registerUser";
 };
 
 
 // This next policy is pretty loose. It allows 
-// minimally-authenticated users to view and edit any page,
-// as well as create new pages, comment and upload files.
-// If you want to require authentication rather than trusting
-// the users to supply their own identities, comment out or delete this entry.
-// Ditto for "strict logins."
+// minimally-authenticated users to view and edit any page
+// (including group pages), as well as create new pages, 
+// comment and upload files. If you want to require authentication
+// rather than trusting the users to supply their own identities,
+// comment out or delete this entry. Ditto for "strict logins."
 
-grant principal com.ecyrd.jspwiki.auth.Role "Asserted" {
-    permission com.ecyrd.jspwiki.auth.permissions.CommentPermission "*";
-    permission com.ecyrd.jspwiki.auth.permissions.CreatePermission "*";
-    permission com.ecyrd.jspwiki.auth.permissions.EditPermission "*";
-    permission com.ecyrd.jspwiki.auth.permissions.UploadPermission "*";
-    permission com.ecyrd.jspwiki.auth.permissions.ViewPermission "*";
+grant principal com.ecyrd.jspwiki.auth.authorize.Role "Asserted" {
+    permission com.ecyrd.jspwiki.auth.permissions.PagePermission "*", "edit";
+    permission com.ecyrd.jspwiki.auth.permissions.PagePermission "Group*", "view";
+    permission com.ecyrd.jspwiki.auth.permissions.WikiPermission "createPages";
 };
 
 
 // This next policy feels a bit more like real security. If
-// a user has logged in, he or she can view or edit any page,
-// as well as create new pages, comment and upload files.
+// a user has logged in, he or she can view or edit any page
+// (including group pages), as well as create new pages, 
+// comment and upload files.
 
-grant principal com.ecyrd.jspwiki.auth.Role "Authenticated" {
-    permission com.ecyrd.jspwiki.auth.permissions.CommentPermission "*";
-    permission com.ecyrd.jspwiki.auth.permissions.CreatePermission "*";
-    permission com.ecyrd.jspwiki.auth.permissions.EditPermission "*";
-    permission com.ecyrd.jspwiki.auth.permissions.UploadPermission "*";
-    permission com.ecyrd.jspwiki.auth.permissions.ViewPermission "*";
+grant principal com.ecyrd.jspwiki.auth.authorize.Role "Authenticated" {
+    permission com.ecyrd.jspwiki.auth.permissions.PagePermission "*", "edit,rename";
+    permission com.ecyrd.jspwiki.auth.permissions.PagePermission "Group*", "view";
+    permission com.ecyrd.jspwiki.auth.permissions.WikiPermission "createPages,createGroups";
 };
 
 
-// Administrators also are allowed to delete any page.
+// Administrators also are allowed to delete any page, and can edit/delete groups.
 
-grant principal com.ecyrd.jspwiki.auth.Role "Admin" {
-    permission com.ecyrd.jspwiki.auth.permissions.DeletePermission "*";
+grant principal com.ecyrd.jspwiki.auth.authorize.Role "Admin" {
+    permission com.ecyrd.jspwiki.auth.permissions.PagePermission "*", "rename,delete";
+    permission com.ecyrd.jspwiki.auth.permissions.PagePermission "Group*", "rename,delete";
+    permission com.ecyrd.jspwiki.auth.permissions.WikiPermission "createPages,createGroups";
 };
