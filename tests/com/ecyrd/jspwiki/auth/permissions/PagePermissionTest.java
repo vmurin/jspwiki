@@ -4,7 +4,7 @@ import junit.framework.TestCase;
 
 /**
  * @author Andrew R. Jaquith
- * @version $Revision: 1.1.2.1 $ $Date: 2005-02-01 00:41:38 $
+ * @version $Revision: 1.1.2.2 $ $Date: 2005-02-01 03:31:46 $
  */
 public class PagePermissionTest extends TestCase
 {
@@ -157,17 +157,17 @@ public class PagePermissionTest extends TestCase
 
     public final void testImpliedMask()
     {
-        int result = ( PagePermission.DELETE | PagePermission.EDIT | PagePermission.COMMENT | PagePermission.UPLOAD | PagePermission.VIEW );
-        assertEquals( result, PagePermission.impliedMask( PagePermission.DELETE ) );
+        int result = ( PagePermission.DELETE_MASK | PagePermission.EDIT_MASK | PagePermission.COMMENT_MASK | PagePermission.UPLOAD_MASK | PagePermission.VIEW_MASK );
+        assertEquals( result, PagePermission.impliedMask( PagePermission.DELETE_MASK ) );
 
-        result = ( PagePermission.EDIT | PagePermission.COMMENT | PagePermission.UPLOAD | PagePermission.VIEW );
-        assertEquals( result, PagePermission.impliedMask( PagePermission.EDIT ) );
+        result = ( PagePermission.EDIT_MASK | PagePermission.COMMENT_MASK | PagePermission.UPLOAD_MASK | PagePermission.VIEW_MASK );
+        assertEquals( result, PagePermission.impliedMask( PagePermission.EDIT_MASK ) );
 
-        result = ( PagePermission.COMMENT | PagePermission.VIEW );
-        assertEquals( result, PagePermission.impliedMask( PagePermission.COMMENT ) );
+        result = ( PagePermission.COMMENT_MASK | PagePermission.VIEW_MASK );
+        assertEquals( result, PagePermission.impliedMask( PagePermission.COMMENT_MASK ) );
 
-        result = ( PagePermission.UPLOAD | PagePermission.VIEW );
-        assertEquals( result, PagePermission.impliedMask( PagePermission.UPLOAD ) );
+        result = ( PagePermission.UPLOAD_MASK | PagePermission.VIEW_MASK );
+        assertEquals( result, PagePermission.impliedMask( PagePermission.UPLOAD_MASK ) );
     }
     
     public final void testGetName()
