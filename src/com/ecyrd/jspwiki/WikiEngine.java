@@ -1929,7 +1929,8 @@ public class WikiEngine
             }
         }
 
-        WikiContext context = new WikiContext( this, 
+        WikiContext context = new WikiContext( this,
+                                               request,
                                                wikipage );
         context.setRequestContext( requestContext );
         context.setHttpRequest( request );
