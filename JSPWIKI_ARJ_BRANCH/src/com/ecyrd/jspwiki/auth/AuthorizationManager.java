@@ -167,7 +167,7 @@ public class AuthorizationManager
         // Does the page in question have an access control list?
         // If no ACL, we check the security policy to see what the
         // defaults should be.
-        Acl acl = m_engine.getPageManager().getPermissions( page );
+        Acl acl = m_engine.getAclManager().getPermissions( page );
         if ( acl == null )
         {
             return checkStaticPermission( subject, permission );
