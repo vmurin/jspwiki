@@ -1,4 +1,4 @@
-// $Id: jspwiki.policy,v 1.1.2.4 2005-02-28 06:39:11 arj Exp $
+// $Id: jspwiki.policy,v 1.1.2.5 2005-02-28 07:10:23 arj Exp $
 //
 // This file contains the Java 2 security policy for JSPWiki.
 // It provides the permissions rules for the JSPWiki
@@ -34,14 +34,15 @@
 // And now, for the security policy
 //
 
-// JSPWiki signs its own JAR files. The keystore is here
+// JSPWiki signs its own JAR files so that the Java security polcicy
+// knows how to resolve our custom Wiki/PagePermissions. The keystore is here:
 keystore "jspwiki.jks";
 
 // JSPWiki itself needs some basic privileges in order to operate.
-// Don't change these, because it will b0rk the system.
+// Don't change these, because it will b0rk the system if you do.
 grant signedBy "jspwiki" {
-    permission com.ecyrd.jspwiki.auth.permissions.PagePermission "LoginError", "view";
     permission com.ecyrd.jspwiki.auth.permissions.PagePermission "Main", "view";
+    permission com.ecyrd.jspwiki.auth.permissions.PagePermission "LoginError", "view";
 };
 
 // Unauthenticted users are allowed to view all pages (except group
