@@ -15,6 +15,7 @@ import org.apache.log4j.Logger;
 
 import com.ecyrd.jspwiki.WikiContext;
 import com.ecyrd.jspwiki.WikiEngine;
+import com.ecyrd.jspwiki.WikiException;
 import com.ecyrd.jspwiki.WikiPage;
 import com.ecyrd.jspwiki.auth.WikiPrincipal;
 import com.ecyrd.jspwiki.filters.BasicPageFilter;
@@ -63,14 +64,19 @@ public class DefaultGroupManager implements GroupManager
         public void postSave( WikiContext context, String content )
         {
             WikiPage p = context.getPage();
+            
+            // Parse groups if name starts with GROUP_PREFIX
+            if (p.getName().startsWith(DefaultGroupManager.GROUP_PREFIX)) {
+                log.debug( "Skimming through page " + p.getName() + " to see if there are new groups..." );
 
-            log.debug( "Skimming through page " + p.getName() + " to see if there are new users..." );
+                m_engine.textToHTML( context, content );
+                
+                String groupName = p.getName().substring(DefaultGroupManager.GROUP_PREFIX.length());
+                String members = (String) p.getAttribute( ATTR_MEMBERLIST );
 
-            m_engine.textToHTML( context, content );
-
-            String members = (String) p.getAttribute( ATTR_MEMBERLIST );
-
-            updateGroup( p.getName(), parseMemberList( members ) );
+                updateGroup( groupName, parseMemberList( members ) );
+            }
+            
         }
     }
 
@@ -85,6 +91,8 @@ public class DefaultGroupManager implements GroupManager
     private WikiEngine         m_engine;
 
     private final HashMap      m_groups        = new HashMap();
+
+    public static final String GROUP_PREFIX = "Group";
 
     /**
      * Adds a Group to the group cache. Note that this method fail, and will
@@ -153,6 +161,15 @@ public class DefaultGroupManager implements GroupManager
 
         m_engine.getFilterManager().addPageFilter( new SaveFilter(), 1000000 );
 
+        if (!m_engine.pageExists(GROUP_PREFIX)) {
+            WikiContext context = new WikiContext( m_engine, null, new WikiPage(GROUP_PREFIX) );
+            try {
+                m_engine.saveText(context, "This is the group configuration page. All group definitions are sub-pages of this page.");
+            }
+            catch (WikiException e) {
+                throw new IllegalStateException("Could not save default group page " + GROUP_PREFIX);
+            }
+        }
         reload();
     }
 
