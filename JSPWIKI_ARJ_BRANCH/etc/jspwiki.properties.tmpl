@@ -318,7 +318,8 @@ jspwiki.plugin.searchPath =
 #
 #  Override with your own UserDatabase implementation with this property:
 #
-# jspwiki.userdatabase = WikiDatabase
+jspwiki.userdatabase = com.ecyrd.jspwiki.auth.user.XMLUserDatabase
+jspwiki.xmlUserDatabaseFile = userdatabase.xml
 
 #
 # By default, at least the LoginError page is readable by anyone, and
