@@ -3,10 +3,12 @@
 <%@ page import="java.util.*" %>
 <%@ page import="java.text.SimpleDateFormat" %>
 <%@ page import="java.security.Principal" %>
+<%@ page import="java.security.Permission" %>
+<%@ page import="com.ecyrd.jspwiki.auth.login.AnonymousLoginModule" %>
+<%@ page import="com.ecyrd.jspwiki.auth.permissions.PagePermission" %>
 <%@ page import="com.ecyrd.jspwiki.tags.WikiTagBase" %>
 <%@ page import="com.ecyrd.jspwiki.WikiProvider" %>
 <%@ page import="com.ecyrd.jspwiki.auth.AuthorizationManager" %>
-<%@ page import="com.ecyrd.jspwiki.auth.permissions.CommentPermission" %>
 <%@ page errorPage="/Error.jsp" %>
 <%@ taglib uri="/WEB-INF/jspwiki.tld" prefix="wiki" %>
 
@@ -22,17 +24,19 @@
 
 
 <%
+    WikiContext wikiContext = wiki.createContext( request, WikiContext.COMMENT );
+    WikiSession wikiSession = wikiContext.getWikiSession(); 
+    String user = wikiSession.getUserPrincipal().getName();
+    if ( !wikiSession.isAuthenticated() && wikiSession.isAnonymous() ) {
+        user  = wiki.safeGetParameter( request, "user" );
+    }
     String action  = request.getParameter("action");
     String ok      = request.getParameter("ok");
     String preview = request.getParameter("preview");
     String cancel  = request.getParameter("cancel");
-    String author  = wiki.safeGetParameter( request, "author" );
     String remember = request.getParameter("remember");
-
-    WikiContext wikiContext = wiki.createContext( request, 
-                                                  WikiContext.COMMENT );
-
     String pagereq = wikiContext.getPage().getName();
+
 
     NDC.push( wiki.getApplicationName()+":"+pagereq );    
 
@@ -45,12 +49,12 @@
     }
 
     AuthorizationManager mgr = wiki.getAuthorizationManager();
-    Principal currentUser  = wikiContext.getCurrentUser();
 
+    Permission requiredPermission = new PagePermission( pagereq, "comment" );
     if( !mgr.checkPermission( wikiContext,
-                              new CommentPermission() ) )
+                              requiredPermission ) )
     {
-        log.info("User "+currentUser.getName()+" has no access - redirecting to login page.");
+        log.info("User "+user+" has no access - redirecting to login page.");
         String pageurl = wiki.encodeName( pagereq );
         response.sendRedirect( wiki.getBaseURL()+"Login.jsp?page="+pageurl );
         return;
@@ -73,7 +77,7 @@
 
     if( ok != null )
     {
-        log.info("Saving page "+pagereq+". User="+request.getRemoteUser()+", host="+request.getRemoteAddr() );
+        log.info("Saving page "+pagereq+". User="+user+", host="+request.getRemoteAddr() );
 
         //  FIXME: I am not entirely sure if the JSP page is the
         //  best place to check for concurrent changes.  It certainly
@@ -107,7 +111,7 @@
         //  Set author information
         //
 
-        wikipage.setAuthor( currentUser.getName() );
+        wikipage.setAuthor( user );
 
         StringBuffer pageText = new StringBuffer(wiki.getPureText( wikipage ));
 
@@ -123,20 +127,17 @@
 
         pageText.append( wiki.safeGetParameter( request, "text" ) );
 
-        log.debug("Author name ="+author);
-        if( author != null && author.length() > 0 )
-        {
-            Calendar cal = Calendar.getInstance();
-            SimpleDateFormat fmt = new SimpleDateFormat("dd-MMM-yyyy");
+        log.debug("Author name ="+user);
+        Calendar cal = Calendar.getInstance();
+        SimpleDateFormat fmt = new SimpleDateFormat("dd-MMM-yyyy");
 
-            pageText.append("\n\n--"+author+", "+fmt.format(cal.getTime()));
-        }
+        pageText.append("\n\n--"+user+", "+fmt.format(cal.getTime()));
 
         wiki.saveText( wikiContext, pageText.toString() );
 
         if( remember != null )
         {
-            wiki.getUserManager().setUserCookie( response, author );            
+            AnonymousLoginModule.setUserCookie( response, user );            
         }
 
         response.sendRedirect(wiki.getViewURL(pagereq));
@@ -145,8 +146,7 @@
     else if( preview != null )
     {
         log.debug("Previewing "+pagereq);
-        if( author == null ) author = "";
-        pageContext.forward( "Preview.jsp?action=comment&author="+author );
+        pageContext.forward( "Preview.jsp?action=comment&author="+user );
     }
     else if( cancel != null )
     {
@@ -162,7 +162,7 @@
         return;
     }
 
-    log.info("Commenting page "+pagereq+". User="+request.getRemoteUser()+", host="+request.getRemoteAddr() );
+    log.info("Commenting page "+pagereq+". User="+user+", host="+request.getRemoteAddr() );
 
     //
     //  Determine and store the date the latest version was changed.  Since
@@ -185,7 +185,7 @@
     //  Attempt to lock the page.
     //
     PageLock lock = wiki.getPageManager().lockPage( wikipage, 
-                                                    currentUser.getName() );
+                                                    user );
 
     if( lock != null )
     {
