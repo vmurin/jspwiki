@@ -1988,7 +1988,7 @@ public class WikiEngine
 
     /**
      * @since 2.1.165
-     * @return
+     * @return the RSSGenerator
      */
     public RSSGenerator getRSSGenerator()
     {
