@@ -1,12 +1,12 @@
 <%@ page import="org.apache.log4j.*" %>
 <%@ page import="com.ecyrd.jspwiki.*" %>
-<%@ page import="java.security.Permission" %>
-<%@ page import="java.security.Principal" %>
 <%@ page import="java.util.*" %>
 <%@ page import="java.text.SimpleDateFormat" %>
 <%@ page import="com.ecyrd.jspwiki.tags.WikiTagBase" %>
 <%@ page import="com.ecyrd.jspwiki.WikiProvider" %>
 <%@ page import="com.ecyrd.jspwiki.auth.AuthorizationManager" %>
+<%@ page import="java.security.Permission" %>
+<%@ page import="java.security.Principal" %>
 <%@ page import="com.ecyrd.jspwiki.auth.permissions.PagePermission" %>
 <%@ page import="com.ecyrd.jspwiki.auth.permissions.WikiPermission" %>
 <%@ page errorPage="/Error.jsp" %>
@@ -32,6 +32,9 @@
 
     WikiPage wikipage      = wikiContext.getPage();
     WikiPage latestversion = wiki.getPage( pagereq );
+
+    String delete = wiki.safeGetParameter( request, "delete" );
+    String deleteall = wiki.safeGetParameter( request, "delete-all" );
 
     if( latestversion == null )
     {
@@ -61,15 +64,35 @@
 
     response.setContentType("text/html; charset="+wiki.getContentEncoding() );
 
-    // ARJ hack: so it will compile.
-    String delete = null;
-
-    if( delete != null )
+    if( deleteall != null )
     {
-        log.info("Deleting page "+pagereq+". User="+currentUser.getName()+", host="+request.getRemoteAddr() );
+        log.info("Deleting page "+pagereq+". User="+request.getRemoteUser()+", host="+request.getRemoteAddr() );
 
+        wiki.deletePage( pagereq );
         response.sendRedirect(wiki.getViewURL(pagereq));
         return;
+    }
+    else if( delete != null )
+    {
+        log.info("Deleting a range of pages from "+pagereq);
+        
+        for( Enumeration params = request.getParameterNames(); params.hasMoreElements(); )
+        {
+            String paramName = (String)params.nextElement();
+            
+            if( paramName.startsWith("delver") )
+            {
+                int version = Integer.parseInt( paramName.substring(7) );
+                
+                WikiPage p = wiki.getPage( pagereq, version );
+                
+                log.debug("Deleting version "+version);
+                wiki.deleteVersion( p );
+            }
+        }
+        
+        response.sendRedirect(wiki.getURL( WikiContext.INFO, pagereq, null, false ));
+        return; 
     }
 
     // FIXME: not so.

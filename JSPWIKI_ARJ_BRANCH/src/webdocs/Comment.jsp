@@ -2,13 +2,13 @@
 <%@ page import="com.ecyrd.jspwiki.*" %>
 <%@ page import="java.util.*" %>
 <%@ page import="java.text.SimpleDateFormat" %>
-<%@ page import="java.security.Principal" %>
-<%@ page import="java.security.Permission" %>
-<%@ page import="com.ecyrd.jspwiki.auth.login.AnonymousLoginModule" %>
-<%@ page import="com.ecyrd.jspwiki.auth.permissions.PagePermission" %>
 <%@ page import="com.ecyrd.jspwiki.tags.WikiTagBase" %>
 <%@ page import="com.ecyrd.jspwiki.WikiProvider" %>
 <%@ page import="com.ecyrd.jspwiki.auth.AuthorizationManager" %>
+<%@ page import="java.security.Principal" %>
+<%@ page import="java.security.Permission" %>
+<%@ page import="com.ecyrd.jspwiki.auth.login.CookieAssertionLoginModule" %>
+<%@ page import="com.ecyrd.jspwiki.auth.permissions.PagePermission" %>
 <%@ page errorPage="/Error.jsp" %>
 <%@ taglib uri="/WEB-INF/jspwiki.tld" prefix="wiki" %>
 
@@ -34,9 +34,9 @@
     String ok      = request.getParameter("ok");
     String preview = request.getParameter("preview");
     String cancel  = request.getParameter("cancel");
+    String author  = wiki.safeGetParameter( request, "author" );
     String remember = request.getParameter("remember");
     String pagereq = wikiContext.getPage().getName();
-
 
     NDC.push( wiki.getApplicationName()+":"+pagereq );    
 
@@ -127,17 +127,20 @@
 
         pageText.append( wiki.safeGetParameter( request, "text" ) );
 
-        log.debug("Author name ="+user);
-        Calendar cal = Calendar.getInstance();
-        SimpleDateFormat fmt = new SimpleDateFormat("dd-MMM-yyyy");
+        log.debug("Author name ="+author);
+        if( author != null && author.length() > 0 )
+        {
+            Calendar cal = Calendar.getInstance();
+            SimpleDateFormat fmt = new SimpleDateFormat("dd-MMM-yyyy");
 
-        pageText.append("\n\n--"+user+", "+fmt.format(cal.getTime()));
+            pageText.append("\n\n--"+author+", "+fmt.format(cal.getTime()));
+        }
 
         wiki.saveText( wikiContext, pageText.toString() );
 
         if( remember != null )
         {
-            AnonymousLoginModule.setUserCookie( response, user );            
+            CookieAssertionLoginModule.setUserCookie( response, user );            
         }
 
         response.sendRedirect(wiki.getViewURL(pagereq));
@@ -146,7 +149,8 @@
     else if( preview != null )
     {
         log.debug("Previewing "+pagereq);
-        pageContext.forward( "Preview.jsp?action=comment&author="+user );
+        if( author == null ) author = "";
+        pageContext.forward( "Preview.jsp?action=comment&author="+author );
     }
     else if( cancel != null )
     {
@@ -162,7 +166,7 @@
         return;
     }
 
-    log.info("Commenting page "+pagereq+". User="+user+", host="+request.getRemoteAddr() );
+    log.info("Commenting page "+pagereq+". User="+request.getRemoteUser()+", host="+request.getRemoteAddr() );
 
     //
     //  Determine and store the date the latest version was changed.  Since

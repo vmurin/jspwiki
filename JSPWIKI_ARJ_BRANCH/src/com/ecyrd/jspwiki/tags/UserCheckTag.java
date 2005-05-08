@@ -29,20 +29,14 @@ import com.ecyrd.jspwiki.WikiSession;
  *  been considerably enhanced for 2.2.  The possibilities for the "status"-argument are:
  *
  * <ul>
- * <li>"unknown"     - the body of the tag is included 
- *                     if the user is completely unknown (no cookie, no password)
- * <li>"known"       - the body of the tag is included 
- *                     if the user is not unknown (i.e has a cookie, 
- *                     or has been authenticated.
- * <li>"named"       - the body of the tag is included 
- *                     if the user has either been named by a cookie, but
- *                     not been authenticated.
- * <li>"validated"   - the body of the tag is included 
- *                     if the user is validated either through the container,
- *                     or by our own authentication.
- * <li>"unvalidated" - the body of the tag is included 
- *                     if the user is not validated (i.e. he could have a cookie,
- *                     but has not been authenticated.)
+ * <li>"anonymous"     - the body of the tag is included 
+ *                       if the user is completely unknown (no cookie, no password)
+ * <li>"asserted"      - the body of the tag is included 
+ *                       if the user has either been named by a cookie, but
+ *                       not been authenticated.
+ * <li>"authenticated" - the body of the tag is included 
+ *                       if the user is validated either through the container,
+ *                       or by our own authentication.
  * </ul>
  *
  *  If the old "exists" -argument is used, it corresponds as follows:
@@ -82,11 +76,11 @@ public class UserCheckTag
     {
         if("true".equals(arg))
         {
-            m_status = "known";
+            m_status = "authenticated";
         }
         else
         {
-            m_status = "unknown";
+            m_status = "anonymous";
         }
     }
 
@@ -105,30 +99,20 @@ public class UserCheckTag
 
         if( m_status != null )
         {
-            if ( "unknown".equals( m_status )) {
+            if ( "anonymous".equals( m_status )) {
               if (status.equals(WikiSession.ANONYMOUS)) {
                 return EVAL_BODY_INCLUDE;
               }
             }
-            else if( "known".equals( m_status )) { 
+            else if( "authenticated".equals( m_status )) { 
               if (status.equals(WikiSession.AUTHENTICATED)) {
                 return EVAL_BODY_INCLUDE;
               }
             }
-            else if( "named".equals( m_status )) { 
+            else if( "asserted".equals( m_status )) { 
                 if (status.equals(WikiSession.ASSERTED)) {
                   return EVAL_BODY_INCLUDE;
                 }
-            }
-            else if( "unvalidated".equals( m_status )) {
-              if (status.equals(WikiSession.UNVALIDATED)) {
-                return EVAL_BODY_INCLUDE;
-              }
-            }
-            else if( "validated".equals( m_status )) { 
-              if (status.equals(WikiSession.AUTHENTICATED)) {
-                return EVAL_BODY_INCLUDE;
-              }
             }
         }
 

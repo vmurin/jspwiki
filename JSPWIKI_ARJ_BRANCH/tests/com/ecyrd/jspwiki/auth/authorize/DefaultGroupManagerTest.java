@@ -11,6 +11,7 @@ import junit.framework.TestSuite;
 
 import com.ecyrd.jspwiki.TestEngine;
 import com.ecyrd.jspwiki.auth.WikiPrincipal;
+import com.ecyrd.jspwiki.providers.ProviderException;
 
 public class DefaultGroupManagerTest extends TestCase
 {
@@ -44,10 +45,16 @@ public class DefaultGroupManagerTest extends TestCase
 
     public void tearDown()
     {
-        m_engine.deletePage( "GroupTest" );
-        m_engine.deletePage( "GroupTest2" );
-        m_engine.deletePage( "BadGroupTest" );
-    }
+        try
+        {
+            m_engine.deletePage( "GroupTest" );
+            m_engine.deletePage( "GroupTest2" );
+            m_engine.deletePage( "BadGroupTest" );
+        }
+        catch ( ProviderException e )
+        {
+        }
+   }
 
     public void testGroupFormation() throws Exception
     {
@@ -83,6 +90,7 @@ public class DefaultGroupManagerTest extends TestCase
     public void testBadGroupFormation() throws Exception
     {
         // BadGroup doesn't start with "Group", so there should be no group created for it
+        // (Groups must start with the word "Group")
         Principal p = new WikiPrincipal( "Arnold" );
         Subject s = new Subject();
         s.getPrincipals().add(p);

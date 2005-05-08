@@ -7,11 +7,13 @@ import javax.security.auth.Subject;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
+import javax.servlet.http.Cookie;
 
 import junit.framework.TestCase;
 
 import com.ecyrd.jspwiki.NoRequiredPropertyException;
 import com.ecyrd.jspwiki.TestHttpServletRequest;
+import com.ecyrd.jspwiki.auth.AuthenticationManager;
 import com.ecyrd.jspwiki.auth.WikiPrincipal;
 import com.ecyrd.jspwiki.auth.authorize.Role;
 import com.ecyrd.jspwiki.auth.user.UserDatabase;
@@ -19,9 +21,9 @@ import com.ecyrd.jspwiki.auth.user.XMLUserDatabase;
 
 /**
  * @author Andrew R. Jaquith
- * @version $Revision: 1.1.2.2 $ $Date: 2005-05-08 18:39:53 $
+ * @version $Revision: 1.1.2.1 $ $Date: 2005-05-08 18:39:53 $
  */
-public class AnonymousLoginModuleTest extends TestCase
+public class CookieAssertionLoginModuleTest extends TestCase
 {
     UserDatabase db;
 
@@ -33,14 +35,21 @@ public class AnonymousLoginModuleTest extends TestCase
         request.setRemoteAddr( "53.33.128.9" );
         try
         {
-            // Test using IP address (AnonymousLoginModule succeeds)
+            // We can use cookies right?
+            assertTrue( AuthenticationManager.allowsCookieAssertions() );
+            
+            // Test using Cookie and IP address (AnonymousLoginModule succeeds)
+            Cookie cookie = new Cookie( CookieAssertionLoginModule.PREFS_COOKIE_NAME, "Bullwinkle" );
+            request.setCookies( new Cookie[]
+            { cookie } );
+            subject = new Subject();
             CallbackHandler handler = new WebContainerCallbackHandler( request, db );
             LoginContext context = new LoginContext( "JSPWiki-container", subject, handler );
             context.login();
             Set principals = subject.getPrincipals();
             assertEquals( 3, principals.size() );
-            assertTrue( principals.contains( new WikiPrincipal( "53.33.128.9" ) ) );
-            assertTrue( principals.contains( Role.ANONYMOUS ) );
+            assertTrue( principals.contains( new WikiPrincipal( "Bullwinkle" ) ) );
+            assertTrue( principals.contains( Role.ASSERTED ) );
             assertTrue( principals.contains( Role.ALL ) );
         }
         catch( LoginException e )

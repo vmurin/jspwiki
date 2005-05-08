@@ -6,7 +6,7 @@ import com.ecyrd.jspwiki.attachment.Attachment;
 import junit.framework.*;
 import java.util.*;
 import org.apache.xmlrpc.*;
-
+import com.ecyrd.jspwiki.xmlrpc.RPCHandler;
 
 public class RPCHandlerTest extends TestCase
 {
@@ -35,8 +35,9 @@ public class RPCHandlerTest extends TestCase
 
     public void tearDown()
     {
-        m_engine.deletePage( NAME1 );
+        TestEngine.deleteTestPage( NAME1 );
         m_engine.deleteAttachments( NAME1 );
+        TestEngine.emptyWorkDir();
     }
 
     public void testNonexistantPage()
@@ -66,7 +67,7 @@ public class RPCHandlerTest extends TestCase
 
         Calendar cal = Calendar.getInstance();
         cal.setTime( modDate );
-        cal.add( Calendar.MINUTE, -1 );
+        cal.add( Calendar.HOUR, -1 );
 
         // Go to UTC
         cal.add( Calendar.MILLISECOND, 
@@ -97,7 +98,7 @@ public class RPCHandlerTest extends TestCase
 
         Calendar cal = Calendar.getInstance();
         cal.setTime( modDate );
-        cal.add( Calendar.MINUTE, -1 );
+        cal.add( Calendar.HOUR, -1 );
 
         // Go to UTC
         cal.add( Calendar.MILLISECOND, 
@@ -186,21 +187,23 @@ public class RPCHandlerTest extends TestCase
 
         Hashtable linkinfo = (Hashtable) links.elementAt(0);
 
-        assertEquals( "name", "Foobar", linkinfo.get("page") );
-        assertEquals( "type", "local",  linkinfo.get("type") );
-        assertEquals( "href", "Edit.jsp?page=Foobar", linkinfo.get("href") );
+        assertEquals( "edit name", "Foobar", linkinfo.get("page") );
+        assertEquals( "edit type", "local",  linkinfo.get("type") );
+        assertEquals( "edit href", "Edit.jsp?page=Foobar", linkinfo.get("href") );
 
         linkinfo = (Hashtable) links.elementAt(1);
 
-        assertEquals( "name", NAME1+"%2FTestAtt.txt", linkinfo.get("page") );
-        assertEquals( "type", "local", linkinfo.get("type") );
-        assertEquals( "href", "attach?page="+NAME1+"%2FTestAtt.txt", linkinfo.get("href") );
+        assertEquals( "att name", NAME1+"/TestAtt.txt", linkinfo.get("page") );
+        assertEquals( "att type", "local", linkinfo.get("type") );
+        assertEquals( "att href", "attach/"+NAME1+"/TestAtt.txt", linkinfo.get("href") );
     }
 
+    /*
+     * TODO: ENABLE
     public void testPermissions()
         throws Exception
     {
-        String text ="Blaa. [{ALLOW view NamedGuest}]";
+        String text ="Blaa. [{DENY view Guest}] [{ALLOW view NamedGuest}]";
 
         m_engine.saveText( NAME1, text );
 
@@ -218,7 +221,8 @@ public class RPCHandlerTest extends TestCase
         }
         catch( XmlRpcException e ) {}
     }
-
+*/
+    
     public static Test suite()
     {
         return new TestSuite( RPCHandlerTest.class );

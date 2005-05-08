@@ -19,6 +19,7 @@ import com.ecyrd.jspwiki.WikiPage;
 import com.ecyrd.jspwiki.WikiSession;
 import com.ecyrd.jspwiki.auth.acl.Acl;
 import com.ecyrd.jspwiki.auth.acl.AclEntry;
+import com.ecyrd.jspwiki.auth.acl.UnresolvedPrincipal;
 import com.ecyrd.jspwiki.auth.authorize.DefaultGroup;
 import com.ecyrd.jspwiki.auth.authorize.Group;
 import com.ecyrd.jspwiki.auth.authorize.GroupManager;
@@ -28,6 +29,7 @@ import com.ecyrd.jspwiki.auth.permissions.WikiPermission;
 import com.ecyrd.jspwiki.auth.user.DefaultUserProfile;
 import com.ecyrd.jspwiki.auth.user.DuplicateUserException;
 import com.ecyrd.jspwiki.auth.user.UserProfile;
+import com.ecyrd.jspwiki.providers.ProviderException;
 
 /**
  * Tests the AuthorizationManager class.
@@ -54,12 +56,6 @@ public class AuthorizationManagerTest extends TestCase
         props.load( TestEngine.findTestProperties() );
         m_engine = new TestEngine( props );
         m_auth = m_engine.getAuthorizationManager();
-    }
-
-    public void tearDown()
-    {
-        m_engine.deletePage( "Test" );
-        m_engine.deletePage( "AdminGroup" );
     }
 
     /**
@@ -119,6 +115,16 @@ public class AuthorizationManagerTest extends TestCase
         // Test user principal (non-WikiPrincipal) posession
         assertTrue("Alice has Alice", m_auth.hasRoleOrPrincipal( context, new TestPrincipal("Alice")));
         assertFalse("Alice has Bob", m_auth.hasRoleOrPrincipal( context, new TestPrincipal("Bob")));
+        
+        // Cleanup
+        try
+        {
+            m_engine.deletePage( "Test" );
+        }
+        catch ( ProviderException e ) 
+        {
+            assertTrue(false);
+        }
     }
     
     public void testStaticPermission()
@@ -271,8 +277,8 @@ public class AuthorizationManagerTest extends TestCase
         super.assertNotSame( new WikiPrincipal("Authenticated"), m_auth.resolvePrincipal( "Authenticated" ) );
         super.assertEquals( Role.AUTHENTICATED, m_auth.resolvePrincipal( "Authenticated" ) );
 
-        // An unknown user should resolve to a generic WikiPrincipal
-        Principal principal = new WikiPrincipal("Bart Simpson");
+        // An unknown user should resolve to a generic UnresolvedPrincipal
+        Principal principal = new UnresolvedPrincipal("Bart Simpson");
         assertEquals( principal, m_auth.resolvePrincipal("Bart Simpson"));
     }
     
@@ -299,9 +305,9 @@ public class AuthorizationManagerTest extends TestCase
         session.getSubject().getPrincipals().clear();
         session.getSubject().getPrincipals().add( principal );
         session.getSubject().getPrincipals().add( Role.ANONYMOUS );
-        assertTrue( "Charlie", mgr.checkPermission( context,
+        assertTrue( "Charlie view", mgr.checkPermission( context,
                 new PagePermission( "TestPage", "view" ) ) );
-        assertFalse( "Charlie", mgr.checkPermission( context,
+        assertFalse( "Charlie edit", mgr.checkPermission( context,
                 new PagePermission( "TestPage", "edit" ) ) );
 
         // Bob is logged in
@@ -309,10 +315,20 @@ public class AuthorizationManagerTest extends TestCase
         session.getSubject().getPrincipals().clear();
         session.getSubject().getPrincipals().add( principal );
         session.getSubject().getPrincipals().add( Role.AUTHENTICATED );
-        assertTrue( "Bob", mgr.checkPermission( context,
+        assertTrue( "Bob view", mgr.checkPermission( context,
                 new PagePermission( "TestPage", "view" ) ) );
-        assertTrue( "Bob", mgr.checkPermission( context,
+        assertTrue( "Bob edit", mgr.checkPermission( context,
                 new PagePermission( "TestPage", "edit" ) ) );
+
+        // Cleanup
+        try
+        {
+            m_engine.deletePage( "TestDefaultPage" );
+        }
+        catch ( ProviderException e ) 
+        {
+            assertTrue(false);
+        }
     }
 
     public void testPrincipalAclPermissions() throws Exception
@@ -343,6 +359,16 @@ public class AuthorizationManagerTest extends TestCase
         session.getSubject().getPrincipals().add( Role.ANONYMOUS );
         assertFalse( "Bar view Test", m_auth.checkPermission( context, new PagePermission( "Test", "view" ) ) );
         assertFalse( "Bar !view all", m_auth.checkPermission( context, new PagePermission( "Test", "edit" ) ) );
+        
+        // Cleanup
+        try
+        {
+            m_engine.deletePage( "Test" );
+        }
+        catch ( ProviderException e ) 
+        {
+            assertTrue(false);
+        }
     }
 
     public void testRoleAclPermissions() throws Exception
@@ -373,6 +399,16 @@ public class AuthorizationManagerTest extends TestCase
         session.getSubject().getPrincipals().add( Role.ANONYMOUS );
         assertFalse( "Bar view Test", m_auth.checkPermission( context, new PagePermission( "Test", "view" ) ) );
         assertFalse( "Bar !view all", m_auth.checkPermission( context, new PagePermission( "Test", "edit" ) ) );
+        
+        // Cleanup
+        try
+        {
+            m_engine.deletePage( "Test" );
+        }
+        catch ( ProviderException e ) 
+        {
+            assertTrue(false);
+        }
     }
 
     /**

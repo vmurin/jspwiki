@@ -24,6 +24,7 @@ import java.io.ByteArrayOutputStream;
  * - ARJ, 4/04
  *
  * @author Craig R. McClanahan
+ * @since 2.3
  */
 
 public final class HexUtils {

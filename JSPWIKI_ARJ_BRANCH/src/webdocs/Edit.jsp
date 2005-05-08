@@ -1,15 +1,16 @@
 <%@ page import="org.apache.log4j.*" %>
 <%@ page import="com.ecyrd.jspwiki.*" %>
 <%@ page import="com.ecyrd.jspwiki.filters.*" %>
-<%@ page import="java.security.Permission" %>
-<%@ page import="java.security.Principal" %>
 <%@ page import="java.util.*" %>
 <%@ page import="java.text.SimpleDateFormat" %>
 <%@ page import="com.ecyrd.jspwiki.tags.WikiTagBase" %>
 <%@ page import="com.ecyrd.jspwiki.WikiProvider" %>
 <%@ page import="com.ecyrd.jspwiki.auth.AuthorizationManager" %>
-<%@ page import="com.ecyrd.jspwiki.auth.permissions.PagePermission" %>
+<%@ page import="java.security.Permission" %>
+<%@ page import="java.security.Principal" %>
 <%@ page import="com.ecyrd.jspwiki.auth.permissions.WikiPermission" %>
+<%@ page import="com.ecyrd.jspwiki.auth.authorize.DefaultGroupManager" %>
+<%@ page import="com.ecyrd.jspwiki.auth.permissions.PagePermission" %>
 <%@ page errorPage="/Error.jsp" %>
 <%@ taglib uri="/WEB-INF/jspwiki.tld" prefix="wiki" %>
 
@@ -28,7 +29,8 @@
     WikiContext wikiContext = wiki.createContext( request, WikiContext.EDIT );
     WikiSession wikiSession = wikiContext.getWikiSession(); 
     String user = wikiSession.getUserPrincipal().getName();
-    if ( !wikiSession.isAuthenticated() && wikiSession.isAnonymous() ) {
+    if ( !wikiSession.isAuthenticated() && wikiSession.isAnonymous() )
+    {
         user  = wiki.safeGetParameter( request, "author" );
     }
     String action  = request.getParameter("action");
@@ -36,6 +38,7 @@
     String preview = request.getParameter("preview");
     String cancel  = request.getParameter("cancel");
     String append  = request.getParameter("append");
+    String author  = wiki.safeGetParameter( request, "author" );
     String text    = wiki.safeGetParameter( request, "text" );
     String pagereq = wikiContext.getPage().getName();
 
@@ -55,7 +58,14 @@
     }
     else
     {
-        requiredPermission = WikiPermission.CREATE_PAGES;
+    	    if ( pagereq.startsWith( DefaultGroupManager.GROUP_PREFIX ) )
+    	    {
+            requiredPermission = WikiPermission.CREATE_GROUPS;
+    	    }
+    	    else
+    	    {
+            requiredPermission = WikiPermission.CREATE_PAGES;
+        }
     }   
 
     AuthorizationManager mgr = wiki.getAuthorizationManager();
