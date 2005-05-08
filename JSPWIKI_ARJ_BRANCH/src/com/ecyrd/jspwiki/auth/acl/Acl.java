@@ -52,7 +52,8 @@ import java.util.Enumeration;
  * to the complexities associated with resolving Role principal membership.
  * </p>
  * @author Janne Jalkanen
- * @author Andrew R. Jaquith
+ * @author Andrew Jaquith
+ * @version $Revision: 1.1.2.2 $ $Date: 2005-05-08 18:03:59 $
  * @since 2.3
  */
 public interface Acl
@@ -78,15 +79,20 @@ public interface Acl
 
     /**
      * Returns all Principal objects assigned a given Permission in the access
-     * control list. The Princiapls returned are those that have been
-     * granted either the supplied permission, or a permission
-     * implied by the supplied permission. Principals are not "expanded"
-     * if they are a role or group.
+     * control list. The Princiapls returned are those that have been granted
+     * either the supplied permission, or a permission implied by the supplied
+     * permission. Principals are not "expanded" if they are a role or group.
      * @param permission
-     * @return
+     * @return an array of Principals posessing the permission
      */
     public Principal[] findPrincipals( Permission permission );
 
+    /**
+     * Returns an AclEntry for a supplied Principal, or <code>null</code> if
+     * the Principal does not have a matching AclEntry.
+     * @param principal
+     * @return the AclEntry associated with the principal, or <code>null</code>
+     */
     public AclEntry getEntry( Principal principal );
 
     /**

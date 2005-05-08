@@ -21,7 +21,6 @@ package com.ecyrd.jspwiki;
 
 import java.util.Date;
 import java.util.HashMap;
-
 import com.ecyrd.jspwiki.auth.acl.Acl;
 
 import com.ecyrd.jspwiki.providers.WikiPageProvider;
@@ -36,7 +35,8 @@ import com.ecyrd.jspwiki.providers.WikiPageProvider;
 //        need to figure out the metadata lifecycle.
 
 public class WikiPage
-    implements Cloneable
+    implements Cloneable,
+               Comparable
 {
     private String       m_name;
     private Date         m_lastModified;
@@ -183,7 +183,7 @@ public class WikiPage
     private boolean m_hasMetadata = false;
 
     /**
-     *  Returns true, if the page has valid metadata, i.e. it has been parsed.
+     *  Returns <code>true</code> if the page has valid metadata; that is, it has been parsed.
      */
     public boolean hasMetadata()
     {
@@ -213,5 +213,20 @@ public class WikiPage
         p.m_lastModified = (Date)m_lastModified.clone();
 
         return p;
+    }
+    
+    public int compareTo( Object o )
+    {
+        int res = 0;
+        if( o instanceof WikiPage )
+        {
+            WikiPage c = (WikiPage)o;
+        
+            res = this.getName().compareTo(c.getName());
+            
+            if( res == 0 ) res = this.getVersion()-c.getVersion();
+        }
+            
+        return res;
     }
 }

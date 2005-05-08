@@ -21,10 +21,10 @@ import java.util.Enumeration;
  * "Authenticated" etc.)</li>
  * <li>Groups cannot have the same name as an existing user</li>
  * </ul>
- * @author Andrew R. Jaquith
  * @author Janne Jalkanen
+ * @author Andrew Jaquith
+ * @version $Revision: 1.1.2.2 $ $Date: 2005-05-08 18:04:31 $
  * @since 2.3
- * @version $Revision: 1.1.2.1 $ $Date: 2005-02-01 02:53:57 $
  */
 public interface Group extends Principal
 {

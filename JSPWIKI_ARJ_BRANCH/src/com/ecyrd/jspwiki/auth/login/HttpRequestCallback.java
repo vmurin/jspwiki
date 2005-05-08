@@ -4,12 +4,14 @@ import javax.security.auth.callback.Callback;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * Callback for requesting and supplying a HttpServletRequest. required by a
- * LoginModule. This This Callback is used by LoginModules needing access to the
- * servlet request's
+ * Callback for requesting and supplying a HttpServletRequest required by a
+ * LoginModule. This Callback is used by LoginModules needing access to the
+ * servlet request.
  * @link javax.servlet.http.HttpServletRequest#getUserPrincipal() or
  * @link javax.servlet.http.HttpServletRequest#getRemoteUser() methods.
  * @author Andrew Jaquith
+ * @version $Revision: 1.1.2.2 $ $Date: 2005-05-08 18:05:19 $
+ * @since 2.3
  */
 public class HttpRequestCallback implements Callback
 {

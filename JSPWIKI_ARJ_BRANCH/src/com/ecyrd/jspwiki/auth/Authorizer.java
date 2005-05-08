@@ -8,23 +8,12 @@ import com.ecyrd.jspwiki.WikiContext;
 
 /**
  * Interface for service providers of authorization information.
- * @author Andrew R. Jaquith
- * @version $Revision: 1.1.4.2 $ $Date: 2005-02-14 05:08:58 $
+ * @author Andrew Jaquith
+ * @version $Revision: 1.1.4.3 $ $Date: 2005-05-08 18:03:20 $
+ * @since 2.3
  */
 public interface Authorizer
 {
-
-    /**
-     * Determines whether the user represented by a supplied Subject is in a
-     * particular role. This method takes three parameters. Context may be null;
-     * however, if a Authorizer implementation requires it (e.g.,
-     * WebContainerAuthorizer), this method must return false.
-     * @param context the current WikiContext
-     * @param subject
-     * @param role
-     * @return
-     */
-    public boolean isUserInRole( WikiContext context, Subject subject, Principal role );
 
     /**
      * Looks up and returns a role principal matching a given string.
@@ -35,5 +24,18 @@ public interface Authorizer
      * @return the role principal
      */
     public Principal findRole( String role );
-    
+
+    /**
+     * Determines whether the user represented by a supplied Subject is in a
+     * particular role. This method takes three parameters. Context may be null;
+     * however, if a Authorizer implementation requires it (e.g.,
+     * WebContainerAuthorizer), this method must return false.
+     * @param context the current WikiContext
+     * @param subject the current subject
+     * @param role the role to check
+     * @return <code>true</code> if the user is considered in the role,
+     *         <code>false</code> otherwise
+     */
+    public boolean isUserInRole( WikiContext context, Subject subject, Principal role );
+
 }

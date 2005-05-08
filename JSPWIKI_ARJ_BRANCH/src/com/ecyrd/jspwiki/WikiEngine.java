@@ -43,6 +43,7 @@ import com.ecyrd.jspwiki.filters.FilterException;
 import com.ecyrd.jspwiki.filters.FilterManager;
 
 import com.ecyrd.jspwiki.util.ClassUtil;
+import com.ecyrd.jspwiki.diff.DifferenceManager;
 
 /**
  *  Provides Wiki services to the JSP page.
@@ -74,11 +75,14 @@ public class WikiEngine
 
     /** The web.xml parameter that defines where the config file is to be found. 
      *  If it is not defined, uses the default as defined by DEFAULT_PROPERTYFILE. 
-     *  @value jspwiki.propertyfile
+     *  {@value jspwiki.propertyfile}
      */
 
     public static final String PARAM_PROPERTYFILE = "jspwiki.propertyfile";
 
+    /** Property for application name */
+    public static final String PROP_APPNAME      = "jspwiki.applicationName";
+    
     /** Property start for any interwiki reference. */
     public static final String PROP_INTERWIKIREF = "jspwiki.interWikiRef.";
 
@@ -122,7 +126,7 @@ public class WikiEngine
     private static final String  PROP_ACLMANAGER     = "jspwiki.aclManager";
 
     /** Path to the default property file. 
-     *  @value /WEB_INF/jspwiki.properties
+     * {@value /WEB_INF/jspwiki.properties}
      */
     public static final String DEFAULT_PROPERTYFILE = "/WEB-INF/jspwiki.properties";
 
@@ -187,7 +191,7 @@ public class WikiEngine
     private TemplateManager  m_templateManager = null;
 
     /** Does all our diffs for us. */
-    private DifferenceEngine m_differenceEngine;
+    private DifferenceManager m_differenceManager;
 
     /** Handlers page filters. */
     private FilterManager    m_filterManager;
@@ -265,7 +269,7 @@ public class WikiEngine
     /**
      * Gets a WikiEngine related to the servlet. Works just like getInstance( ServletConfig )
      * 
-     * @param config The ServletContext of the webapp servlet/JSP calling this method.
+     * @param context The ServletContext of the webapp servlet/JSP calling this method.
      * @param props  A set of properties, or null, if we are to load JSPWiki's default 
      *               jspwiki.properties (this is the usual case).
      */
@@ -445,15 +449,23 @@ public class WikiEngine
         {
             File f = new File( m_workDir );
             f.mkdirs();
+            
+            //
+            //  A bunch of sanity checks
+            //
+            if( !f.exists() ) throw new WikiException("Work directory does not exist: "+m_workDir);
+            if( !f.canRead() ) throw new WikiException("No permission to read work directory: "+m_workDir);
+            if( !f.canWrite() ) throw new WikiException("No permission to write to work directory: "+m_workDir);
+            if( !f.isDirectory() ) throw new WikiException("jspwiki.workDir does not point to a directory: "+m_workDir);
         }
-        catch( Exception e )
+        catch( SecurityException e )
         {
             log.fatal("Unable to find or create the working directory: "+m_workDir,e);
             throw new IllegalArgumentException("Unable to find or create the working dir: "+m_workDir);
         }
 
         log.info("JSPWiki working directory is '"+m_workDir+"'");
-
+        
         m_saveUserInfo   = TextUtil.getBooleanProperty( props,
                                                         PROP_STOREUSERNAME, 
                                                         m_saveUserInfo );
@@ -486,7 +498,7 @@ public class WikiEngine
 
             m_pageManager       = new PageManager( this, props );
             m_pluginManager     = new PluginManager( props );
-            m_differenceEngine  = new DifferenceEngine( props, getContentEncoding() );
+            m_differenceManager = new DifferenceManager( this, props );
             m_attachmentManager = new AttachmentManager( this, props );
             m_variableManager   = new VariableManager( props );
             m_filterManager     = new FilterManager( this, props );
@@ -888,7 +900,7 @@ public class WikiEngine
     // FIXME: Should use servlet context as a default instead of a constant.
     public String getApplicationName()
     {
-        String appName = m_properties.getProperty("jspwiki.applicationName");
+        String appName = m_properties.getProperty(PROP_APPNAME);
 
         if( appName == null )
             return Release.APPNAME;
@@ -1074,27 +1086,14 @@ public class WikiEngine
      */
     public String encodeName( String pagename )
     {
-        try
-        {
-            if( m_useUTF8 )
-                return TextUtil.urlEncodeUTF8( pagename );
-            else
-                return java.net.URLEncoder.encode( pagename, "ISO-8859-1" );
-        }
-        catch( UnsupportedEncodingException e )
-        {
-            throw new InternalWikiException("ISO-8859-1 not a supported encoding!?!  Your platform is borked.");
-        }
+        return TextUtil.urlEncode( pagename, (m_useUTF8 ? "UTF-8" : "ISO-8859-1"));
     }
 
     public String decodeName( String pagerequest )
     {
         try
         {
-            if( m_useUTF8 )
-                return TextUtil.urlDecodeUTF8( pagerequest );
-            else
-                return java.net.URLDecoder.decode( pagerequest, "ISO-8859-1" );
+            return TextUtil.urlDecode( pagerequest, (m_useUTF8 ? "UTF-8" : "ISO-8859-1") );
         }
         catch( UnsupportedEncodingException e )
         {
@@ -1236,13 +1235,13 @@ public class WikiEngine
 
     public String getHTML( WikiContext context, WikiPage page )
     {
-	String pagedata = null;
+        String pagedata = null;
 
         pagedata = getPureText( page.getName(), page.getVersion() );
 
         String res = textToHTML( context, pagedata );
 
-	return res;
+        return res;
     }
     
     /**
@@ -1262,19 +1261,18 @@ public class WikiEngine
      *
      *  @param pagename WikiName of the page to convert.
      *  @param version Version number to fetch
-     *  @deprecated
      */
     public String getHTML( String pagename, int version )
     {
-        WikiPage page = new WikiPage( pagename );
-        page.setVersion( version );
+        WikiPage page = getPage( pagename, version );
 
         WikiContext context = new WikiContext( this,
                                                page );
+        context.setRequestContext( WikiContext.NONE );
         
         String res = getHTML( context, page );
 
-	return res;
+        return res;
     }
 
     /**
@@ -1511,7 +1509,7 @@ public class WikiEngine
     //
     // FIXME: Should also have attributes attached.
     //
-    public Collection findPages( WikiContext context, String query )
+    public Collection findPages( String query )
     {
         StringTokenizer st = new StringTokenizer( query, " \t," );
 
@@ -1554,7 +1552,7 @@ public class WikiEngine
             items[word++].word = token;
         }
 
-        Collection results = m_pageManager.findPages( context, items );
+        Collection results = m_pageManager.findPages( items );
         
         return results;
     }
@@ -1644,21 +1642,7 @@ public class WikiEngine
             page1 = "";
         }
 
-        String diff  = m_differenceEngine.makeDiff( page1, page2 );
-
-        diff = TextUtil.replaceEntities( diff );
-        
-        try
-        {
-            if( diff.length() > 0 )
-            {
-                diff = m_differenceEngine.colorizeDiff( diff );
-            }
-        }
-        catch( IOException e )
-        {
-            log.error("Failed to colorize diff result.", e);
-        }
+        String diff  = m_differenceManager.makeDiff( page1, page2 );
 
         return diff;
     }
@@ -1939,7 +1923,46 @@ public class WikiEngine
         return context;
     }
 
-
+    /**
+     *  Deletes a page or an attachment completely, including all versions.
+     * 
+     * @param pageName
+     * @throws ProviderException
+     */
+    public void deletePage( String pageName )
+        throws ProviderException
+    {
+        WikiPage p = getPage( pageName );
+        
+        if( p instanceof Attachment )
+        {
+            m_attachmentManager.deleteAttachment( (Attachment) p );
+        }
+        else
+        {
+            m_pageManager.deletePage( p );
+        }
+    }
+    
+    /**
+     *  Deletes a specific version of a page or an attachment.
+     * 
+     * @param page
+     * @throws ProviderException
+     */
+    public void deleteVersion( WikiPage page )
+        throws ProviderException
+    {
+        if( page instanceof Attachment )
+        {
+            m_attachmentManager.deleteVersion( (Attachment) page );
+        }
+        else
+        {
+            m_pageManager.deleteVersion( page );
+        }
+    }
+    
     /**
      *  Returns the URL of the global RSS file.  May be null, if the
      *  RSS file generation is not operational.
@@ -1963,6 +1986,15 @@ public class WikiEngine
         return m_rootPath;
     }
 
+    /**
+     * @since 2.1.165
+     * @return
+     */
+    public RSSGenerator getRSSGenerator()
+    {
+        return m_rssGenerator;
+    }
+    
     /**
      *  Runs the RSS generation thread.
      *  FIXME: MUST be somewhere else, this is not a good place.

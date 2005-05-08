@@ -3,7 +3,7 @@
 	<classpathentry excluding="webdocs/**|wikipages/**" kind="src" path="src"/>
 	<classpathentry excluding="build/**|etc/**|reports/**" kind="src" path="tests"/>
 	<classpathentry kind="lib" path="lib/JRegistrar-0.22.jar"/>
-	<classpathentry kind="lib" path="lib/j2ee.jar"/>
+	<classpathentry sourcepath="/Users/arj/workspace/jakarta-tomcat-5.0.29-src/jakarta-tomcat-jasper/jasper2/src/share" kind="lib" path="lib/j2ee.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/ecs.jar"/>
 	<classpathentry kind="lib" path="lib/junit.jar"/>
@@ -14,5 +14,8 @@
 	<classpathentry kind="lib" path="lib/oscache.jar"/>
 	<classpathentry kind="lib" path="lib/sandler.jar"/>
 	<classpathentry kind="lib" path="lib/xmlrpc.jar"/>
+	<classpathentry kind="lib" path="tests/etc"/>
+	<classpathentry kind="lib" path="lib/servlet.jar"/>
+	<classpathentry kind="lib" path="lib/jrcs-diff.jar"/>
 	<classpathentry kind="output" path="build"/>
 </classpath>

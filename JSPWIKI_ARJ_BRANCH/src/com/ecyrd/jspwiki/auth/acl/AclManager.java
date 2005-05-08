@@ -7,8 +7,10 @@ import com.ecyrd.jspwiki.WikiPage;
 import com.ecyrd.jspwiki.auth.WikiSecurityException;
 
 /**
- * @author Andrew R. Jaquith
- * @version $Revision: 1.1.2.2 $ $Date: 2005-02-25 20:41:55 $
+ *  Specifies how to parse and return ACLs from wiki pages.
+ *  @author Andrew Jaquith
+ *  @version $Revision: 1.1.2.3 $ $Date: 2005-05-08 18:03:59 $
+ *  @since 2.3
  */
 public interface AclManager
 {
@@ -37,7 +39,7 @@ public interface AclManager
      * it was consolidated with some code from AuthorizationManager.
      * @param page
      * @since 2.2.121
-     * @return
+     * @return the Acl representing permissions for the page
      */
     public Acl getPermissions( WikiPage page );
 }

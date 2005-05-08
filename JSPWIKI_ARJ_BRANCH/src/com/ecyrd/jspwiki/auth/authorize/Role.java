@@ -22,14 +22,15 @@ package com.ecyrd.jspwiki.auth.authorize;
 import java.security.Principal;
 
 /**
- *  A lightweight, immutable Principal that
- *  represents a built-in wiki role such as Anonymous, Asserted
- *  and Authenticated. It can also represent 
- *
- *  @author Andrew R. Jaquith
- *  @since  2.3
+ * A lightweight, immutable Principal that represents a built-in wiki role such
+ * as Anonymous, Asserted and Authenticated. It can also represent dynamic roles
+ * used by an external {@link com.ecyrd.jspwiki.auth.Authorizer}, such as a web
+ * container.
+ * @author Andrew Jaquith
+ * @version $Revision: 1.1.2.2 $ $Date: 2005-05-08 18:04:31 $
+ * @since 2.3
  */
-public class Role implements Principal
+public final class Role implements Principal
 {
 
     /** If the user has authenticated and is an adminstrator */
@@ -47,8 +48,12 @@ public class Role implements Principal
     /** If the user has authenticated with the Container or UserDatabase */
     public static final Role AUTHENTICATED = new Role( "Authenticated" );
 
-    protected final String   m_name;
+    private final String   m_name;
 
+    /**
+     * Constructs a new Role with a given name.
+     * @param name the name of the Role
+     */
     public Role( String name )
     {
         m_name = name;
@@ -67,7 +72,26 @@ public class Role implements Principal
         
     }
     
-    public boolean equals( Object obj )
+    /**
+     * Returns <code>true</code> if the supplied name is identical to the name
+     * of a built-in Role; that is, the value returned by <code>getName()</code> for
+     * built-in Roles ADMIN, ALL, ANONYMOUS, ASSERTED, or AUTHENTICATED.
+     * @param name the name to be tested
+     * @return <code>true</code> if the name is reserved; <code>false</code> if not
+     */
+    public static final boolean isReservedName(String name)
+    {
+        return (name.equals(ADMIN.m_name) || name.equals(ALL.m_name) || 
+                name.equals(ANONYMOUS.m_name) || name.equals(ASSERTED.m_name) || 
+                name.equals(AUTHENTICATED.m_name));
+    }
+    
+    /**
+     * Two Role objects are considered equal if their names are identical.
+     * @return <code>true</code> if both objects are of type Role and have identical names
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+    public final boolean equals( Object obj )
     {
         if ( obj == null || !( obj instanceof Role ) ) { return false; }
         return ( m_name.equals( ( (Role) obj ).getName() ) );
@@ -75,17 +99,19 @@ public class Role implements Principal
 
     /**
      *  Returns the name of the Principal.
+     * @return the name of the Role
      */
-    public String getName()
+    public final String getName()
     {
         return m_name;
     }
     
     /**
      * Returns a String representation of the role
+     * @return the string representation of the role
      * @see java.lang.Object#toString()
      */
-    public String toString() {
+    public final String toString() {
         return "[" + this.getClass().getName() + ": " + m_name + "]"; 
     }
 

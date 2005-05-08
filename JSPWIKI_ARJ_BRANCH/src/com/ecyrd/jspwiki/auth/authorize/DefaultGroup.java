@@ -7,6 +7,9 @@ import java.util.Vector;
 
 /**
  * Provides a concrete implementation of the {@link Group} interface.
+ * @author Andrew Jaquith
+ * @version $Revision: 1.1.2.2 $ $Date: 2005-05-08 18:04:31 $
+ * @since 2.3
  */
 public class DefaultGroup implements Group
 

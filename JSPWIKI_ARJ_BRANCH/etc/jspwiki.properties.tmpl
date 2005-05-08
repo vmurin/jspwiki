@@ -49,6 +49,16 @@ jspwiki.usePageCache = true
 jspwiki.fileSystemProvider.pageDir = @pagedir@
 
 #
+#  The JSPWiki working directory.  If not set, a temporary path will
+#  be used.  You can see the location of the workdir in the logs.
+#  It is HIGHLY recommended that you set this.
+#
+#  The working directory is used to cache things like Lucene search
+#  results.
+#
+#jspwiki.workDir =
+
+#
 #  ATTACHMENTS:
 #
 #  Use the following property to define which attachment provider
@@ -81,6 +91,29 @@ jspwiki.basicAttachmentProvider.storageDir = @pagedir@
 #jspwiki.attachment.maxsize=100000
 
 #
+#  page Diff Representation
+#
+#  To show differences between page versions, you can define a 
+# difference provider. 
+#  The following choices are available:
+#    * TraditionalDiffProvider - Uses internal (java) diff
+#        to create a list of changes and shows it line by
+#        line colored. This is the default
+#    * ContextualDiffProvider - Uses internal (java) diff
+#        to create changes inline and shows it on a word by
+#        word basis using CSS. This is much superior to the
+#        traditional diff provider, however, it is still quite
+#        new and not much tested. YMMV.
+#    * ExternalDiffProvider - uses a system diff program (which
+#        can be configured using "jspwiki.diffCommand") to 
+#        create an unified (!) diff.
+#
+#        Example for a diff command:
+#        jspwiki.diffCommand = /usr/bin/diff -u %s1 %s2
+#
+jspwiki.diffProvider = TraditionalDiffProvider
+
+#
 #  BaseURL can be used to rewrite all of JSPWiki's internal references.
 #  Sometimes, especially if you're behind a address-rewriting firewall,
 #  relative URLs don't work since the servlet container has no idea
@@ -96,7 +129,7 @@ jspwiki.basicAttachmentProvider.storageDir = @pagedir@
 #  Example:
 #  jspwiki.baseURL = http://www.jspwiki.org/
 #
-#jspwiki.baseURL=
+jspwiki.baseURL=
 
 #  Determines if you need to have relative urls or not.  If the baseURL
 #  is not set, then this has no effect, but if you set the baseURL (which
@@ -141,15 +174,6 @@ jspwiki.encoding = UTF-8
 #  The default for this option is "false".
 #
 jspwiki.translatorReader.allowHTML = false
-
-#
-#  The JSPWiki working directory.  If not set, a temporary path will
-#  be used.  You can see the location of the workdir in the logs.
-#
-#  The working directory is used to cache things like Lucene search
-#  results.
-#
-#jspwiki.workDir = /path/to/your/workdir/
 
 ############################################################################
 #
@@ -222,6 +246,13 @@ jspwiki.lockExpiryTime = 60
 #  turn it off here.
 #
 #jspwiki.useLucene = true
+
+#
+#  If your wiki's language is something else than English, you might
+#  want to visit jakarta.apache.org/lucene and download a proper Analyzer
+#  for your language.  Default is to use StandardAnalyzer.
+#
+#jspwiki.lucene.analyzer = org.apache.lucene.analysis.standard.StandardAnalyzer
 
 ############################################################################
 #
@@ -386,6 +417,9 @@ jspwiki.interWikiRef.Wikipedia = http://www.wikipedia.com/wiki/%s
 
 #  Google, the ubiquitous search engine.
 jspwiki.interWikiRef.Google = http://www.google.com/search?q=%s
+
+#  JSPWiki documentation (for this release)
+jspwiki.interWikiRef.Doc = http://doc.jspwiki.org/2.2/Wiki.jsp?page=%s
 
 ############################################################################
 #

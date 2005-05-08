@@ -3,9 +3,9 @@ package com.ecyrd.jspwiki.auth.user;
 /**
  * Class for representing wiki user information, such as the login name, full
  * name, wiki name, and e-mail address.
- * @author Andrew R. Jaquith
+ * @author Andrew Jaquith
+ * @version $Revision: 1.1.2.2 $ $Date: 2005-05-08 18:06:34 $
  * @since 2.3
- * @version $Revision: 1.1.2.1 $ $Date: 2005-02-01 02:57:26 $
  */
 public interface UserProfile
 {
@@ -42,7 +42,7 @@ public interface UserProfile
     public String getPassword();
 
     /**
-     * Returns the user's wiki name. 
+     * Returns the user's wiki name.
      * @return the wiki name.
      */
     public String getWikiName();
@@ -58,12 +58,12 @@ public interface UserProfile
      * @param arg the full name
      */
     public void setFullname( String arg );
-    
+
     /**
      * Sets the name by which the user logs in. The login name is used as the
      * username for custom authentication (see
-     * {@link org.ecyrd.jspwiki.auth.AuthenticationManager#login(String,String,HttpServletRequest}).
-     * {@link org.ecyrd.jspwiki.auth.login.UserDatabaseLoginModule}). The login
+     * {@link com.ecyrd.jspwiki.auth.AuthenticationManager#loginCustom(String, String, HttpServletRequest)}.
+     * {@link com.ecyrd.jspwiki.auth.login.UserDatabaseLoginModule}). The login
      * name is typically a short name ("jannej"). In contrast, the wiki name is
      * typically of type FirstnameLastName ("JanneJalkanen").
      * @param name the login name

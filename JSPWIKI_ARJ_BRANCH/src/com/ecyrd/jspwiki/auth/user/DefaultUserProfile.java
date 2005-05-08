@@ -24,8 +24,9 @@ import org.apache.log4j.Category;
 /**
  * Default implementation for representing wiki user information, such as the
  * login name, full name, wiki name, and e-mail address.
- * @author Andrew R. Jaquith
  * @author Janne Jalkanen
+ * @author Andrew Jaquith
+ * @version $Revision: 1.1.2.2 $ $Date: 2005-05-08 18:06:34 $
  * @since 2.3
  */
 
@@ -98,7 +99,7 @@ public class DefaultUserProfile implements UserProfile
     }
 
     /**
-     * Returns the user's wiki name. 
+     * Returns the user's wiki name.
      * @return the wiki name.
      */
     public String getWikiName()
@@ -128,9 +129,8 @@ public class DefaultUserProfile implements UserProfile
      * Sets the name by which the user logs in. The login name is used as the
      * username for custom authentication (see
      * {@link com.ecyrd.jspwiki.auth.AuthenticationManager#loginCustom(String, String, HttpServletRequest)}).
-     * {@link com.ecyrd.jspwiki.auth.login.UserDatabaseLoginModule}). The login
-     * name is typically a short name ("jannej"). In contrast, the wiki name is
-     * typically of type FirstnameLastName ("JanneJalkanen").
+     * The login name is typically a short name ("jannej"). In contrast, the
+     * wiki name is typically of type FirstnameLastName ("JanneJalkanen").
      * @param name the login name
      */
     public void setLoginName( String name )

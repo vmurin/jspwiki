@@ -20,7 +20,7 @@ import com.ecyrd.jspwiki.auth.authorize.Role;
  * minimal, default-deny values: authentication is set to false, and the user
  * principal is set to null.
  * @author Andrew R. Jaquith
- * @version $Revision: 1.1.2.3 $ $Date: 2005-02-27 06:52:15 $
+ * @version $Revision: 1.1.2.4 $ $Date: 2005-05-08 18:01:37 $
  */
 public class WikiSession
 {
@@ -34,15 +34,11 @@ public class WikiSession
 
     public static final String      ANONYMOUS           = "anonymous";
 
-    public static final String      KNOWN               = "known";
-
     public static final String      ASSERTED            = "asserted";
 
     public static final String      AUTHENTICATED       = "authenticated";
 
-    public static final String      UNVALIDATED         = "unvalidated";
-
-    private static final String     WIKI_SESSION        = "WikiSession";
+    protected static final String   WIKI_SESSION        = "WikiSession";
 
     private Subject                 m_subject             = new Subject();
 
@@ -57,6 +53,14 @@ public class WikiSession
         GUEST_SESSION.getSubject().getPrincipals().add( Role.ANONYMOUS );
     }
 
+    /**
+     * Returns <code>true</code> if this WikiSession's Subject contains
+     * a given Principal in its Principal set.
+     * @param principal the Principal to look for
+     * @return <code>true</code> if the Set of Principals returned by 
+     * {@link javax.security.auth.Subject#getPrincipals()} contains
+     * the specified Principal; <code>false</code> otherwise.
+     */
     protected boolean hasPrincipal( Principal principal )
     {
         for( Iterator it = m_subject.getPrincipals().iterator(); it.hasNext(); )
@@ -114,26 +118,43 @@ public class WikiSession
     }
     
     /**
-     * Returns the primary user Principal associated with this session. The
-     * primary user principal is the first one in the Subject's principal
-     * collection that that isn't of type Role. If no user principal is found,
-     * returns null.
-     * @return Returns the user principal
+     * <p>Returns the primary user Principal associated with this session. The
+     * primary user principal is determined as follows:</p>
+     * <ol>
+     *   <li>If the Subject's Principal set contains WikiPrincipals,
+     *       the first WikiPrincipal whose <code>isCommonName</code> method
+     *       returns <code>true</true> is the primary Principal.</li>
+     *   <li>For all other cases, the first Principal in the Subject's principal
+     *       collection that that isn't of type Role is the primary.</li>
+     * </ol> 
+     * If no primary user Principal is found, this method returns <code>null</code>.
+     * @return the primary user Principal
      */
     public Principal getUserPrincipal()
     {
         // Lazily determine the primary principal, if we can
         Set principals = m_subject.getPrincipals();
-        // Take the first non Role as the main Principal
+        Principal secondChoice = null;
+
+        // Take the first WikiPrincipal with isCommonName as primary
+        // Take the first non-Role as the alternate
         for( Iterator it = principals.iterator(); it.hasNext(); )
         {
             Principal currentPrincipal = (Principal) it.next();
             if ( !( currentPrincipal instanceof Role ) )
             {
-                return currentPrincipal;
+                if ( currentPrincipal instanceof WikiPrincipal
+                     && ( (WikiPrincipal) currentPrincipal ).isCommonName() )
+                {
+                    return currentPrincipal;
+                }
+                if ( secondChoice != null )
+                {
+                    secondChoice = currentPrincipal;
+                }
             }
         }
-        return null;
+        return secondChoice;
     }
 
     /**
@@ -163,7 +184,8 @@ public class WikiSession
      * Identifies whether the WikiSession's Subject is currently unknown to the
      * application. This will return <code>true</code> if the size of the
      * Subject's Principal collection is 0.
-     * @return
+     * @return <code>true</code> if the subject contains zero principals,
+     *         <code>false</code> otherwise
      */
     public boolean isUnknown()
     {
@@ -182,7 +204,7 @@ public class WikiSession
 
     /**
      * Returns the Subject representing the user.
-     * @return
+     * @return the subject
      */
     public Subject getSubject()
     {
@@ -232,7 +254,8 @@ public class WikiSession
      * this function, the cached values are set to those in the current request.
      * If the servlet request is null, this method always returns false.
      * @param request the current servlet request
-     * @return
+     * @return <code>true</code> if the status has changed, <code>false</code>
+     *         otherwise
      */
     public boolean isContainerStatusChanged( HttpServletRequest request )
     {
@@ -270,8 +293,13 @@ public class WikiSession
     }
 
     /**
-     * Returns the status of the session as a text string.
-     * @return
+     * <p>Returns the status of the session as a text string. Valid values are:</p>
+     * <ul>
+     *   <li>{@link #AUTHENTICATED}</li>
+     *   <li>{@link #ASSERTED}</li>
+     *   <li>{@link #ANONYMOUS}</li>
+     * </ul>
+     * @return the session status
      */
     public String getStatus()
     {

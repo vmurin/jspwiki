@@ -26,7 +26,7 @@ import java.util.Date;
 import java.util.TreeSet;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
 
 import com.ecyrd.jspwiki.*;
 
@@ -46,7 +46,7 @@ import com.ecyrd.jspwiki.*;
 public abstract class AbstractFileProvider
     implements WikiPageProvider
 {
-    private static final Category   log = Category.getInstance(AbstractFileProvider.class);
+    private static final Logger   log = Logger.getLogger(AbstractFileProvider.class);
     private String m_pageDirectory = "/tmp/";
     
     protected String m_encoding;
@@ -105,27 +105,29 @@ public abstract class AbstractFileProvider
      */
     protected String mangleName( String pagename )
     {
-        // FIXME: Horrible kludge, very slow, etc.
+        pagename = TextUtil.urlEncode( pagename, m_encoding );
+        
+        pagename = TextUtil.replaceString( pagename, "/", "%2F" );
 
-        // FIXME: SHOULD THIS DO A / => %2F MAPPING!?!
-        if( "UTF-8".equalsIgnoreCase( m_encoding ) )
-            return TextUtil.urlEncodeUTF8( pagename );
-
-        return java.net.URLEncoder.encode( pagename );
+        return pagename;
     }
 
     /**
-     *  This makes the reverse of mangleName
+     *  This makes the reverse of mangleName.
      */
     protected String unmangleName( String filename )
     {
-        // FIXME: Horrible kludge, very slow, etc.
-        if( "UTF-8".equalsIgnoreCase( m_encoding ) )
-            return TextUtil.urlDecodeUTF8( filename );
-
-        return java.net.URLDecoder.decode( filename );
+        // The exception should never happen.
+        try
+        {
+            return TextUtil.urlDecode( filename, m_encoding );
+        }
+        catch( UnsupportedEncodingException e ) 
+        {
+            throw new InternalWikiException("Faulty encoding; should never happen");
+        }
     }
-
+    
     /**
      *  Finds a Wiki page from the page repository.
      */
@@ -202,6 +204,7 @@ public abstract class AbstractFileProvider
     }
 
     public void putPageText( WikiPage page, String text )        
+        throws ProviderException
     {
         File file = findPage( page.getName() );
         PrintWriter out = null;

@@ -4,9 +4,9 @@ Emacs, this is -*- Text -*- for you.
                         JSPWiki documentation
                         =====================
 
-                         $Revision: 1.21 $
-                             $Date: 2003-07-16 15:51:24 $
-                           $Author: jalkanen $
+                         $Revision: 1.21.2.1 $
+                             $Date: 2005-05-08 17:45:59 $
+                           $Author: arj $
 
 What is it?
 -----------
@@ -17,7 +17,7 @@ formatting in JSP files, and uses a custom Java class called
 system.
 
 
-    Copyright (C) 2001-2003 Janne Jalkanen
+    Copyright (C) 2001-2005 Janne Jalkanen
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public License
@@ -59,13 +59,15 @@ Okay, so you wanna Wiki?  You'll need the following things:
 
 REQUIRED:
 
-* A JSP engine.  I recommend Tomcat from
+* A JSP engine that supports Servlet API 2.2.  I recommend Tomcat from
   http://jakarta.apache.org/tomcat for a really easy installation.
 
 * Some previous administration experience...  If you've ever installed
   Apache or any other web server, you should be pretty well off.
 
 * And of course, a server to run the JSP engine on.
+
+* JDK 1.4+
 
 OPTIONAL:
 
@@ -78,13 +80,42 @@ OPTIONAL:
   not require RCS.
 
 
+Really simple installation
+--------------------------
+
+This section is meant for you, if you just want to have a really quick
+install without much worries.  If you want to have a more complicated
+installation (with more power as to how to do things), 
+check out the "Install" section below.
+
+Since JSPWiki 2.1.153, JSPWiki comes with a really simple installation
+engine.  Just do the following:
+
+1) Install Tomcat from http://jakarta.apache.org/ (or any other servlet
+   container)
+
+2) Drop the JSPWiki.war file in your <tomcat home>/webapps/ directory.
+   Optional: Rename the JSPWiki.war if you want your URL to end with
+   something else than /JSPWiki/.  For example, to get it called "wiki"
+   just rename the "JSPWiki.war" file to "wiki.war".
+
+3) Point your browser at http://<myhost>/JSPWiki/Install.jsp
+   (Or, if you renamed it in the previous phase, use something like
+   http://<myhost>/wiki/Install.jsp)
+
+4) Answer a couple of simple questions
+
+5) Point your browser to http://<myhost>/JSPWiki/
+
+That's it!
+
 
 Installation
 ------------
 
 First, install a JSP engine and a web server.  You can download Tomcat
 from http://jakarta.apache.org/tomcat/.  This software was built
-originally on top of Tomcat 3.2.2, but probably most other versions
+originally on top of Tomcat 4.0, but probably most other versions
 work, too, and most other JSP containers.
 
 After you've installed the engine and checked that it works, you just
@@ -206,7 +237,8 @@ to use them to bootstrap your own Wiki.
 Internationalisation
 --------------------
 
-JSPWiki can also handle UTF-8.  However, you need to switch this at
+JSPWiki can also handle UTF-8. In fact, it's even recommended to use UTF-8
+in new installations.  However, you need to switch this at
 install-time, since the old method of handling ISO-8859-1 and the new
 method of handling UTF-8 are not compatible, and I did not wish to
 break previous installations that are already using the ISO-8859-1

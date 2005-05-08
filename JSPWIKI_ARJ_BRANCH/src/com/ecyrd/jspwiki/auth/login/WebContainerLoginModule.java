@@ -18,30 +18,33 @@ import com.ecyrd.jspwiki.auth.user.UserDatabase;
  * <p>
  * Logs in a user by extracting authentication data from an Http servlet
  * session. First, the module tries to extract a Principal object out of the
- * request directly. If one is found, authentication succeeds. If there is no
- * Principal in the request, try the remoteUser string and ask the active
- * UserDatabase to look it up by this id,, and return the appropriate user
+ * request directly using the servlet requests's <code>getUserPrincipal()</code>
+ * method. If one is found, authentication succeeds. If there is no
+ * Principal in the request, try calling <code>getRemoteUser()</code>
+ * and ask the active UserDatabase to look it up by this id, and return the appropriate user
  * Principals as per
- * {@link com.ecyrd.jspwiki.auth.user.UserDatabase#getPrincipals(String)}.
- * If the remoteUser string exists but the UserDatabase can't find 
- * a matching profile, a generic
- * WikiPrincipal is created with this value. If neither userPrincipal nor
- * remoteUser string exist in the request, the login fails.
+ * {@link com.ecyrd.jspwiki.auth.user.UserDatabase#getPrincipals(String)}. If
+ * the <code>remoteUser</code> exists but the UserDatabase can't find a matching
+ * profile, a generic WikiPrincipal is created with this value. If neither
+ * <code>userPrincipal</code> nor <code>remoteUser</code> exist in the request, the login fails.
  * </p>
  * <p>
  * This module must be used with a CallbackHandler that supports the following
  * Callback types:
  * </p>
  * <ol>
- * <li>{@link HttpRequestCallback}- supplies the Http request object, from
+ * <li>{@link HttpRequestCallback} - supplies the Http request object, from
  * which the getRemoteUser and getUserPrincipal are extracted</li>
- * <li>{@link UserDatabaseCallback}- supplies the user database for looking up
+ * <li>{@link UserDatabaseCallback} - supplies the user database for looking up
  * the value of getRemoteUser</li>
  * </ol>
  * <p>
- * After authentication, the Principal will be created and associated with the
- * Subject. Also, principals Role.AUTHENTICATED and Role.ALL will be added.
+ * After authentication, the authenticated Principal will be created and associated with the
+ * Subject. Also, principals {@link com.ecyrd.jspwiki.auth.authorize.Role#ALL}
+ * and {@link com.ecyrd.jspwiki.auth.authorize.Role#AUTHENTICATED} will be added.
  * @author Andrew Jaquith
+ * @version $Revision: 1.1.2.2 $ $Date: 2005-05-08 18:05:19 $
+ * @since 2.3
  */
 public class WebContainerLoginModule extends AbstractLoginModule
 {
@@ -66,7 +69,7 @@ public class WebContainerLoginModule extends AbstractLoginModule
             HttpServletRequest request = requestCallback.getRequest();
             if ( request == null )
             {
-                throw new LoginException("No Http request supplied.");
+                throw new LoginException( "No Http request supplied." );
             }
             Principal principal = request.getUserPrincipal();
             if ( principal != null )
@@ -74,12 +77,13 @@ public class WebContainerLoginModule extends AbstractLoginModule
                 m_principals.add( principal );
                 userId = principal.getName();
             }
-            
+
             // If no Principal in request, try the remoteUser
             if ( userId == null )
             {
                 userId = request.getRemoteUser();
-                if (userId == null) {
+                if ( userId == null )
+                {
                     throw new FailedLoginException( "No remote user found" );
                 }
             }
@@ -91,7 +95,7 @@ public class WebContainerLoginModule extends AbstractLoginModule
                 throw new LoginException( "User database cannot be null." );
             }
             Principal[] principals = database.getPrincipals( userId );
-            for (int i = 0; i < principals.length; i++)
+            for( int i = 0; i < principals.length; i++ )
             {
                 m_principals.add( principals[i] );
             }

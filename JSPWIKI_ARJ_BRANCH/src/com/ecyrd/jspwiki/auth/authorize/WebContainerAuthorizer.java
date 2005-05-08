@@ -11,8 +11,9 @@ import com.ecyrd.jspwiki.auth.Authorizer;
 /**
  * Authorizes users by delegating role membership checks to the servlet
  * container.
- * @author Andrew R. Jaquith
- * @version $Revision: 1.1.2.3 $ $Date: 2005-02-25 20:44:11 $
+ * @author Andrew Jaquith
+ * @version $Revision: 1.1.2.4 $ $Date: 2005-05-08 18:04:31 $
+ * @since 2.3
  */
 public class WebContainerAuthorizer implements Authorizer
 {
@@ -23,7 +24,7 @@ public class WebContainerAuthorizer implements Authorizer
     /**
      * A fixed set of Roles that the container knows about.
      */
-    protected Role[] CONTAINER_ROLES = new Role[]
+    protected static final Role[] CONTAINER_ROLES = new Role[]
                                      { Role.ADMIN, Role.AUTHENTICATED };
 
     /**
@@ -34,13 +35,12 @@ public class WebContainerAuthorizer implements Authorizer
      * {@link com.ecyrd.jspwiki.WikiContext#getHttpRequest()}. If
      * <code>context</code> or <code>group</code> are <code>null</code>,
      * this method will return <code>false</code>.
-     * @parameter context the current wiki context
-     * @parameter subject the subject to check. In this implementation, the
+     * @param context the current wiki context
+     * @param subject the subject to check. In this implementation, the
      *            value of this parameter has no effect on the result, and may
      *            be <code>null</code>.
-     * @parameter the wiki group (role) being tested for
-     * @see com.ecyrd.jspwiki.auth.Authorizer#isUserInGroup(com.ecyrd.jspwiki.WikiContext,
-     *      java.security.Principal, java.lang.String)
+     * @param role the wiki group (role) being tested for
+     * @see com.ecyrd.jspwiki.auth.Authorizer#isUserInRole(WikiContext, Subject, Principal)
      */
     public boolean isUserInRole( WikiContext context, Subject subject, Principal role )
     {
@@ -58,7 +58,7 @@ public class WebContainerAuthorizer implements Authorizer
     /**
      * Looks up and returns a role principal matching a given string. If the
      * role does not match one of the container roles (see
-     * {@see #CONTAINER_ROLES}), this method returns null.
+     * {@link #CONTAINER_ROLES}), this method returns null.
      * @param role the name of the role to retrieve
      * @return a Role principal, or null
      * @see com.ecyrd.jspwiki.auth.Authorizer#findRole(java.lang.String)
