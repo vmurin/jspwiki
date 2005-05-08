@@ -11,6 +11,7 @@ import com.ecyrd.jspwiki.TestEngine;
 import com.ecyrd.jspwiki.WikiPage;
 import com.ecyrd.jspwiki.auth.WikiPrincipal;
 import com.ecyrd.jspwiki.auth.permissions.PagePermission;
+import com.ecyrd.jspwiki.providers.ProviderException;
 
 public class DefaultAclManagerTest
     extends TestCase
@@ -38,8 +39,13 @@ public class DefaultAclManagerTest
 
     public void tearDown()
     {
-        m_engine.deletePage( "TestDefaultPage" );
-        m_engine.deletePage( "TestAclPage" );
+        try {
+            m_engine.deletePage( "TestDefaultPage" );
+            m_engine.deletePage( "TestAclPage" );
+        }
+        catch ( ProviderException e )
+        {
+        }
     }
     
     public void testGetPermissions()
@@ -55,12 +61,12 @@ public class DefaultAclManagerTest
         // Charlie is an editor; reading is therefore implied
         Principal[] principals = acl.findPrincipals( new PagePermission( page, "view") );
         assertEquals( 1, principals.length );
-        assertEquals( new WikiPrincipal("Charlie"), principals[0]);
+        assertEquals( new UnresolvedPrincipal("Charlie"), principals[0]);
         
         // Charlie should be in the ACL as an editor
         principals = acl.findPrincipals( new PagePermission( page, "edit") );
         assertEquals( 1, principals.length );
-        assertEquals( new WikiPrincipal("Charlie"), principals[0]);
+        assertEquals( new UnresolvedPrincipal("Charlie"), principals[0]);
         
         // Charlie should not be able to delete this page
         principals = acl.findPrincipals( new PagePermission( page, "delete") );

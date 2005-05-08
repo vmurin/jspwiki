@@ -23,6 +23,28 @@ public class TestEngine extends WikiEngine
         super( props );
     }
 
+    public static void emptyWorkDir()
+    {
+        Properties properties = new Properties();
+        
+        try
+        {
+            properties.load( findTestProperties() );
+        
+            String workdir = properties.getProperty( WikiEngine.PROP_WORKDIR );
+            if( workdir != null )
+            {
+                File f = new File( workdir );
+                
+                if( f.exists() && f.isDirectory() && new File( f, "refmgr.ser" ).exists() )
+                {
+                    deleteAll( f );
+                }
+            }
+        }
+        catch( IOException e ) {} // Fine   
+    }
+    
     public static final InputStream findTestProperties()
     {
         return findTestProperties( "/jspwiki.properties" );
@@ -38,46 +60,58 @@ public class TestEngine extends WikiEngine
      */
     public static void deleteAll( File file )
     {
-        if( file.isDirectory() )
+        if( file != null )
         {
-            File[] files = file.listFiles();
-
-            for( int i = 0; i < files.length; i++ )
+            if( file.isDirectory() )
             {
-                if( files[i].isDirectory() )
+                File[] files = file.listFiles();
+
+                if( files != null ) 
                 {
-                    deleteAll(files[i]);
+                    for( int i = 0; i < files.length; i++ )
+                    {
+                        if( files[i].isDirectory() )
+                        {
+                            deleteAll(files[i]);
+                        }
+
+                        files[i].delete();
+                    }
                 }
-
-                files[i].delete();
             }
+            
+            file.delete();
         }
-
-        file.delete();
     }
 
     /**
      *  Copied from FileSystemProvider
      */
-    protected String mangleName( String pagename )
+    protected static String mangleName( String pagename )
+        throws IOException
     {
-        // FIXME: Horrible kludge, very slow, etc.
-        if( "UTF-8".equals( getContentEncoding() ) )
-            return TextUtil.urlEncodeUTF8( pagename );
+        Properties properties = new Properties();
+        String m_encoding = properties.getProperty( WikiEngine.PROP_ENCODING,
+                AbstractFileProvider.DEFAULT_ENCODING );
 
-        return java.net.URLEncoder.encode( pagename );
+        pagename = TextUtil.urlEncode( pagename, m_encoding );
+        pagename = TextUtil.replaceString( pagename, "/", "%2F" );
+        return pagename;
     }
 
     /**
      *  Removes a page, but not any auxiliary information.  Works only
      *  with FileSystemProvider.
      */
-    public void deletePage( String name )
+    public static void deleteTestPage( String name )
     {
-        String files = getWikiProperties().getProperty( FileSystemProvider.PROP_PAGEDIR );
-
+        Properties properties = new Properties();
+        
         try
         {
+            properties.load( findTestProperties() );
+            String files = properties.getProperty( FileSystemProvider.PROP_PAGEDIR );
+
             File f = new File( files, mangleName(name)+FileSystemProvider.FILE_EXT );
 
             f.delete();
@@ -97,7 +131,7 @@ public class TestEngine extends WikiEngine
         {
             String files = getWikiProperties().getProperty( BasicAttachmentProvider.PROP_STORAGEDIR );
 
-            File f = new File( files, page+BasicAttachmentProvider.DIR_EXTENSION );
+            File f = new File( files, TextUtil.urlEncodeUTF8( page ) + BasicAttachmentProvider.DIR_EXTENSION );
 
             deleteAll( f );
         }

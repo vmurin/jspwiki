@@ -6,7 +6,6 @@ import java.io.*;
 import java.util.*;
 
 import com.ecyrd.jspwiki.*;
-import com.ecyrd.jspwiki.providers.*;
 
 public class AttachmentManagerTest extends TestCase
 {
@@ -54,14 +53,13 @@ public class AttachmentManagerTest extends TestCase
 
     public void tearDown()
     {
-        m_engine.deletePage( NAME1 );
-        m_engine.deletePage( NAMEU );
+        TestEngine.deleteTestPage( NAME1 );
+        TestEngine.deleteTestPage( NAMEU );
 
-        String tmpfiles = props.getProperty( BasicAttachmentProvider.PROP_STORAGEDIR );
+        m_engine.deleteAttachments(NAME1);
+        m_engine.deleteAttachments(NAMEU);
 
-        File f = new File( tmpfiles, NAME1+BasicAttachmentProvider.DIR_EXTENSION );
-
-        m_engine.deleteAll( f );
+        TestEngine.emptyWorkDir();
     }
 
     public void testEnabled()        

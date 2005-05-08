@@ -8,13 +8,14 @@
     public void jspInit()
     {
         WikiEngine wiki = WikiEngine.getInstance( getServletConfig() );
-        if ( wiki.getAuthenticationManager().isContainerAuthenticated() )
+        AuthenticationManager mgr = wiki.getAuthenticationManager();
+        if ( mgr.isContainerAuthenticated() )
         {   
             postURL = "j_security_check";
         }
         else
         {
-            postURL = wiki.getBaseURL() + "/Login.jsp";
+            postURL = "Login.jsp";
         }
     }
     String postURL;
@@ -34,7 +35,7 @@
 
 <body class="login" bgcolor="#FFFFFF">
   <p>Welcome to <wiki:Variable var="applicationname" />. Please sign in
-    with your e-mail address and password.</p>
+    with your login name and password.</p>
   <br />
   <br />
   <form action="<%=postURL%>"accept-charset="<wiki:ContentEncoding />" method="post" >
@@ -66,7 +67,7 @@
       </tr>
     </table>
     <p>Don't have a password? 
-      <a href="<wiki:BaseURL />/UserPreferences.jsp">Join <wiki:Variable var="applicationname" />
+      <a href="UserPreferences.jsp"Join <wiki:Variable var="applicationname" />
       now!</a>
     </p>
   </div>

@@ -27,10 +27,13 @@ import com.ecyrd.jspwiki.WikiPage;
 import com.ecyrd.jspwiki.WikiProvider;
 import com.ecyrd.jspwiki.auth.AuthorizationManager;
 import com.ecyrd.jspwiki.auth.permissions.PagePermission;
+import com.ecyrd.jspwiki.auth.permissions.WikiPermission;
 
 /**
- *  Tells if a page may be edited.  This tag takes care of all possibilities,
- *  user permissions, page version, etc.
+ *  Tells whether the user in the current wiki context possesses a particular
+ *  permission. The permission is typically a PagePermission (e.g., "edit", "view",
+ *  "delete", "comment", "upload"). It may also be a wiki-wide WikiPermission
+ *  ("createPages", "createGroups", "registerUser").
  *
  *  @author Janne Jalkanen
  *  @since 2.0
@@ -40,6 +43,10 @@ public class PermissionTag
 {
     private String m_permission;
 
+    /**
+     * Sets the permission to look for (case sensitive).
+     * @param permission
+     */
     public void setPermission( String permission )
     {
         m_permission = permission;
@@ -53,7 +60,12 @@ public class PermissionTag
         AuthorizationManager mgr   = engine.getAuthorizationManager();
         boolean     got_permission = false;
         
-        if( page != null )
+        if ( "createGroups".equals(m_permission) || "createPages".equals(m_permission)
+             || "registerUser".equals( m_permission ) )
+        {
+            got_permission = mgr.checkPermission( m_wikiContext, new WikiPermission( m_permission ) );
+        }
+        else if( page != null )
         {
             //
             //  Edit tag also checks that we're not trying to edit an

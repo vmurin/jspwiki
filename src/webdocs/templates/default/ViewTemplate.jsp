@@ -9,6 +9,9 @@
 <head>
   <title><wiki:Variable var="applicationname" />: <wiki:PageName /></title>
   <wiki:Include page="commonheader.jsp"/>
+  <wiki:CheckVersion mode="notlatest">
+        <meta name="robots" content="noindex,nofollow" />
+  </wiki:CheckVersion>
 </head>
 
 <body bgcolor="#FFFFFF">
@@ -26,6 +29,23 @@
        </wiki:CheckRequestContext>
        </p>
        <wiki:Include page="LeftMenuFooter.jsp"/>
+       
+       <!-- Strictly for debugging -->
+       <p>Page: <wiki:PageName/></p>
+       <p>You: <wiki:UserName/></p>
+       <p>Permissions:</p>
+       <ul>
+           <wiki:Permission permission="view"><li>view</li></wiki:Permission>
+           <wiki:Permission permission="comment"><li>comment</li></wiki:Permission>
+           <wiki:Permission permission="edit"><li>edit</li></wiki:Permission>
+           <wiki:Permission permission="upload"><li>upload</li></wiki:Permission>
+           <wiki:Permission permission="rename"><li>rename</li></wiki:Permission>
+           <wiki:Permission permission="delete"><li>delete</li></wiki:Permission>
+           <wiki:Permission permission="registerUser"><li>register</li></wiki:Permission>
+           <wiki:Permission permission="createPages"><li>create pages</li></wiki:Permission>
+           <wiki:Permission permission="createGroups"><li>create groups</li></wiki:Permission>
+       </ul>
+       <p>Status: <wiki:Variable var="loginstatus"/></p>
 
        <br /><br />
        <div align="center">

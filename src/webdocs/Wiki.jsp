@@ -1,7 +1,7 @@
-<%@ page import="java.security.Principal" %>
 <%@ page import="org.apache.log4j.*" %>
 <%@ page import="com.ecyrd.jspwiki.*" %>
 <%@ page import="com.ecyrd.jspwiki.tags.WikiTagBase" %>
+<%@ page import="java.security.Principal" %>
 <%@ page import="com.ecyrd.jspwiki.auth.permissions.PagePermission" %>
 <%@ page import="com.ecyrd.jspwiki.auth.*" %>
 <%@ page errorPage="/Error.jsp" %>
@@ -21,7 +21,7 @@
 
     NDC.push( wiki.getApplicationName()+":"+pagereq );
     
-    log.info("Request for page '"+pagereq+"' from "+request.getRemoteAddr()+" by "+request.getRemoteUser() );
+    log.info("Request for page '"+pagereq+"' from "+request.getRemoteAddr()+" by "+wikiContext.getCurrentUser().getName() );
 
     String redirect = wiki.getRedirectURL( wikiContext );
 

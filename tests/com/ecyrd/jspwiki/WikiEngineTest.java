@@ -11,7 +11,7 @@ import com.ecyrd.jspwiki.attachment.*;
 public class WikiEngineTest extends TestCase
 {
     public static final String NAME1 = "Test1";
-    public static final long PAGEPROVIDER_RESCAN_PERIOD = 2000L;
+    public static final long PAGEPROVIDER_RESCAN_PERIOD = 2;
 
     Properties props = new Properties();
 
@@ -39,24 +39,14 @@ public class WikiEngineTest extends TestCase
         props.load( TestEngine.findTestProperties() );
 
         props.setProperty( WikiEngine.PROP_MATCHPLURALS, "true" );
-	// We'll need a shorter-than-default consistency check for
-	// the page-changed checks. This will cause additional load
-	// to the file system, though.
-	props.setProperty( CachingProvider.PROP_CACHECHECKINTERVAL, 
-			   Long.toString(PAGEPROVIDER_RESCAN_PERIOD) );
+        // We'll need a shorter-than-default consistency check for
+        // the page-changed checks. This will cause additional load
+        // to the file system, though.
+        props.setProperty( CachingProvider.PROP_CACHECHECKINTERVAL, 
+                           Long.toString(PAGEPROVIDER_RESCAN_PERIOD) );
 
-        //
-        //  We must make sure that the reference manager cache is cleaned before.
-        //
-        String workDir = props.getProperty( "jspwiki.workDir" );
-
-        if( workDir != null )
-        {
-            File refmgrfile = new File( workDir, "refmgr.ser" );
-            if( refmgrfile.exists() ) refmgrfile.delete();
-        }
-
-        m_engine = new TestEngine(props);
+        TestEngine.emptyWorkDir();
+        m_engine = new TestEngine(props);        
     }
 
     public void tearDown()
@@ -67,9 +57,10 @@ public class WikiEngineTest extends TestCase
         {
             File f = new File( files );
 
-            m_engine.deleteAll( f );
+            TestEngine.deleteAll( f );
         }
 
+        TestEngine.emptyWorkDir();
     }
     
     public void testNonExistantDirectory()
@@ -170,7 +161,7 @@ public class WikiEngineTest extends TestCase
         assertEquals( "singular mistake", "Foobars",
                       m_engine.getFinalPageName( "Foobar" ) );
     }
-
+    
     public void testPutPage()
         throws Exception
     {
@@ -382,7 +373,7 @@ public class WikiEngineTest extends TestCase
         VerySimpleProvider vsp = (VerySimpleProvider) engine.getPageManager().getProvider();
 
         assertEquals( "wrong page", "test", vsp.m_latestReq );
-        assertEquals( "wrong version", -1, vsp.m_latestVers );
+        assertEquals( "wrong version", 5, vsp.m_latestVers );
     }
 
     public void testLatestGet4()
@@ -438,7 +429,7 @@ public class WikiEngineTest extends TestCase
         { 
             // do cleanup
             String files = props.getProperty( FileSystemProvider.PROP_PAGEDIR );
-            m_engine.deleteAll( new File( files, NAME1+BasicAttachmentProvider.DIR_EXTENSION ) );
+            TestEngine.deleteAll( new File( files, NAME1+BasicAttachmentProvider.DIR_EXTENSION ) );
         }
     }
 
@@ -511,7 +502,7 @@ public class WikiEngineTest extends TestCase
         { 
             // do cleanup
             String files = props.getProperty( FileSystemProvider.PROP_PAGEDIR );
-            m_engine.deleteAll( new File( files, NAME1+BasicAttachmentProvider.DIR_EXTENSION ) );
+            TestEngine.deleteAll( new File( files, NAME1+BasicAttachmentProvider.DIR_EXTENSION ) );
         }
     }
 
@@ -548,7 +539,7 @@ public class WikiEngineTest extends TestCase
         { 
             // do cleanup
             String files = props.getProperty( FileSystemProvider.PROP_PAGEDIR );
-            m_engine.deleteAll( new File( files, NAME1+BasicAttachmentProvider.DIR_EXTENSION ) );
+            TestEngine.deleteAll( new File( files, NAME1+BasicAttachmentProvider.DIR_EXTENSION ) );
         }
     }
     
@@ -585,43 +576,75 @@ public class WikiEngineTest extends TestCase
         { 
             // do cleanup
             String files = props.getProperty( FileSystemProvider.PROP_PAGEDIR );
-            m_engine.deleteAll( new File( files, NAME1+BasicAttachmentProvider.DIR_EXTENSION ) );
+            TestEngine.deleteAll( new File( files, NAME1+BasicAttachmentProvider.DIR_EXTENSION ) );
             new File( files, "TestPage2"+FileSystemProvider.FILE_EXT ).delete();
         }
     }    
 
 
-    /**
-     *  Assumes that CachingProvider is in use.
-     */
-    public void testExternalModification()
+    
+
+    public void testDeletePage()
         throws Exception
     {
-        m_engine.saveText( NAME1, "Foobar" );
-
-        m_engine.getText( NAME1 ); // Ensure that page is cached.
-
-        Thread.sleep( 2000L ); // Wait two seconds for filesystem granularity
+        m_engine.saveText( NAME1, "Test" );
 
         String files = props.getProperty( FileSystemProvider.PROP_PAGEDIR );
-
         File saved = new File( files, NAME1+FileSystemProvider.FILE_EXT );
 
-        assertTrue( "No file!", saved.exists() );
+        assertTrue( "Didn't create it!", saved.exists() );
 
-        FileWriter out = new FileWriter( saved );
-        FileUtil.copyContents( new StringReader("Puppaa"), out );
-        out.close();
+        WikiPage page = m_engine.getPage( NAME1, WikiProvider.LATEST_VERSION );
 
-	// Wait for the caching provider to notice a refresh.
-        Thread.sleep( 2L*PAGEPROVIDER_RESCAN_PERIOD );
+        m_engine.deletePage( page.getName() );
 
-	// Trim - engine.saveText() may append a newline.
-        String text = m_engine.getText( NAME1 ).trim();
-        assertEquals( "wrong contents", "Puppaa", text );
+        assertFalse( "Page has not been removed!", saved.exists() );
+    }
+    
+    public void testDeleteVersion()
+        throws Exception
+    {
+        props.setProperty( "jspwiki.pageProvider", "VersioningFileProvider" );
+        
+        TestEngine engine = new TestEngine( props );
+        engine.saveText( NAME1, "Test1" );
+        engine.saveText( NAME1, "Test2" );
+        engine.saveText( NAME1, "Test3" );
+
+        WikiPage page = engine.getPage( NAME1, 3 );
+
+        engine.deleteVersion( page );
+        
+        assertNull( "got page", engine.getPage( NAME1, 3 ) );
+        
+        String content = engine.getText( NAME1, WikiProvider.LATEST_VERSION );
+        
+        assertEquals( "content", "Test2", content.trim() );
     }
 
+    public void testDeleteVersion2()
+        throws Exception
+    {
+        props.setProperty( "jspwiki.pageProvider", "VersioningFileProvider" );
+    
+        TestEngine engine = new TestEngine( props );
+        engine.saveText( NAME1, "Test1" );
+        engine.saveText( NAME1, "Test2" );
+        engine.saveText( NAME1, "Test3" );
 
+        WikiPage page = engine.getPage( NAME1, 1 );
+        
+        engine.deleteVersion( page );
+        
+        assertNull( "got page", engine.getPage( NAME1, 1 ) );
+        
+        String content = engine.getText( NAME1, WikiProvider.LATEST_VERSION );
+        
+        assertEquals( "content", "Test3", content.trim() );
+        
+        assertEquals( "content1", "", engine.getText(NAME1, 1).trim() );
+    }
+    
     /**
      *  Assumes that CachingProvider is in use.
      */
@@ -635,7 +658,7 @@ public class WikiEngineTest extends TestCase
 
         Collection c = refMgr.findUncreated();
         assertTrue( "Non-existent reference not detected by ReferenceManager",
-		    Util.collectionContains( c, "Foobar" ));
+            Util.collectionContains( c, "Foobar" ));
 
         Thread.sleep( 2000L ); // Wait two seconds for filesystem granularity
 
@@ -649,7 +672,7 @@ public class WikiEngineTest extends TestCase
         FileUtil.copyContents( new StringReader("[Puppaa]"), out );
         out.close();
 
-        Thread.sleep( 5000L ); // Wait five seconds for CachingProvider to wake up.
+        Thread.sleep( 2000L*PAGEPROVIDER_RESCAN_PERIOD ); // Wait five seconds for CachingProvider to wake up.
 
         String text = m_engine.getText( NAME1 );
 
@@ -658,8 +681,8 @@ public class WikiEngineTest extends TestCase
         c = refMgr.findUncreated();
 
         assertTrue( "Non-existent reference after external page change " +
-		    "not detected by ReferenceManager",
-		    Util.collectionContains( c, "Puppaa" ));
+                    "not detected by ReferenceManager",
+                    Util.collectionContains( c, "Puppaa" ));
     }
 
 
@@ -690,7 +713,7 @@ public class WikiEngineTest extends TestCase
 
         assertFalse( "File not deleted!", saved.exists() );
 
-        Thread.sleep( 5000L ); // Wait five seconds for CachingProvider to catch up.
+        Thread.sleep( 2000L*PAGEPROVIDER_RESCAN_PERIOD ); // Wait five seconds for CachingProvider to catch up.
 
         WikiPage p = m_engine.getPage( NAME1 );
 
@@ -703,22 +726,36 @@ public class WikiEngineTest extends TestCase
         c = refMgr.findUncreated();
         assertEquals( "NEW: uncreated count", 0, c.size() );
     }
-    /*
-    public void testDeletePage()
+
+    /**
+     *  Assumes that CachingProvider is in use.
+     */
+    public void testExternalModification()
         throws Exception
     {
-        m_engine.saveText( NAME1, "Test" );
+        m_engine.saveText( NAME1, "Foobar" );
+
+        m_engine.getText( NAME1 ); // Ensure that page is cached.
+
+        Thread.sleep( 2000L ); // Wait two seconds for filesystem granularity
 
         String files = props.getProperty( FileSystemProvider.PROP_PAGEDIR );
+
         File saved = new File( files, NAME1+FileSystemProvider.FILE_EXT );
 
-        assertTrue( "Didn't create it!", saved.exists() );
+        assertTrue( "No file!", saved.exists() );
 
-        WikiPage page = m_engine.getPage( NAME1, WikiProvider.LATEST_VERSION );
+        FileWriter out = new FileWriter( saved );
+        FileUtil.copyContents( new StringReader("Puppaa"), out );
+        out.close();
 
-        m_engine.deletePage( page );
+        // Wait for the caching provider to notice a refresh.
+        Thread.sleep( 2000L*PAGEPROVIDER_RESCAN_PERIOD );
 
-        assertFalse( "Page has not been removed!", saved.exists() );
+        // Trim - engine.saveText() may append a newline.
+        String text = m_engine.getText( NAME1 ).trim();
+        assertEquals( "wrong contents", "Puppaa", text );
     }
-    */
+
+
 }

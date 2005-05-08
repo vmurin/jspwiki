@@ -21,7 +21,6 @@ package com.ecyrd.jspwiki.tags;
 
 import java.io.IOException;
 import java.security.Principal;
-
 import javax.servlet.http.HttpServletRequest;
 
 import com.ecyrd.jspwiki.WikiEngine;

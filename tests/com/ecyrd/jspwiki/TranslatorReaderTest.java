@@ -56,38 +56,44 @@ public class TranslatorReaderTest extends TestCase
         {
             String name = (String) i.next();
 
-            testEngine.deletePage(name);
+            TestEngine.deleteTestPage(name);
+            testEngine.deleteAttachments(name);
         }
 
         created.clear();
     }
 
     private String translate( String src )
-        throws IOException,
-               NoRequiredPropertyException,
-               ServletException
+    throws IOException,
+           NoRequiredPropertyException,
+           ServletException
     {
-        WikiContext context = new WikiContext( testEngine,
-                                               new WikiPage(PAGE_NAME) );
-        Reader r = new TranslatorReader( context, 
-                                         new BufferedReader( new StringReader(src)) );
-        StringWriter out = new StringWriter();
-        int c;
-
-        while( ( c=r.read()) != -1 )
-        {
-            out.write( c );
-        }
-
-        return out.toString();
+        return translate( new WikiPage(PAGE_NAME), src );
     }
 
+    private String translate( WikiEngine e, String src )
+    throws IOException,
+           NoRequiredPropertyException,
+           ServletException
+    {
+        return translate( e, new WikiPage(PAGE_NAME), src );
+    }
+
+
     private String translate( WikiPage p, String src )
+    throws IOException,
+           NoRequiredPropertyException,
+           ServletException
+    {
+        return translate( testEngine, p, src );
+    }
+    
+    private String translate( WikiEngine e, WikiPage p, String src )
         throws IOException,
                NoRequiredPropertyException,
                ServletException
     {
-        WikiContext context = new WikiContext( testEngine,
+        WikiContext context = new WikiContext( e,
                                                p );
         Reader r = new TranslatorReader( context, 
                                          new BufferedReader( new StringReader(src)) );
@@ -560,6 +566,45 @@ public class TranslatorReaderTest extends TestCase
 
         assertEquals( "This should be a <a class=\"interwiki\" href=\"http://www.ecyrd.com/JSPWiki/Wiki.jsp?page=HyperLink\">link</a>",
                       translate(src) );
+    }
+
+    public void testAttachmentLink()
+        throws Exception
+    {
+        newPage("Test");
+
+        Attachment att = new Attachment( "Test", "TestAtt.txt" );
+        att.setAuthor( "FirstPost" );
+        testEngine.getAttachmentManager().storeAttachment( att, testEngine.makeAttachmentFile() );
+    
+        String src = "This should be an [attachment link|Test/TestAtt.txt]";
+        
+        assertEquals( "This should be an <a class=\"attachment\" href=\"attach/Test/TestAtt.txt\">attachment link</a>"+
+                      "<a href=\"PageInfo.jsp?page=Test/TestAtt.txt\"><img src=\"images/attachment_small.png\" border=\"0\" alt=\"(info)\"/></a>",
+                      translate(src));
+    }
+
+    public void testAttachmentLink2()
+         throws Exception
+    {
+        props.setProperty( "jspwiki.encoding", "ISO-8859-1" );
+        
+        //TODO
+        TestEngine testEngine2 = new TestEngine( props );
+        
+        testEngine2.saveText( "Test", "foo ");
+        created.addElement( "Test" );
+
+        Attachment att = new Attachment( "Test", "TestAtt.txt" );
+        att.setAuthor( "FirstPost" );
+    
+        testEngine2.getAttachmentManager().storeAttachment( att, testEngine.makeAttachmentFile() );
+
+        String src = "This should be an [attachment link|Test/TestAtt.txt]";
+    
+        assertEquals( "This should be an <a class=\"attachment\" href=\"attach/Test/TestAtt.txt\">attachment link</a>"+
+                      "<a href=\"PageInfo.jsp?page=Test/TestAtt.txt\"><img src=\"images/attachment_small.png\" border=\"0\" alt=\"(info)\"/></a>",
+                      translate(testEngine2,src));
     }
 
     public void testNoHyperlink()
@@ -1621,20 +1666,33 @@ public class TranslatorReaderTest extends TestCase
 
         Acl acl = p.getAcl();
 
-        // Janne can read and edit
+        // ACL says Janne can read and edit
         Principal prof = new WikiPrincipal("JanneJalkanen");
         assertTrue( "read for JJ", inArray( acl.findPrincipals( new PagePermission( PAGE_NAME, "view") ), prof ) );
         assertTrue( "edit for JJ", inArray( acl.findPrincipals( new PagePermission( PAGE_NAME, "edit") ), prof ) );
 
-        // Erik cannot read or edit
+        // ACL doesn't say Erik can read or edit
         prof = new WikiPrincipal("ErikBunn");
         assertFalse( "no read for BB", inArray( acl.findPrincipals( new PagePermission( PAGE_NAME, "view") ), prof ) );
         assertFalse( "no edit for EB", inArray( acl.findPrincipals( new PagePermission( PAGE_NAME, "edit") ), prof ) );
 
-        // Sulo can edit and read (edit implies read)
+        // ACL says Sulo can edit, but doens't say he can read (though the AuthMgr will tell us it's implied)
         prof = new WikiPrincipal("SuloVilen");
-        assertTrue( "read for SV", inArray( acl.findPrincipals( new PagePermission( PAGE_NAME, "view") ), prof ) );
+        assertFalse( "read for SV", inArray( acl.findPrincipals( new PagePermission( PAGE_NAME, "view") ), prof ) );
         assertTrue( "edit for SV", inArray( acl.findPrincipals( new PagePermission( PAGE_NAME, "edit") ), prof ) );
+    }
+
+    private boolean containsGroup( List l, String name )
+    {
+        for( Iterator i = l.iterator(); i.hasNext(); )
+        {
+            String group = (String) i.next();
+
+            if( group.equals( name ) )
+                return true;
+        }
+
+        return false;
     }
 
     /**
@@ -1792,7 +1850,7 @@ public class TranslatorReaderTest extends TestCase
             File storagedir = new File( files, PAGE_NAME+BasicAttachmentProvider.DIR_EXTENSION );
 
             if( storagedir.exists() && storagedir.isDirectory() )
-                testEngine.deleteAll( storagedir );
+                TestEngine.deleteAll( storagedir );
         }
     }
 

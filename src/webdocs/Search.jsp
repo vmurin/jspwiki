@@ -35,7 +35,7 @@
     {
         log.info("Searching for string "+query);
 
-        list = wiki.findPages( wikiContext, query );
+        list = wiki.findPages( query );
 
         pageContext.setAttribute( "searchresults",
                                   list,

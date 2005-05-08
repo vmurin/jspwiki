@@ -1,9 +1,18 @@
 <%@ taglib uri="/WEB-INF/jspwiki.tld" prefix="wiki" %>
 
+<script language="javascript">
+function confirmDelete()
+{
+  var reallydelete = confirm("Please confirm that you want to delete content permanently!");
+
+  return reallydelete;
+}
+</script>
+
 <wiki:PageExists>
 
-   <form action="<wiki:Variable var="baseurl"/>Delete.jsp?page=<wiki:PageName />" method="post" 
-                 accept-charset="<wiki:ContentEncoding />">
+   <form name="deleteForm" action="<wiki:BaseURL/>Delete.jsp?page=<wiki:Variable var="pagename" />" method="post" 
+                 accept-charset="<wiki:ContentEncoding />" onsubmit="return confirmDelete()">
 
    <table cellspacing="4">
        <tr>
@@ -26,6 +35,11 @@
        <tr>
            <td><b>Current page version</b></td>
            <td><wiki:PageVersion>No versions.</wiki:PageVersion></td>
+       </tr>
+
+       <tr>
+           <td><b>Page feed</b></td>
+           <td><a href="<wiki:BaseURL/>rss.jsp?page=<wiki:Variable var="pagename" />&amp;mode=wiki"><img src="<wiki:BaseURL/>images/xml.png" border="0" alt="[RSS]"></a></td>
        </tr>
 
        <tr>
@@ -81,19 +95,21 @@
 
                          <wiki:Permission permission="delete">
                              <td>
-                                 <input type="checkbox" name="delete-<%=currentPage.getVersion()%>" />
+                                 <input type="checkbox" name="delver-<%=currentPage.getVersion()%>" />
                              </td>
                          </wiki:Permission>
                      </tr>
                    </wiki:HistoryIterator>
                </table>
+               <wiki:Permission permission="delete">
+                   <br /><br />
+                   <input type="submit" name="delete" value="Delete marked versions only"/>
+                   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                   <input type="submit" name="delete-all" value="Delete entire page"/>
+               </wiki:Permission>
            </td>
       </tr>
 </table>
-
-    <wiki:Permission permission="delete">
-       <input type="submit" name="delete" value="Delete marked versions"/>
-    </wiki:Permission>
 
     </form>
              
