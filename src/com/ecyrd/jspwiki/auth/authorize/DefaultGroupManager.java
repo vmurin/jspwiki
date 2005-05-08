@@ -15,7 +15,6 @@ import org.apache.log4j.Logger;
 
 import com.ecyrd.jspwiki.WikiContext;
 import com.ecyrd.jspwiki.WikiEngine;
-import com.ecyrd.jspwiki.WikiException;
 import com.ecyrd.jspwiki.WikiPage;
 import com.ecyrd.jspwiki.auth.AuthorizationManager;
 import com.ecyrd.jspwiki.auth.WikiPrincipal;
@@ -46,9 +45,10 @@ import com.ecyrd.jspwiki.providers.ProviderException;
  * <p>
  * TODO: are 'named members' supposed to be usernames, or are group names
  * allowed? (Suggestion: both)
- * @since 2.3
  * @author Janne Jalkanen
- * @author Andrew R. Jaquith
+ * @author Andrew Jaquith
+ * @version $Revision: 1.1.2.5 $ $Date: 2005-05-08 18:04:31 $
+ * @since 2.3
  */
 public class DefaultGroupManager implements GroupManager
 
@@ -104,7 +104,7 @@ public class DefaultGroupManager implements GroupManager
      * is the same name as one of the built-in Roles: e.g., Admin,
      * Authenticated, etc.
      * @param group the Group to add
-     * @see com.ecyrd.jspwiki.auth.authorize.GroupManager#add(DefaultGroup)
+     * @see com.ecyrd.jspwiki.auth.authorize.GroupManager#add(Group)
      * @throws IllegalArgumentException if the group name isn't allowed
      */
     public synchronized void add( Group group )
@@ -130,7 +130,9 @@ public class DefaultGroupManager implements GroupManager
     }
 
     /**
-     * @see com.ecyrd.jspwiki.auth.authorize.GroupManager#exists(DefaultGroup)
+     * Returns <code>true</code> if a Group is known to the GroupManager
+     * (contained in the group cache), <code>false</code> otherwise.
+     * @see com.ecyrd.jspwiki.auth.authorize.GroupManager#exists(Group)
      */
     public boolean exists( Group group )
     {
@@ -145,7 +147,7 @@ public class DefaultGroupManager implements GroupManager
      * </p>
      * @param name Name of the group. This is case-sensitive.
      * @return A DefaultGroup instance.
-     * @see com.ecyrd.jspwiki.auth.authorize.GroupManager#find(java.lang.String)
+     * @see com.ecyrd.jspwiki.auth.authorize.GroupManager#findRole(java.lang.String)
      */
     public Principal findRole( String name )
     {
@@ -164,16 +166,7 @@ public class DefaultGroupManager implements GroupManager
         m_engine = engine;
 
         m_engine.getFilterManager().addPageFilter( new SaveFilter(), 1000000 );
-
-        if (!m_engine.pageExists(GROUP_PREFIX)) {
-            WikiContext context = new WikiContext( m_engine, null, new WikiPage(GROUP_PREFIX) );
-            try {
-                m_engine.saveText(context, "This is the group configuration page. All group definitions are sub-pages of this page.");
-            }
-            catch (WikiException e) {
-                throw new IllegalStateException("Could not save default group page " + GROUP_PREFIX);
-            }
-        }
+     
         reload();
     }
 
@@ -186,8 +179,7 @@ public class DefaultGroupManager implements GroupManager
      *            <code>null</code> is permitted
      * @param subject the subject about whom membership statis is sought
      * @param role the Group to search. If null, this method always returns false
-     * @see com.ecyrd.jspwiki.auth.Authorizer#isUserInRole(com.ecyrd.jspwiki.WikiContext,
-     *      java.security.Principal, java.lang.String)
+     * @see com.ecyrd.jspwiki.auth.Authorizer#isUserInRole(WikiContext, Subject, Principal)
      */
     public boolean isUserInRole( WikiContext context, Subject subject, Principal role )
     {
@@ -235,7 +227,8 @@ public class DefaultGroupManager implements GroupManager
 
                 if ( memberList != null )
                 {
-                    updateGroup( p.getName(), memberList );
+                    String groupName = p.getName().substring(DefaultGroupManager.GROUP_PREFIX.length());
+                    updateGroup( groupName, memberList );
                 }
             }
         }
@@ -248,7 +241,7 @@ public class DefaultGroupManager implements GroupManager
     /**
      * Removes a Group from the group cache.
      * @param group the group to remove
-     * @see com.ecyrd.jspwiki.auth.authorize.GroupManager#remove(DefaultGroup)
+     * @see com.ecyrd.jspwiki.auth.authorize.GroupManager#remove(Group)
      */
     public synchronized void remove( Group group )
     {

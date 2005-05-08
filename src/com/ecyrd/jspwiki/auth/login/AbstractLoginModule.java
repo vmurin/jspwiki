@@ -13,12 +13,14 @@ import org.apache.log4j.Logger;
 
 /**
  * Abstract JAAS {@link javax.security.auth.spi.LoginModule}that implements
- * base functionality. The methods {@link #login()}and {@link #commit()}must
+ * base functionality. The methods {@link #login()} and {@link #commit()} must
  * be implemented by subclasses. The default implementations of
- * {@link #initialize(Subject, CallbackHandler, Map, Map), {@link #abort()}and
- * {@link #logout()}should be sufficient for most purposes, but can be safely
+ * {@link #initialize(Subject, CallbackHandler, Map, Map)}, {@link #abort()} and
+ * {@link #logout()} should be sufficient for most purposes, but can be safely
  * over-ridden.
  * @author Andrew Jaquith
+ * @version $Revision: 1.1.2.2 $ $Date: 2005-05-08 18:05:19 $
+ * @since 2.3
  */
 public abstract class AbstractLoginModule implements LoginModule
 {
@@ -34,7 +36,7 @@ public abstract class AbstractLoginModule implements LoginModule
     protected Map             m_state;
 
     protected Subject         m_subject;
-    
+
     /**
      * Aborts the login; always returns <code>true</code>.
      * @see javax.security.auth.spi.LoginModule#abort()
@@ -51,13 +53,13 @@ public abstract class AbstractLoginModule implements LoginModule
     }
 
     /**
-     * Commits the login. If the {@link #login()}method succeeded, adds
+     * Commits the login. If the {@link #login()} method succeeded, adds
      * principals to the Subject's set; generally, these will be the user's
      * actual Principal, plus one or more Role principals. The state of the
      * <code>m_principals</code> member variable is consulted to determine
      * whether to add the principals. If its size is 0 (because the login
      * failed), no principals are added. Otherwise, the principals added to
-     * <code>m_principals</code> in the {@link #login()}method are added to
+     * <code>m_principals</code> in the {@link #login()} method are added to
      * the Subject's set.
      * @return <code>true</code> if the commit succeeded, or
      *         <code>false</code> if the previous call to {@link #login()}
@@ -69,7 +71,8 @@ public abstract class AbstractLoginModule implements LoginModule
      */
     public boolean commit() throws LoginException
     {
-        if ( m_principals.size() > 0 ) {
+        if ( m_principals.size() > 0 )
+        {
             m_subject.getPrincipals().addAll( m_principals );
             return true;
         }
@@ -81,12 +84,11 @@ public abstract class AbstractLoginModule implements LoginModule
 
     /**
      * Initializes the LoginModule with a given <code>Subject</code>,
-     * callback handler, options and shared state.
-     * In particular, the member variable <code>m_principals</code>
-     * is initialized as a blank Set.
+     * callback handler, options and shared state. In particular, the member
+     * variable <code>m_principals</code> is initialized as a blank Set.
      * @see javax.security.auth.spi.LoginModule#initialize(javax.security.auth.Subject,
-     * javax.security.auth.callback.CallbackHandler, java.util.Map,
-     * java.util.Map)
+     *      javax.security.auth.callback.CallbackHandler, java.util.Map,
+     *      java.util.Map)
      */
     public void initialize( Subject subject, CallbackHandler callbackHandler, Map sharedState, Map options )
     {
@@ -95,11 +97,13 @@ public abstract class AbstractLoginModule implements LoginModule
         m_handler = callbackHandler;
         m_state = sharedState;
         m_options = options;
-        if (subject == null) {
-            throw new IllegalStateException("Subject cannot be null");
+        if ( subject == null )
+        {
+            throw new IllegalStateException( "Subject cannot be null" );
         }
-        if (callbackHandler == null) {
-            throw new IllegalStateException("Callback handler cannot be null");
+        if ( callbackHandler == null )
+        {
+            throw new IllegalStateException( "Callback handler cannot be null" );
         }
     }
 
@@ -108,9 +112,10 @@ public abstract class AbstractLoginModule implements LoginModule
      * series of callbacks. If the login succeeds, this method returns
      * <code>true</code>
      * @return <code>true</code> if the commit succeeded, or
-     * <code>false</code> if this LoginModule should be ignored.
-     * Implementing classes should set the member variable <code>m_loginSucceeded</code>
-     * to indicate whether the login for this module succeeded or failed.
+     *         <code>false</code> if this LoginModule should be ignored.
+     *         Implementing classes should set the member variable
+     *         <code>m_loginSucceeded</code> to indicate whether the login for
+     *         this module succeeded or failed.
      * @throws LoginException if the authentication fails
      * @see javax.security.auth.spi.LoginModule#login()
      */
@@ -120,7 +125,7 @@ public abstract class AbstractLoginModule implements LoginModule
      * Logs the user out. Removes all principals from the Subject's principal
      * set.
      * @return <code>true</code> if the commit succeeded, or
-     * <code>false</code> if this LoginModule should be ignored
+     *         <code>false</code> if this LoginModule should be ignored
      * @throws LoginException if the authentication fails
      * @see javax.security.auth.spi.LoginModule#logout()
      */

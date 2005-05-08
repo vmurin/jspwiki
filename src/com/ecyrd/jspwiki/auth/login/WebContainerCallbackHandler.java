@@ -10,9 +10,11 @@ import javax.servlet.http.HttpServletRequest;
 import com.ecyrd.jspwiki.auth.user.UserDatabase;
 
 /**
- * Handles logins made from
+ * Handles logins made from within JSPWiki.
  * @link AuthenticationManager#getWikiSession(HttpServletRequest).
  * @author Andrew Jaquith
+ * @version $Revision: 1.1.2.2 $ $Date: 2005-05-08 18:05:19 $
+ * @since 2.3
  */
 public class WebContainerCallbackHandler implements CallbackHandler
 {

@@ -14,10 +14,16 @@
 package com.ecyrd.jspwiki.auth;
 
 import java.security.Permission;
+import java.security.Principal;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Properties;
+import java.util.Set;
 
 import javax.security.auth.Subject;
 import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.login.AppConfigurationEntry;
+import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import javax.servlet.http.Cookie;
@@ -31,19 +37,28 @@ import com.ecyrd.jspwiki.WikiContext;
 import com.ecyrd.jspwiki.WikiEngine;
 import com.ecyrd.jspwiki.WikiException;
 import com.ecyrd.jspwiki.WikiSession;
+import com.ecyrd.jspwiki.auth.authorize.Role;
+import com.ecyrd.jspwiki.auth.login.CookieAssertionLoginModule;
 import com.ecyrd.jspwiki.auth.login.WebContainerCallbackHandler;
 import com.ecyrd.jspwiki.auth.login.WikiCallbackHandler;
 import com.ecyrd.jspwiki.auth.permissions.PagePermission;
+import com.ecyrd.jspwiki.auth.user.UserDatabase;
+import com.ecyrd.jspwiki.auth.user.UserProfile;
 
 /**
- * @author Andrew R. Jaquith
+ * Manages authentication activities for a WikiEngine: user login, logout, and 
+ * credential refreshes. This class uses JAAS to determine how users log in.
+ * @author Andrew Jaquith
  * @author Janne Jalkanen
  * @author Erik Bunn
+ * @version $Revision: 1.1.2.4 $ $Date: 2005-05-08 18:03:20 $
  * @since 2.3
  */
 public class AuthenticationManager
 {
 
+    public static final String                 COOKIE_MODULE       =  CookieAssertionLoginModule.class.getName();
+    
     public static final String                 LOGIN_CONTAINER     = "JSPWiki-container";
 
     public static final String                 LOGIN_CUSTOM        = "JSPWiki-custom";
@@ -56,13 +71,13 @@ public class AuthenticationManager
     static Logger                              log                 = Logger.getLogger( AuthenticationManager.class );
 
     private String                             m_administrator     = null;
+    
+    private boolean                            m_containerAuth     = true;
 
     private WikiEngine                         m_engine            = null;
 
     /** If true, logs the IP address of the editor */
     private boolean                            m_storeIPAddress    = true;
-    
-    private boolean                            m_containerAuth     = true;
 
     /**
      * Creates an AuthenticationManager instance for the given WikiEngine and
@@ -75,27 +90,18 @@ public class AuthenticationManager
         m_containerAuth = Boolean.getBoolean( props.getProperty( PROP_USE_CMS_AUTH, "true").toLowerCase() );
         m_storeIPAddress = TextUtil.getBooleanProperty( props, PROP_STOREIPADDRESS, m_storeIPAddress );
     }
-
+    
     /**
-     * Attempts to perform a login for the given username/password combination.
-     * @param username The user name. This is a login name, not a WikiName. In
-     *            most cases they are the same, but in some cases, they might
-     *            not be.
-     * @param password The password
-     * @return true, if the username/password is valid
+     * Returns true if this WikiEngine uses container-managed authentication.
+     * This method is used primarily for cosmetic purposes in the JSP tier, and
+     * performs no meaningful security function per se. Defaults to true unless
+     * property {@link #PROP_USE_CMS_AUTH}was set.
+     * @return <code>true</code> if the wiki's authentication is managed by
+     *         the container, <code>false</code> otherwise
      */
-    public boolean loginCustom( String username, String password, HttpServletRequest request )
+    public boolean isContainerAuthenticated()
     {
-        if ( request == null )
-        {
-            log.error( "No Http request provided, cannot log in." );
-            return false;
-        }
-        WikiSession wikiSession = WikiSession.getWikiSession( request );
-        Subject subject = wikiSession.getSubject();
-        subject.getPrincipals().clear();
-        CallbackHandler handler = new WikiCallbackHandler( m_engine.getUserDatabase(), username, password );
-        return doLogin( wikiSession, handler, LOGIN_CUSTOM );
+            return m_containerAuth;
     }
 
     /**
@@ -108,7 +114,7 @@ public class AuthenticationManager
      * true, an IllegalStateException is thrown. This method is a
      * <em>privileged</em> action; the caller must posess the (name here)
      * permission.
-     * @param contect wiki context for this user.
+     * @param context wiki context for this user.
      * @throws IllegalStateException if the wiki context's
      *             <code>getHttpRequest</code> or <code>getWikiSession</code>
      *             methods return null
@@ -141,13 +147,157 @@ public class AuthenticationManager
     }
 
     /**
+     * Attempts to perform a login for the given username/password combination.
+     * @param username The user name. This is a login name, not a WikiName. In
+     *            most cases they are the same, but in some cases, they might
+     *            not be.
+     * @param password The password
+     * @return true, if the username/password is valid
+     */
+    public boolean loginCustom( String username, String password, HttpServletRequest request )
+    {
+        if ( request == null )
+        {
+            log.error( "No Http request provided, cannot log in." );
+            return false;
+        }
+        WikiSession wikiSession = WikiSession.getWikiSession( request );
+        Subject subject = wikiSession.getSubject();
+        subject.getPrincipals().clear();
+        CallbackHandler handler = new WikiCallbackHandler( m_engine.getUserDatabase(), username, password );
+        return doLogin( wikiSession, handler, LOGIN_CUSTOM );
+    }
+    
+    /**
+     * Reloads user Principals into the suppplied WikiSession's Subject.
+     * Existing Role principals are preserved; all other Principal
+     * types are flushed and replaced by those returned by
+     * {@link com.ecyrd.jspwiki.auth.user.UserDatabase#getPrincipals(String)}.
+     * This method should generally be called after a user's {@link com.ecyrd.jspwiki.auth.user.UserProfile}
+     * is saved. If the wiki session is null, or there is no matching user profile, the
+     * method returns silently.
+     * @param wikiSession
+     */
+    public void refreshCredentials( WikiSession wikiSession ) 
+    {
+      // Get the database and wiki session Subject
+      UserDatabase database = m_engine.getUserDatabase();
+      if ( database == null )
+      {
+          throw new IllegalStateException( "User database cannot be null." );
+      }
+      Subject subject = wikiSession.getSubject();
+      
+      // Copy all Role principals into a temporary cache
+      Set oldPrincipals = subject.getPrincipals();
+      Set newPrincipals = new HashSet();
+      for (Iterator it = oldPrincipals.iterator(); it.hasNext();)
+      {
+          Principal principal = (Principal)it.next();
+          if (principal instanceof Role)
+          {
+              newPrincipals.add( principal );
+          }
+      }
+      String searchId = wikiSession.getUserPrincipal().getName();
+      if ( searchId == null )
+      {
+          // Oh dear, this wasn't an authenticated user after all
+          log.info("Refresh principals failed because WikiSession had no user Principal; maybe not logged in?");
+          return;
+      }
+      
+      // Look up the user and go get the new Principals
+      try 
+      {
+          UserProfile profile = database.find( searchId );
+          Principal[] principals = database.getPrincipals( profile.getLoginName() );
+          for (int i = 0; i < principals.length; i++)
+          {
+              newPrincipals.add( principals[i] );
+          }
+        
+          // Replace the Subject's old Principals with the new ones
+          oldPrincipals.clear();
+          oldPrincipals.addAll( newPrincipals );
+      }
+      catch ( NoSuchPrincipalException e )
+      {
+          // It would be extremely surprising if we get here....
+          log.error("Refresh principals failed because user profile matching '" + searchId + "' not found.");
+      }
+    }
+
+    /**
+     * Determines whether authentication is required to view wiki pages. This is
+     * done by checking for the PagePermission.VIEW permission using a null
+     * WikiContext. It delegates the check to
+     * {@link AuthorizationManager#checkPermission(WikiContext, Permission)}.
+     * @return <code>true</code> if logins are required
+     */
+    public boolean strictLogins()
+    {
+        return ( m_engine.getAuthorizationManager().checkPermission( null, PagePermission.VIEW ) );
+    }
+
+    /**
+     * Log in to the application using a given JAAS LoginConfiguration.
+     * @param wikiSession the current wiki session, to which the Subject will be associated
+     * @param handler handles callbacks sent by the LoginModules in the configuration
+     * @param application the name of the application whose LoginConfiguration should be used
+     * @return the result of the login
+     * @throws WikiSecurityException
+     */
+    private boolean doLogin( WikiSession wikiSession, CallbackHandler handler, String application )
+    {
+        try
+        {
+            LoginContext loginContext = new LoginContext( application, handler );
+            loginContext.login();
+            Subject subject = loginContext.getSubject();
+            wikiSession.setSubject( subject );
+            
+            // TODO: Inject Role.ADMIN if user is named admin or part of role
+            
+            return true;
+        }
+        catch( LoginException e )
+        {
+            log.error( "Couldn't log in. Is something wrong with your jaas.config file?\nMessage="
+                    + e.getLocalizedMessage() );
+            return false;
+        }
+    }
+    
+    /**
+     * Determines whether this WikiEngine allows users to assert identities using
+     * cookies instead of passwords. This is determined by inspecting
+     * the LoginConfiguration for application <code>JSPWiki-container</code>.
+     * @return <code>true</code> if cookies are allowed
+     */
+    public static boolean allowsCookieAssertions()
+    {
+        Configuration loginConfig = Configuration.getConfiguration();
+        AppConfigurationEntry[] configs = loginConfig.getAppConfigurationEntry("JSPWiki-container");
+        for ( int i = 0; i < configs.length; i++ )
+        {
+            AppConfigurationEntry config = configs[i];
+            if ( COOKIE_MODULE.equals( config.getLoginModuleName() ) )
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Logs the user out by invalidating the Http session associated with the
      * Wiki context. As a consequence, this will also automatically unbind the
      * WikiSession, and with it all of its Principal objects and Subject. This
      * is a cheap-and-cheerful way to do it without invoking JAAS LoginModules.
      * The logout operation will also remove the JSESSIONID cookie from
      * the user's browser session, if it was set.
-     * @param context the current wiki context
+     * @param session the current HTTP session
      */
     public static void logout( HttpSession session )
     {
@@ -162,57 +312,6 @@ public class AuthenticationManager
         // Remove JSESSIONID in case it is still kicking around
         Cookie sessionCookie = new Cookie("JSESSIONID", null);
         sessionCookie.setMaxAge(0);
-    }
-
-    /**
-     * Log in to the application using a given JAAS LoginConfiguration.
-     * @param wikiSession
-     * @param handler
-     * @param application
-     * @return the result of the login
-     * @throws WikiSecurityException
-     */
-    private boolean doLogin( WikiSession wikiSession, CallbackHandler handler, String application )
-    {
-        //TODO: inject Role.ADMIN if user is named admin or part of role
-        try
-        {
-            LoginContext loginContext = new LoginContext( application, handler );
-            loginContext.login();
-            Subject subject = loginContext.getSubject();
-            wikiSession.setSubject( subject );
-            return true;
-        }
-        catch( LoginException e )
-        {
-            log.error( "Couldn't log in. Is something wrong with your jaas.config file?\nMessage="
-                    + e.getLocalizedMessage() );
-            return false;
-        }
-    }
-
-    /**
-     * Determines whether authentication is required to view wiki pages. This is
-     * done by checking for the PagePermission.VIEW permission using a null
-     * WikiContext. It delegates the check to
-     * {@link AuthorizationManager#checkPermission(WikiContext, Permission)}.
-     * @return <code>true</code> if logins are required
-     */
-    public boolean strictLogins()
-    {
-        return ( m_engine.getAuthorizationManager().checkPermission( null, PagePermission.VIEW ) );
-    }
-    
-    /**
-     * Returns true if this WikiEngine uses container-managed authentication.
-     * This method is used primarily for cosmetic purposes in the JSP tier,
-     * and performs no meaningful security function per se.
-     * Defaults to true unless property {@link #PROP_USE_CMS_AUTH} was set.
-     * @return 
-     */
-    public boolean isContainerAuthenticated()
-    {
-            return m_containerAuth;
     }
 
 }

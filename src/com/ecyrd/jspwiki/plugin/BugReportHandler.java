@@ -21,9 +21,9 @@ package com.ecyrd.jspwiki.plugin;
 
 import org.apache.log4j.Logger;
 import com.ecyrd.jspwiki.*;
+import java.security.Principal;
 import java.util.*;
 import java.io.*;
-import java.security.Principal;
 import java.text.SimpleDateFormat;
 
 /**

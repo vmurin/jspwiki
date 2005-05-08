@@ -65,6 +65,7 @@
        <servlet-class>com.ecyrd.jspwiki.WikiServlet</servlet-class>       
    </servlet>
 
+
    <!--
        Attachment exchange handler.
      -->
@@ -120,6 +121,22 @@
    </welcome-file-list>
 
    <!--
+       By default we just limit access to the Delete.jsp, as it
+       is actually dangerous.
+   -->
+
+   <security-constraint>
+       <web-resource-collection>
+           <web-resource-name>Protected Area</web-resource-name>
+           <url-pattern>/Delete.jsp</url-pattern>
+       </web-resource-collection>
+       <auth-constraint>
+           <role-name>admin</role-name>
+           <role-name>user</role-name>
+       </auth-constraint>
+   </security-constraint>
+      
+   <!--
        Here we define the users which are allowed to access JSPWiki
        editor.
 
@@ -127,7 +144,7 @@
        which allows everyone read access, but only authenticated
        users are allowed to edit (i.e. access the Edit.jsp page).
 
-       To enable this, remove the comments signs.
+       To enable this, replace the previous section with this section.
 
        We setup here two sample roles, "admin" and "user".
        There is no real difference between these two for now.

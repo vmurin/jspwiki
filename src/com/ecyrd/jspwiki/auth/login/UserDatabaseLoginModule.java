@@ -18,29 +18,29 @@ import com.ecyrd.jspwiki.auth.user.UserProfile;
 
 /**
  * <p>
- * Logs a user in based on a username, password, and static password file
+ * Logs in a user based on a username, password, and static password file
  * location. This module must be used with a CallbackHandler (such as
  * {@link WikiCallbackHandler}) that supports the following Callback types:
  * </p>
  * <ol>
- * <li>{@link FileCallback}- supplies the location of the password file</li>
  * <li>{@link javax.security.auth.callback.NameCallback}- supplies the
  * username</li>
  * <li>{@link javax.security.auth.callback.PasswordCallback}- supplies the
  * password</li>
  * <li>{@link com.ecyrd.jspwiki.auth.login.UserDatabaseCallback}- supplies the
- * {@link org.ecyrd.jspwiki.auth.user.UserDatabase}</li>
+ * {@link com.ecyrd.jspwiki.auth.user.UserDatabase}</li>
  * </ol>
  * <p>
- * After authentication, Principals based on the login name, full
- * name, and wiki name will be created and associated with the Subject, as
- * returned by
+ * After authentication, Principals based on the login name, full name, and wiki
+ * name will be created and associated with the Subject, as returned by
  * {@link com.ecyrd.jspwiki.auth.user.UserDatabase#getPrincipals(String)}.
- * Also, principals Role.AUTHENTICATED and Role.ALL will be added to the
- * Subject's principal set.
+ * Also, principals {@link com.ecyrd.jspwiki.auth.authorize.Role#ALL} and
+ * {@link com.ecyrd.jspwiki.auth.authorize.Role#AUTHENTICATED} will be added to
+ * the Subject's principal set.
  * </p>
- * @author Andrew R. Jaquith
- * @version $Revision: 1.1.2.1 $ $Date: 2005-02-01 02:54:33 $
+ * @author Andrew Jaquith
+ * @version $Revision: 1.1.2.2 $ $Date: 2005-05-08 18:05:19 $
+ * @since 2.3
  */
 public class UserDatabaseLoginModule extends AbstractLoginModule
 {
@@ -66,15 +66,16 @@ public class UserDatabaseLoginModule extends AbstractLoginModule
             String password = new String( pcb.getPassword() );
 
             // Look up the user and compare the password hash
-            if ( db == null ) {
+            if ( db == null )
+            {
                 throw new FailedLoginException( "No user database: check the callback handler code!" );
             }
             UserProfile profile = db.findByLoginName( username );
             Principal[] principals = db.getPrincipals( username );
             String storedPassword = profile.getPassword();
-            if ( storedPassword != null && db.validatePassword(username, password) )
+            if ( storedPassword != null && db.validatePassword( username, password ) )
             {
-                for (int i = 0; i < principals.length; i++)
+                for( int i = 0; i < principals.length; i++ )
                 {
                     m_principals.add( principals[i] );
                 }
@@ -96,10 +97,10 @@ public class UserDatabaseLoginModule extends AbstractLoginModule
             log.error( message, e );
             throw new LoginException( message );
         }
-        catch (NoSuchPrincipalException e) {
+        catch( NoSuchPrincipalException e )
+        {
             throw new FailedLoginException( "The username or password is incorrect." );
         }
     }
-
 
 }

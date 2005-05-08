@@ -10,8 +10,10 @@ import com.ecyrd.jspwiki.auth.permissions.PagePermission;
 
 /**
  * Implementation of a JSPWiki AclEntry.
- * @author Andrew R. Jaquith
- * @version $Revision: 1.1.2.1 $ $Date: 2005-02-01 02:53:13 $
+ * @author Janne Jalkanen
+ * @author Andrew Jaquith
+ * @version $Revision: 1.1.2.2 $ $Date: 2005-05-08 18:03:59 $
+ * @since 2.3
  */
 public class AclEntryImpl implements AclEntry
 {
@@ -85,8 +87,8 @@ public class AclEntryImpl implements AclEntry
 
         Principal p = getPrincipal();
 
-        sb.append( "AclEntry: [User=" + ( p != null ? p.getName() : "null" ) );
-        sb.append( " ALLOW " );
+        sb.append( "[AclEntry ALLOW " + ( p != null ? p.getName() : "null" ) );
+        sb.append( " " );
 
         for( Iterator i = m_permissions.iterator(); i.hasNext(); )
         {

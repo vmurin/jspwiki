@@ -38,24 +38,34 @@ import com.ecyrd.jspwiki.WikiException;
 import com.ecyrd.jspwiki.WikiPage;
 import com.ecyrd.jspwiki.WikiSession;
 import com.ecyrd.jspwiki.auth.acl.Acl;
+import com.ecyrd.jspwiki.auth.acl.AclEntry;
+import com.ecyrd.jspwiki.auth.acl.UnresolvedPrincipal;
 import com.ecyrd.jspwiki.auth.authorize.Group;
 import com.ecyrd.jspwiki.auth.authorize.Role;
-import com.ecyrd.jspwiki.auth.permissions.PagePermission;
+import com.ecyrd.jspwiki.auth.permissions.WikiPermission;
 import com.ecyrd.jspwiki.auth.user.UserDatabase;
 import com.ecyrd.jspwiki.auth.user.UserProfile;
 import com.ecyrd.jspwiki.util.ClassUtil;
 
 /**
- * Manages all access control and authorization.
+ * Manages all access control and authorization; determines what authenticated
+ * users are allowed to do.
+ * @author Andrew Jaquith
+ * @version $Revision: 1.16.2.6 $ $Date: 2005-05-08 18:03:20 $
+ * @since 2.3
  * @see AuthenticationManager
  */
 public class AuthorizationManager
 {
+    /**
+     * The default external Authorizer is the WebContainerAuthorizer
+     */
     public static final String                DEFAUT_AUTHORIZER = "com.ecyrd.jspwiki.auth.authorize.WebContainerAuthorizer";
 
+    /**
+     * The property name in jspwiki.properties for specifying the external Authorizer.
+     */
     public static final String                PROP_AUTHORIZER   = "jspwiki.authorizer";
-
-    private static final AuthorizationManager c_instance        = new AuthorizationManager();
 
     static Category                           log               = Category.getInstance( AuthorizationManager.class );
 
@@ -64,110 +74,87 @@ public class AuthorizationManager
     private WikiEngine                        m_engine          = null;
 
     /**
-     * Returns true or false, depending on whether a Permission is allowed for
-     * this WikiContext.
-     * @param permission Any of the available page permissions "view", "edit,
-     *            "comment", etc.
-     * @see #checkPermission(WikiPage, WikiContext, Permission)
-     */
-    public boolean checkPermission( WikiContext context, Permission permission )
-    {
-        if ( context == null ) 
-        {
-            return checkPermission( null, context, permission );
-        }
-        return checkPermission( context.getPage(), context, permission );
-    }
-    
-    /**
-     * Returns true or false, depending on whether this action is allowed for
-     * this WikiPage.
-     * @param permission Any of the available page permissions "view", "edit,
-     *            "comment", etc.
-     * @deprecated use instead:
-     *             {@link AuthorizationManager#checkPermission(WikiPage, WikiContext, Permission)}
-     */
-    public boolean checkPermission( WikiPage page, WikiContext context, String permission )
-    {
-        Permission pagePermission = new PagePermission( page.getName(), permission );
-        return checkPermission( page, context, pagePermission );
-    }
-
-    /**
-     * Returns true or false, depending on whether this action is allowed for
-     * this WikiPage. The access control algorithm works this way:
+     * Returns <code>true</code> or <code>false</code>, depending on
+     * whether this action is allowed for this WikiPage. The access control
+     * algorithm works this way:
      * <ol>
      * <li>The ACL for the page is obtained</li>
      * <li>The Subject associated with the current WikiSession is obtained
      * (this is looked up in the HttpSession associated with the supplied
      * HttpServletRequest)</li>
-     * <li>If the Subject's principal set includes the Role principal that is the
-     * administrator group, always allow the permission</li>
+     * <li>If the Subject's principal set includes the Role principal that is
+     * the administrator group, always allow the permission</li>
      * <li>If there is no ACL at all, check to see if the Permission is allowed
      * according to the "static" security policy. The security policy speficies
      * what permissions are available by default</li>
      * <li>If there is an ACL, get the list of Principals assigned this
-     * permission in the ACL: these will be role, group or user Principals. Then
-     * determine whether the user (Subject) is in the role/group or poseseses
-     * the user Principal. The matching process works as follows:
-     * <ul>
-     * <li>If the Principal is a built-in Role, check to see whether the
-     * Subject posesses the Role principal in its principal set. Return
-     * <code>true</code> if it does; if not, try the next check</li>
-     * <li>If the Principal is a Role (and not built-in, OR the result of the
-     * previous check was false), call the current Authorizer's
-     * <code>isInRole</code> method. Return the result.</li>
-     * <li>If the Principal is a Group, iterate through the Subject's principal
-     * set and call the current GroupManager's <code>isInRole</code> method
-     * </li>
-     * on each one; if any of the principals in the set are members of the
-     * requested group, return <code>true</code> immediately. Otherwise, if
-     * none are members of the requested group, return <code>false</code>.
-     * </li>
-     * <li>For all other cases, iterate through the Subject's principal set and
-     * check to see if any of the principals in the set have a
-     * <code>getName()</code> result that matches the the desired name. If so,
-     * return <code>true</code> immediately. Otherwise, if none match, return
-     * <code>false</code>.</li>
-     * </ul>
-     * @param page the wiki page
-     * @param context the current wiki context. If null, a synthetic WikiContext
-     *            containing a WikiSession.GUEST_SESSION is assumed
+     * permission in the ACL: these will be role, group or user Principals, or
+     * UnresolvedPrincipals (see below). Then iterate through the Subject's
+     * principal set and determine whether the user (Subject) posesses any one
+     * of these specified Roles or Principals. The matching process delegates to
+     * {@link #hasRoleOrPrincipal(WikiContext, Principal)}.
+     * </ol>
+     * <p>
+     * Note that when iterating through the ACL's list of authorized Principals,
+     * it is possible that one or more of the ACL's Principal entries are of
+     * type {@link com.ecyrd.jspwiki.auth.acl.UnresolvedPrincipal}. This means
+     * that the last time the Acl was read, the Principal (user, built-in Role,
+     * authorizer Role, or wiki Group) could not be resolved: the Role was not
+     * valid, the user wasn't found in the UserDatabase, or the Group wasn't
+     * known to (e.g., cached) in the GroupManager. If an UnresolvedPrincipal is
+     * encountered, this method will attempt to resolve it first <em>before</em>
+     * checking to see if the Subject possesses this principal, by calling
+     * {@link #resolvePrincipal(String)}. If the (re-)resolution does not
+     * succeed, the access check for the principal will fail by definition 
+     * (the Subject should never contain UnresolvedPrincipals).
+     * </p>
+     * @param context the current wiki context. If null, a synthetic anonymous WikiContext
+     *            containing a {@link com.ecyrd.jspwiki.WikiSession#GUEST_SESSION} is assumed
      * @param permission the permission being checked
      * @see #hasRoleOrPrincipal(WikiContext, Principal)
      * @return the result of the permission check
-     * @deprecated use checkPermission(WikiPage,WikiContext) instead
      */
-    public boolean checkPermission( WikiPage page, WikiContext context, Permission permission )
+    public boolean checkPermission( WikiContext context, Permission permission )
     {
-        AuthenticationManager authenticator = m_engine.getAuthenticationManager();
-
         //
         //  A slight sanity check.
         //
-        if ( page == null || permission == null )
+        if ( permission == null )
         {
             return false;
         }
 
+        // Get the current session and subject
         WikiSession session = WikiSession.GUEST_SESSION;
         if ( context != null )
         {
             session = WikiSession.getWikiSession( context.getHttpRequest() );
         }
-
-        // Always allow the action if it's the Admin
         Subject subject = session.getSubject();
+        
+        // Always allow the action if it's the Admin
         if ( subject.getPrincipals().contains( Role.ADMIN ) )
         {
             return true;
+        }
+
+        // If this isn't a PagePermission, just check the security policy
+        // and we're done
+        if ( permission instanceof WikiPermission )
+        {
+            return checkStaticPermission( subject, permission );
         }
 
         //
         // Does the page in question have an access control list?
         // If no ACL, we check the security policy to see what the
         // defaults should be.
-        Acl acl = m_engine.getAclManager().getPermissions( page );
+        Acl acl = null;
+        if ( context != null )
+        {
+            WikiPage page = context.getPage();
+            acl = m_engine.getAclManager().getPermissions( page );
+        }
         if ( acl == null )
         {
             return checkStaticPermission( subject, permission );
@@ -175,7 +162,8 @@ public class AuthorizationManager
 
         //
         //  Next, iterate through the Principal objects assigned
-        //  this permission.
+        //  this permission. If the context's subject possesses
+        //  any of these, the action is allowed.
 
         Principal[] aclPrincipals = acl.findPrincipals( permission );
 
@@ -187,6 +175,19 @@ public class AuthorizationManager
         for( int i = 0; i < aclPrincipals.length; i++ )
         {
             Principal aclPrincipal = aclPrincipals[i];
+            
+            // If the ACL principal we're looking at is unresolved,
+            // try to resolve it here & correct the ACL
+            if ( aclPrincipal instanceof UnresolvedPrincipal )
+            {
+                AclEntry aclEntry = acl.getEntry( aclPrincipal );
+                aclPrincipal = resolvePrincipal( aclPrincipal.getName() );
+                if ( aclEntry != null && !( aclPrincipal instanceof UnresolvedPrincipal ) )
+                {
+                    aclEntry.setPrincipal( aclPrincipal );
+                }
+            }
+            
             if ( hasRoleOrPrincipal( context, aclPrincipal ) )
             {
                 return true;
@@ -198,25 +199,27 @@ public class AuthorizationManager
     
     /**
      * Determines if the Subject associated with a supplied WikiContext contains
-     * a desired user principal or built-in role principal, OR is a member a
-     * group or external role. The rules as as follows:
+     * a desired user Principal or built-in Role principal, OR is a member a
+     * Group or external Role. The rules as as follows:
      * <ul>
-     * <li>If the desired principal is a built-in Role, the algorithm simply
+     * <li>If the desired Principal is a built-in Role, the algorithm simply
      * checks to see if the Subject possesses it in its Principal set</li>
-     * <li>If the desired principal is a Role but not built-in, the external
-     * authorizer's <code>isInRole</code> method is called</li>
-     * <li>If the desired principal is a Group, the group authorizer's
-     * <code>isInRole</code> method is called</li>
-     * <li>For all other cases, iterate through the Subject's principal set and
-     * check to see if any of the principals in the set have a
-     * <code>getName()</code> result that matches the the desired name. If so,
-     * return <code>true</code> immediately. Otherwise, if none match, return
-     * <code>false</code>.</li>
+     * <li>If the desired Principal is a Role but <em>not</em> built-in, the
+     * external Authorizer's <code>isInRole</code> method is called</li>
+     * <li>If the desired principal is a Group, the GroupManager's group
+     * authorizer <code>isInRole</code> method is called</li>
+     * <li>For all other cases, delegate to
+     * {@link #hasUserPrincipal(Subject, Principal)}to determine whether the
+     * Subject posesses the desired Principal in its Principal set.</li>
      * </ul>
-     * @param context the current wiki context. If null, always returns false
-     * @param principal the principal (role, group, or user principal) to look for.
-     * If null, always returns false
-     * @return the result
+     * @param context the current wiki context, which must be non-null. If null,
+     *            the result of this method always returns <code>false</code>
+     * @param principal the Principal (role, group, or user principal) to look
+     *            for, which must be non-null. If null, the result of this
+     *            method always returns <code>false</code>
+     * @return <code>true</code> if the Subject supplied with the WikiContext
+     *         posesses the Role, is a member of the Group, or contains the
+     *         desired Principal, <code>false</code> otherwise
      */
     protected boolean hasRoleOrPrincipal( WikiContext context, Principal principal )
     {
@@ -245,15 +248,15 @@ public class AuthorizationManager
     }
 
     /**
-     * Protected method that determines whether any of the user principals
-     * posessed by a Subject have the same name as a supplied Principal.
-     * Principals in the subject's principal set that are of types Role or Group
-     * are <em>not</em> considered, since this would otherwise introduce the
-     * potential for spoofing. Principal.
-     * @param subject the Subject whose principal set will be inspected
-     * @param principal the desired principal
-     * @return true if any of the Subject's principals have the same name as the
-     *         supplied principal, otherwise false
+     * Determines whether any of the user Principals posessed by a Subject have
+     * the same name as a supplied Principal. Principals in the subject's
+     * principal set that are of types Role or Group are <em>not</em>
+     * considered in the comparison, since this would otherwise introduce the
+     * potential for spoofing.
+     * @param subject the Subject whose Principal set will be inspected
+     * @param principal the desired Principal
+     * @return <code>true</code> if any of the Subject's Principals have the
+     *         same name as the supplied Principal, otherwise <code>false</code>
      */
     protected boolean hasUserPrincipal( Subject subject, Principal principal )
     {
@@ -332,11 +335,6 @@ public class AuthorizationManager
         }
     }
 
-    public static final AuthorizationManager getInstance()
-    {
-        return c_instance;
-    }
-
     /**
      * Determines whether a Subject posesses a given "static" Permission as
      * defined in the security policy file. This method uses standard Java 2
@@ -346,13 +344,14 @@ public class AuthorizationManager
      * matters in the policy is <em>who</em> makes the permission check, not
      * what the caller's code source is. Internally, this method works by
      * excuting <code>Subject.doAsPrivileged</code> with a privileged action
-     * that simply calls
+     * that simply calls {@link java.security.AccessController#checkPermission(Permission)}.
      * @link AccessController#checkPermission(java.security.Permission). A
      *       caught exception (or lack thereof) determines whether the privilege
      *       is absent (or present).
-     * @param subject
-     * @param permission
-     * @return
+     * @param subject the Subject whose permission status is being queried
+     * @param permission the Permission the Subject must possess
+     * @return <code>true</code> if the Subject posesses the permission,
+     *         <code>false</code> otherwise
      */
     protected static final boolean checkStaticPermission( final Subject subject, final Permission permission )
     {
@@ -375,26 +374,26 @@ public class AuthorizationManager
     }
     
     /**
-     * <p>Given a supplied string representing a principal name from an ACL, this
+     * <p>Given a supplied string representing a Principal's name from an ACL, this
      * method resolves the correct type of Principal (role, group, or user).
      * This method is guaranteed to always return a Principal.
      * The algorithm is straightforward:</p>
      * <ol>
-     * <li>If the name matches one of the built-in Role names,
-     * return the built-in Role</li>
+     * <li>If the name matches one of the built-in {@link com.ecyrd.jspwiki.auth.authorize.Role} names,
+     * return that built-in Role</li>
      * <li>If the name matches one supplied by the current
-     * Authorizer, return the Role</li>
+     * {@link com.ecyrd.jspwiki.auth.Authorizer}, return that Role</li>
      * <li>If the name matches a group managed by the 
-     * current GroupManager, return the Group</li>
+     * current {@link com.ecyrd.jspwiki.auth.authorize.GroupManager}, return that Group</li>
      * <li>Otherwise, assume that the name represents a user
-     * principal. Using the current UserDatabase, find the
-     * first user whose login name, full name, or wiki name
-     * matches the supplied name</li>
+     * principal. Using the current {@link com.ecyrd.jspwiki.auth.user.UserDatabase}, find the
+     * first user who matches the supplied name by calling
+     * {@link com.ecyrd.jspwiki.auth.user.UserDatabase#find(String)}.</li>
      * <li>Finally, if a user cannot be found, manufacture
-     * and return a generic WikiPrincipal</li>
+     * and return a generic {@link com.ecyrd.jspwiki.auth.acl.UnresolvedPrincipal}</li>
      * </ol>
-     * @param name the name of the principal
-     * @return the fully-resolved principal
+     * @param name the name of the Principal to resolve
+     * @return the fully-resolved Principal
      */
     public Principal resolvePrincipal( String name ) {
         
@@ -434,12 +433,13 @@ public class AuthorizationManager
                     return principal;
                 }
             }
-            return new WikiPrincipal( name );
         }
         catch( NoSuchPrincipalException e )
         {
-            return new WikiPrincipal( name );
+            // We couldn't find the user...
         }
+        // Ok, no luck---mark this as unresolved and move on
+        return new UnresolvedPrincipal( name );
     }
 
 }

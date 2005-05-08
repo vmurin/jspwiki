@@ -7,29 +7,29 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
-import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpServletRequest;
 
 import com.ecyrd.jspwiki.auth.AuthenticationManager;
 import com.ecyrd.jspwiki.auth.user.UserDatabase;
 
 /**
- * Handles logins made via from the wiki application, rather than via the web
+ * Handles logins made from inside the wiki application, rather than via the web
  * container. This handler is instantiated in
- * {@link AuthenticationManager#login(String, String, HttpSession)}. If
- * container-managed authentication is used, the
+ * {@link AuthenticationManager#loginCustom(String, String, HttpServletRequest)}.
+ * If container-managed authentication is used, the
  * {@link WebContainerCallbackHandler}is used instead. This callback handler is
- * designed to be used with
- * @link UserDatabaseLoginModule.
- * @author Andrew R. Jaquith
- * @version $Revision: 1.1.2.1 $ $Date: 2005-02-01 02:54:33 $
+ * designed to be used with {@link UserDatabaseLoginModule}.
+ * @author Andrew Jaquith
+ * @version $Revision: 1.1.2.2 $ $Date: 2005-05-08 18:05:19 $
+ * @since 2.3
  */
 public class WikiCallbackHandler implements CallbackHandler
 {
     private final UserDatabase m_database;
-    
-    private final String m_password;
 
-    private final String m_username;
+    private final String       m_password;
+
+    private final String       m_username;
 
     public WikiCallbackHandler( UserDatabase database, String username, String password )
     {

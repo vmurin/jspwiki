@@ -4,39 +4,44 @@ import java.security.Permission;
 import java.util.Arrays;
 
 /**
- * <p>Represents a permission to perform an global wiki operation.
- * Permission actions include: 
- * <code>createGroups</code>, <code>createPages</code>, and 
- * <code>registerUser</code>.</p>
- * <p>Certain permissions imply others. Currently,
- * <code>createGroups</code> implies <code>createPages</code>.</p>
- * @author Andrew R. Jaquith
+ * <p>
+ * Permission to perform an global wiki operation, such as self-registering or
+ * creating new pages. Permission actions include: <code>createGroups</code>,
+ * <code>createPages</code>, and <code>registerUser</code>.
+ * </p>
+ * <p>
+ * Certain permissions imply others. Currently, <code>createGroups</code>
+ * implies <code>createPages</code>.
+ * </p>
+ * @author Andrew Jaquith
+ * @version $Revision: 1.5.2.4 $ $Date: 2005-05-08 18:05:54 $
+ * @since 2.3
  */
 public final class WikiPermission extends Permission
 {
 
-    private static final String CREATE_GROUPS_ACTION = "createGroups";
+    private static final String        CREATE_GROUPS_ACTION = "createGroups";
 
-    private static final String CREATE_PAGES_ACTION  = "createPages";
+    private static final String        CREATE_PAGES_ACTION  = "createPages";
 
-    private static final String REGISTER_ACTION      = "registerUser";
-    
-    protected static final int  CREATE_GROUPS_MASK = 0x1;
+    private static final String        REGISTER_ACTION      = "registerUser";
 
-    protected static final int  CREATE_PAGES_MASK  = 0x2;
+    protected static final int         CREATE_GROUPS_MASK   = 0x1;
 
-    protected static final int  REGISTER_MASK      = 0x4;
+    protected static final int         CREATE_PAGES_MASK    = 0x2;
 
-    public static final WikiPermission CREATE_GROUPS = new WikiPermission( CREATE_GROUPS_ACTION );
-    
-    public static final WikiPermission CREATE_PAGES = new WikiPermission( CREATE_PAGES_ACTION );
+    protected static final int         REGISTER_MASK        = 0x4;
 
-    public static final WikiPermission REGISTER = new WikiPermission( REGISTER_ACTION );
+    public static final WikiPermission CREATE_GROUPS        = new WikiPermission( CREATE_GROUPS_ACTION );
 
-    private final String        m_actionString;
+    public static final WikiPermission CREATE_PAGES         = new WikiPermission( CREATE_PAGES_ACTION );
 
-    private final int           m_mask;
-    
+    public static final WikiPermission REGISTER             = new WikiPermission( REGISTER_ACTION );
+
+    private final String               m_actionString;
+
+    private final int                  m_mask;
+
     /**
      * Creates a new WikiPermission for a specified set of actions.
      * @param actions the actions for this permission
@@ -76,7 +81,7 @@ public final class WikiPermission extends Permission
 
     /**
      * Returns the actions for this permission: "createGroups", "createPages",
-     * or "registerUser." The actions will always be sorted in alphabetic order,
+     * or "registerUser". The actions will always be sorted in alphabetic order,
      * and will always appear in lower case.
      * @see java.security.Permission#getActions()
      */
@@ -93,17 +98,22 @@ public final class WikiPermission extends Permission
     {
         int hash = 0;
         String actions = getActions();
-        for (int i = 0; i < actions.length(); i++) {
+        for( int i = 0; i < actions.length(); i++ )
+        {
             hash += 13 * actions.hashCode();
         }
         return hash;
     }
-    
+
     /**
      * WikiPermission can only imply other WikiPermissions; no other permission
      * types are implied. One WikiPermission implies another if all of the other
      * WikiPermission's actions are equal to, or a subset of, those for this
      * permission.
+     * @param permission the permission which may (or may not) be implied by
+     *            this instance
+     * @return <code>true</code> if the permission is implied,
+     *         <code>false</code> otherwise
      * @see java.security.Permission#implies(java.security.Permission)
      */
     public final boolean implies( Permission permission )
@@ -117,11 +127,11 @@ public final class WikiPermission extends Permission
         // Build up an "implied mask"
         WikiPermission p = (WikiPermission) permission;
         int impliedMask = impliedMask( m_mask );
-        
+
         // If actions aren't a proper subset, return false
         return ( ( impliedMask & p.m_mask ) == p.m_mask );
     }
-    
+
     /**
      * Prints a human-readable representation of this permission.
      * @see java.lang.Object#toString()
@@ -132,14 +142,15 @@ public final class WikiPermission extends Permission
     }
 
     /**
-     * Creates an "implied mask" based on the actions originally
-     * assigned: for example, createGroups implies createPages.
-     * @param mask
-     * @return
+     * Creates an "implied mask" based on the actions originally assigned: for
+     * example, createGroups implies createPages.
+     * @param mask the initial mask
+     * @return the implied mask
      */
     protected static final int impliedMask( int mask )
     {
-        if ( ( mask & CREATE_GROUPS_MASK ) > 0 ) {
+        if ( ( mask & CREATE_GROUPS_MASK ) > 0 )
+        {
             mask |= CREATE_PAGES_MASK;
         }
         return mask;
@@ -148,8 +159,8 @@ public final class WikiPermission extends Permission
     /**
      * Private method that creates a binary mask based on the actions specified.
      * This is used by {@link #implies(Permission)}.
-     * @param actions
-     * @return
+     * @param actions the permission actions, separated by commas
+     * @return binary mask representing the permissions
      */
     protected static final int createMask( String actions )
     {

@@ -135,6 +135,9 @@ public class TranslatorReader extends Reader
     /** If set to "true", all external links are tagged with 'rel="nofollow"' */
     public static final String     PROP_USERELNOFOLLOW   = "jspwiki.translatorReader.useRelNofollow";
 
+    /** If set to "true", enables plugins during parsing */
+    public static final String     PROP_RUNPLUGINS       = "jspwiki.translatorReader.runPlugins";
+    
     /** If true, then considers CamelCase links as well. */
     private boolean                m_camelCaseLinks      = false;
 
@@ -305,6 +308,14 @@ public class TranslatorReader extends Reader
         m_useRelNofollow      = TextUtil.getBooleanProperty( props,
                                                              PROP_USERELNOFOLLOW,
                                                              m_useRelNofollow );
+    
+        String runplugins = m_engine.getVariable( m_context, PROP_RUNPLUGINS );
+        if( runplugins != null ) enablePlugins( TextUtil.isPositive(runplugins));
+        
+        if( m_engine.getUserDatabase() == null || m_engine.getAuthorizationManager() == null )
+        {
+            disableAccessRules();
+        }   
     }
 
     /**
@@ -2301,7 +2312,7 @@ public class TranslatorReader extends Reader
             if( m_cleanTranslator == null )
             {
                 WikiContext dummyContext = new WikiContext( m_engine, 
-                                                            new WikiPage("_Dummy"));
+                                                            m_context.getPage() );
                 m_cleanTranslator = new TranslatorReader( dummyContext, 
                                                           null,
                                                           new TextRenderer() );

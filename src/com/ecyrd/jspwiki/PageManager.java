@@ -29,7 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
 
-import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
 
 import com.ecyrd.jspwiki.auth.AuthorizationManager;
 import com.ecyrd.jspwiki.auth.permissions.PagePermission;
@@ -56,7 +56,7 @@ public class PageManager
     public static final String PROP_USECACHE     = "jspwiki.usePageCache";
     public static final String PROP_LOCKEXPIRY   = "jspwiki.lockExpiryTime";
 
-    static Category log = Category.getInstance( PageManager.class );
+    static Logger log = Logger.getLogger( PageManager.class );
 
     private WikiPageProvider m_provider;
 
@@ -180,7 +180,11 @@ public class PageManager
             //
             log.info("Repository has been modified externally while fetching page "+pageName );
 
-            WikiPage p = new WikiPage( pageName );
+            //
+            //  Empty the references and yay, it shall be recalculated
+            //
+            //WikiPage p = new WikiPage( pageName );
+            WikiPage p = m_provider.getPageInfo( pageName, version );
             
             m_engine.updateReferences( p );
 
@@ -301,28 +305,12 @@ public class PageManager
     /**
      * Returns wiki pages based on search criteria. The user in the current
      * WikiContext must have at least "view" access to each page returned.
-     * @param context
      * @param query
-     * @return
+     * @return the collection of pages returned by the search
      */
-    public Collection findPages( WikiContext context, QueryItem[] query )
+    public Collection findPages( QueryItem[] query )
     {
-        Collection rawPages = m_provider.findPages( query );
-        Collection pages = new ArrayList();
-        AuthorizationManager auth = m_engine.getAuthorizationManager();
-        for (Iterator it = rawPages.iterator(); it.hasNext();)
-        {
-            Object item = it.next();
-            if (item instanceof WikiPage)
-            {
-                Permission perm = new PagePermission( (WikiPage)item, "view");
-                if ( auth.checkPermission( context, perm ) ) 
-                {
-                    pages.add( item );
-                }
-            }
-        }
-        return pages;
+        return m_provider.findPages( query );
     }
 
     public WikiPage getPageInfo( String pageName, int version )

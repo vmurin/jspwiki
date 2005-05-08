@@ -20,7 +20,9 @@ import java.util.Enumeration;
  * interface, minus negative permissions.
  * </p>
  * @see Acl
- * @author Andrew R. Jaquith
+ * @author Janne Jalkanen
+ * @author Andrew Jaquith
+ * @version $Revision: 1.1.2.2 $ $Date: 2005-05-08 18:03:59 $
  * @since 2.3
  */
 public interface AclEntry {

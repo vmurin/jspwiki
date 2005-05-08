@@ -53,40 +53,50 @@ import com.ecyrd.jspwiki.auth.WikiPrincipal;
 import com.ecyrd.jspwiki.auth.WikiSecurityException;
 
 /**
- * Manages {@see DefaultUserProfile}objects using XML files for persistence.
- * Passwords are hashed using SHA1. User entries are simple &lt;user&gt;
+ * <p>Manages {@link DefaultUserProfile} objects using XML files for persistence.
+ * Passwords are hashed using SHA1. User entries are simple <code>&lt;user&gt;</code>
  * elements under the root. User profile properties are attributes of the
- * element. For example: <users><user loginName="janne" fullName="Janne
- * Jalkanen" wikiName="JanneJalkanen" email="janne@ecyrd.com"
- * password="{SHA}457b08e825da547c3b77fbc1ff906a1d00a7daee"/> </users> Passwords
- * are hashed without salt. In this example, the password is "myP@5sw0rd".
+ * element. For example:</p>
+ * <blockquote><code>
+ * &lt;users&gt;<br/>
+ * &nbsp;&nbsp;&lt;user loginName="janne" fullName="Janne Jalkanen"<br/> 
+ * &nbsp;&nbsp;&nbsp;&nbsp;wikiName="JanneJalkanen" email="janne@ecyrd.com"<br/>
+ * &nbsp;&nbsp;&nbsp;&nbsp;password="{SHA}457b08e825da547c3b77fbc1ff906a1d00a7daee"/&gt;<br/>
+ * &lt;/users&gt;
+ * </code></blockquote> 
+ * <p>In this example, the un-hashed password is <code>myP@5sw0rd</code>. Passwords are hashed without salt.</p>
  * @author Andrew Jaquith
+ * @version $Revision: 1.1.2.5 $ $Date: 2005-05-08 18:06:34 $
  * @since 2.3
  */
 public class XMLUserDatabase implements UserDatabase
 {
 
+    /**
+     * The jspwiki.properties property specifying the file system location of
+     * the user database.
+     */
     public static final String    PROP_USERDATABASE = "jspwiki.xmlUserDatabaseFile";
+
+    private static final String EMAIL             = "email";
+
+    private static final String FULL_NAME         = "fullName";
 
     private static final Logger   log               = Logger.getLogger( XMLUserDatabase.class );
 
-    protected static final String EMAIL             = "email";
+    private static final String LOGIN_NAME        = "loginName";
 
-    protected static final String FULL_NAME         = "fullName";
+    private static final String PASSWORD          = "password";
 
-    protected static final String LOGIN_NAME        = "loginName";
+    private static final String SHA_PREFIX        = "{SHA}";
 
-    protected static final String PASSWORD          = "password";
+    private static final String USER_TAG          = "user";
 
-    protected static final String SHA_PREFIX        = "{SHA}";
+    private static final String WIKI_NAME         = "wikiName";
 
-    protected static final String USER_TAG          = "user";
+    private Document            c_dom             = null;
 
-    protected static final String WIKI_NAME         = "wikiName";
-
-    protected Document            c_dom             = null;
-
-    protected File                c_file            = null;
+    private File                c_file            = null;
 
     /**
      * Persists database changes to disk.
@@ -276,11 +286,14 @@ public class XMLUserDatabase implements UserDatabase
     }
 
     /**
-     * Looks up the Principals representing a user from the user database. These
+     * <p>Looks up the Principals representing a user from the user database. These
      * are defined as a set of WikiPrincipals manufactured from the login name,
      * full name, and wiki name. If the user database does not contain a user
-     * with the supplied identifier, throws a {@link NoSuchPrincipalException}.
-     * @param name the name of the principal to retrieve; this corresponds to
+     * with the supplied identifier, throws a {@link NoSuchPrincipalException}.</p>
+     * <p>When this method creates WikiPrincipals, the Principal containing
+     * the user's full name is marked as containing the common name (see
+     * {@link com.ecyrd.jspwiki.auth.WikiPrincipal#WikiPrincipal(String, boolean)}).
+     * @param identifier the name of the principal to retrieve; this corresponds to
      *            value returned by the user profile's
      *            {@link UserProfile#getLoginName()}method.
      * @return the array of Principals representing the user
@@ -298,7 +311,7 @@ public class XMLUserDatabase implements UserDatabase
             }
             if ( profile.getFullname() != null && profile.getFullname().length() > 0 )
             {
-                principals.add( new WikiPrincipal( profile.getFullname() ) );
+                principals.add( new WikiPrincipal( profile.getFullname(), true ) );
             }
             if ( profile.getWikiName() != null && profile.getWikiName().length() > 0 )
             {
@@ -372,6 +385,14 @@ public class XMLUserDatabase implements UserDatabase
     }
 
     /**
+     * Factory method that instantiates a new DefaultUserProfile.
+     */
+    public UserProfile newProfile()
+    {
+        return new DefaultUserProfile();
+    }
+
+    /**
      * Saves a {@link UserProfile}to the user database, overwriting the
      * existing profile if it exists. The user name under which the profile
      * should be saved is returned by the supplied profile's
@@ -422,6 +443,16 @@ public class XMLUserDatabase implements UserDatabase
     }
 
     /**
+     * Validates the password for a given user. If the user does not exist in
+     * the user database, this method always returns <code>false</code>. If
+     * the user exists, the supplied password is compared to the stored
+     * password. Note that if the stored password's value starts with
+     * <code>{SHA}</code>, the supplied password is hashed prior to the
+     * comparison.
+     * @param loginName the user's login name
+     * @param password the user's password (obtained from user input, e.g., a web form)
+     * @return <code>true</code> if the supplied user password matches the
+     * stored password
      * @see com.ecyrd.jspwiki.auth.user.UserDatabase#validatePassword(java.lang.String,
      *      java.lang.String)
      */
