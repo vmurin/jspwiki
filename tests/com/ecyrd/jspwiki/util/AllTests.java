@@ -15,7 +15,6 @@ public class AllTests extends TestCase
         TestSuite suite = new TestSuite("Utility suite tests");
 
         suite.addTest( ClassUtilTest.suite() );
-        suite.addTest( PriorityListTest.suite() );
 
         return suite;
     }

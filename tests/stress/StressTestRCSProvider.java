@@ -15,7 +15,7 @@ public class StressTestRCSProvider extends TestCase
 
     Properties props = new Properties();
 
-    TestEngine engine;
+    WikiEngine engine;
 
     public StressTestRCSProvider( String s )
     {
@@ -25,9 +25,9 @@ public class StressTestRCSProvider extends TestCase
     public void setUp()
         throws Exception
     {
-        props.load( TestEngine.findTestProperties("/jspwiki_rcs.properties") );
+        props.load( getClass().getClassLoader().getResourceAsStream("/jspwiki_rcs.properties") );
 
-        engine = new TestEngine(props);
+        engine = new TestEngine2(props);
     }
 
     public void tearDown()
@@ -66,7 +66,6 @@ public class StressTestRCSProvider extends TestCase
      */
 
     public void testMillionChanges()
-        throws Exception
     {
         String text = "";
         String name = NAME1;

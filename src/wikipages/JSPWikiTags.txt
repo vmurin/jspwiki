@@ -2,7 +2,7 @@ Most of the JSPWiki tags work in the context of the "current page".  In most cas
 
 ----
 
-Here is an alphabetical list of all the tags that the site administrator can use when he is building his own [WikiTemplate].  Scroll down for a topical list.
+Here is a list of all the tags that the site administrator can use when he is building his own [JSPWikiTemplate].
 
 * [AttachmentsIteratorTag]
 * [AuthorTag]
@@ -11,19 +11,15 @@ Here is an alphabetical list of all the tags that the site administrator can use
 * [CheckLockTag]
 * [CheckRequestContextTag]
 * [CheckVersionTag]
-* [CommentLinkTag]
-* [ContentTag]
 * [ContentEncodingTag]
 * [DiffLinkTag]
 * [EditLinkTag]
-* [EditorAreaTag]
-* [EditorTag]
 * [HasAttachmentsTag]
 * [HistoryIteratorTag]
-* [IfNoSearchResultsTag]
 * [IncludeTag]
 * [InsertDiffTag]
 * [InsertPageTag]
+* [IteratorTag]
 * [LinkToParentTag]
 * [LinkToTag]
 * [NoSuchPageTag]
@@ -41,75 +37,9 @@ Here is an alphabetical list of all the tags that the site administrator can use
 * [RSSImageLinkTag]
 * [RSSLinkTag]
 * [SearchResultIteratorTag]
-* [SearchResultsSizeTag]
-* [SearchResultsTag]
-* [TemplateDirTag]
 * [TranslateTag]
 * [UploadLinkTag]
 * [UserCheckTag]
 * [UserNameTag]
 * [VariableTag]
-
-----
-
-!!List of tags grouped by usage
-
-!Page contents
-
-* [AttachmentsIteratorTag]
-* [AuthorTag]
-* [CommentLinkTag]
-* [ContentTag]
-* [DiffLinkTag]
-* [EditLinkTag]
-* [InsertDiffTag]
-* [InsertPageTag]
-* [LinkToParentTag]
-* [LinkToTag]
-* [PageDateTag]
-* [PageNameTag]
-* [PageSizeTag]
-* [PageTypeTag]
-* [PageVersionTag]
-* [PageInfoLinkTag]
-* [ParentPageNameTag]
-* [UploadLinkTag]
-
-!Navigation
-
-* [BreadcrumbsTag]
-* [CalendarTag]
-
-!Generating dynamic page contents
-
-* [CheckLockTag]
-* [CheckRequestContextTag]
-* [CheckVersionTag]
-* [HasAttachmentsTag]
-* [IncludeTag]
-* [PageExistsTag]
-* [PermissionTag]
-* [NoSuchPageTag]
-* [UserCheckTag]
-
-!Searching and search results
-
-* [IfNoSearchResultsTag]
-* [SearchResultIteratorTag]
-* [SearchResultsSizeTag]
-* [SearchResultsTag]
-
-!Miscallaneous
-
-* [ContentEncodingTag]
-* [EditorAreaTag]
-* [EditorTag]
-* [HistoryIteratorTag]
-* [PluginTag]
-* [RSSCoffeeCupLinkTag]
-* [RSSImageLinkTag]
-* [RSSLinkTag]
-* [TemplateDirTag]
-* [TranslateTag]
-* [UserNameTag]
-* [VariableTag]
+* [WikiLinkTag]

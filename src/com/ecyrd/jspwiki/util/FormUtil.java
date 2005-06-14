@@ -134,10 +134,10 @@ public class FormUtil
     {
         HashMap params = new HashMap();
 
-        Enumeration en = req.getParameterNames();
-        while( en.hasMoreElements() )
+        Enumeration enum = req.getParameterNames();
+        while( enum.hasMoreElements() )
         {
-            String param = (String)en.nextElement();
+            String param = (String)enum.nextElement();
             if( filterPrefix == null || param.startsWith( filterPrefix ) )
             {
                 String realName = param.substring( filterPrefix.length() );

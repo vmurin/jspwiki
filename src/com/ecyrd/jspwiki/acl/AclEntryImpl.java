@@ -7,8 +7,6 @@ import java.util.Vector;
 import java.util.Enumeration;
 import java.util.Iterator;
 
-import com.ecyrd.jspwiki.auth.permissions.WikiPermission;
-
 public class AclEntryImpl
     implements AclEntry
 {
@@ -18,7 +16,7 @@ public class AclEntryImpl
 
     public boolean setPrincipal(Principal user)
     {
-        if( m_principal != null || user == null ) return false;
+        if( m_principal != null ) return false;
 
         m_principal = user;
 
@@ -44,13 +42,13 @@ public class AclEntryImpl
      *  Looks through the permission list and finds a permission that
      *  matches the permission.
      */
-    private Permission findPermission( WikiPermission p )
+    private Permission findPermission( Permission p )
     {
         for( Iterator i = m_permissions.iterator(); i.hasNext(); )
         {
-            WikiPermission pp = (WikiPermission) i.next();
+            Permission pp = (Permission) i.next();
 
-            if( pp.implies( p ) )
+            if( pp.equals( p ) )
             {
                 return pp;
             }
@@ -61,7 +59,7 @@ public class AclEntryImpl
 
     public boolean addPermission(Permission permission)
     {
-        if( findPermission( (WikiPermission)permission ) != null )
+        if( findPermission( permission ) != null )
             return true;
 
         m_permissions.add( permission );
@@ -71,7 +69,7 @@ public class AclEntryImpl
 
     public boolean removePermission(Permission permission)
     {
-        Permission p = findPermission( (WikiPermission)permission );
+        Permission p = findPermission(permission);
 
         if( p != null ) 
         {
@@ -84,7 +82,7 @@ public class AclEntryImpl
 
     public boolean checkPermission(Permission permission)
     {
-        return findPermission( (WikiPermission)permission ) != null;
+        return findPermission( permission ) != null;
     }
 
     public Enumeration permissions()
@@ -108,9 +106,7 @@ public class AclEntryImpl
     {
         StringBuffer sb = new StringBuffer();
 
-        Principal p = getPrincipal();
-
-        sb.append("AclEntry: [User="+(p != null ? p.getName() : "null") );
+        sb.append("AclEntry: [User="+getPrincipal().getName());
         sb.append( m_negative ? " DENY " : " ALLOW " );        
 
         for( Iterator i = m_permissions.iterator(); i.hasNext(); )

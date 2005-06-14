@@ -38,7 +38,6 @@ import com.ecyrd.jspwiki.*;
 import com.ecyrd.jspwiki.util.*;
 
 import com.ecyrd.jspwiki.plugin.WeblogEntryPlugin;
-import com.ecyrd.jspwiki.plugin.WeblogPlugin;
 import com.ecyrd.jspwiki.providers.ProviderException;
 
 /**
@@ -158,7 +157,7 @@ public class AtomAPIServlet extends HttpServlet
             log.error("I/O exception",e);
             throw new ServletException("Could not get body of request",e);
         }
-        catch( WikiException e )
+        catch( ProviderException e )
         {
             log.error("Provider exception while posting",e);
             throw new ServletException("JSPWiki cannot save the entry",e);
@@ -186,17 +185,10 @@ public class AtomAPIServlet extends HttpServlet
 
                 response.setContentType("application/x.atom+xml; charset=UTF-8");
                 response.getWriter().println( Sandler.marshallFeed(feed) );
-
-                response.getWriter().flush();
             }
             else
             {
-                Entry entry = getBlogEntry( blogid );
-
-                response.setContentType("application/x.atom+xml; charset=UTF-8");
-                response.getWriter().println( Sandler.marshallEntry(entry) );
-
-                response.getWriter().flush();
+                Entry entry = getBlogEntry( blogid );                
             }
         }
         catch( Exception e )
@@ -251,24 +243,12 @@ public class AtomAPIServlet extends HttpServlet
         Collection pages = m_engine.getPageManager().getAllPages();
 
         Feed feed = SyndicationFactory.newSyndicationFeed();
-        feed.setTitle("List of blogs at this site");
+        feed.setTitle("");
         feed.setModified( new Date() );
 
         for( Iterator i = pages.iterator(); i.hasNext(); )
         {
             WikiPage p = (WikiPage) i.next();
-
-            //
-            //  List only weblogs
-            //  FIXME: Unfortunately, a weblog is not known until it has
-            //         been executed once, because plugins are off during
-            //         the initial startup phase.
-            //
-
-            log.debug( p.getName()+" = "+p.getAttribute(WeblogPlugin.ATTR_ISWEBLOG)) ;
-
-            if( !("true".equals(p.getAttribute(WeblogPlugin.ATTR_ISWEBLOG)) ) )
-                continue;
 
             String encodedName = TextUtil.urlEncodeUTF8( p.getName() );
 

@@ -1,4 +1,3 @@
-----
-
-__Referenced by__\\
-[{INSERT com.ecyrd.jspwiki.plugin.ReferringPagesPlugin WHERE max=10, maxwidth=20}]
+----\\
+__Referred by__\\
+[{INSERT com.ecyrd.jspwiki.plugin.ReferringPagesPlugin WITH max=5}]

@@ -14,7 +14,6 @@ jspwiki.usePageCache = true
 #  Determines where wiki files are kept.
 #
 jspwiki.fileSystemProvider.pageDir = @tests.pagedir@
-jspwiki.workDir = @tests.workdir@
 
 jspwiki.translatorReader.camelCaseLinks = true
 
@@ -25,15 +24,6 @@ jspwiki.translatorReader.useOutlinkImage = false
 
 jspwiki.attachmentProvider = BasicAttachmentProvider
 jspwiki.basicAttachmentProvider.storageDir = @tests.pagedir@
-
-jspwiki.encoding = ISO-8859-1
-
-jspwiki.auth.useOldAuth = true
-jspwiki.authenticator = FileAuthenticator
-jspwiki.fileAuthenticator.fileName = @tests.auth.filename@
-
-jspwiki.filterConfig = @tests.filter@
-
 
 #
 #  Special page references.
@@ -66,11 +56,6 @@ jspwiki.rss.generate = false
 jspwiki.translatorReader.inlinePattern.1 = *.jpg
 jspwiki.translatorReader.inlinePattern.2 = *.png
 jspwiki.translatorReader.inlinePattern.3 = http://images.com/*
-
-#
-# Use PageAuthorizer for tests.
-#
-jspwiki.authorizer = PageAuthorizer
 
 #
 #  Configure logs.

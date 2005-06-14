@@ -20,14 +20,6 @@ public class Benchmark
     }
 
     /**
-     *  Returns duration in milliseconds.
-     */
-    public long getDurationMs()
-    {
-        return m_stop-m_start;
-    }
-
-    /**
      *  Returns seconds.
      */
     public String toString()
@@ -42,6 +34,6 @@ public class Benchmark
     {
         double totalTime = (double)m_stop - (double)m_start;
 
-        return Double.toString( (operations/totalTime) * 1000.0 );
+        return Double.toString( (operations/totalTime) / 1000.0 );
     }
 }

@@ -10,42 +10,53 @@
          </tr>
       </table>
 
-      <hr />
+      <p><hr></p>
 
       <wiki:InsertPage/>
 
+      <p>
       <h3>Please enter your comments below:</h3>
+      </p>
 
-      <wiki:Editor name="commentForm">
+      <form action="<wiki:EditLink format="url" />" method="POST" 
+            accept-charset="<wiki:ContentEncoding />">
 
-        <wiki:EditorArea/>
+      <p>
+      <%-- These are required parts of this form.  If you do not include these,
+           horrible things will happen.  Do not modify them either. --%>
 
-        <table border="0">
-          <tr>
-            <td><label for="authorname">Your name</label></td><td><input type="text" name="author" id="authorname" value="<wiki:UserName/>" /></td>
-            <td><label for="rememberme">Remember me?</label></td><td><input type="checkbox" name="remember" id="rememberme" /></td>
-          </tr>
-          <tr>
-            <td><label for="link">Homepage or email</label></td><td colspan="3"><input type="text" name="link" id="link" value="<%=pageContext.getAttribute("link",PageContext.REQUEST_SCOPE)%>" /></td>
-          </tr>
-        </table>
+      <%-- FIXME: This is not required, is it? --%>
+      <input type="hidden" name="page"     value="<wiki:PageName/>" />
+      <input type="hidden" name="action"   value="save" />
+      <input type="hidden" name="edittime" value="<%=pageContext.getAttribute("lastchange", PageContext.REQUEST_SCOPE )%>" />
+      <wiki:CheckRequestContext context="comment">
+         <input type="hidden" name="comment" value="true" />
+      </wiki:CheckRequestContext>
 
-        <p>
-        <input type="submit" name="ok" value="Save" />
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        <input type="submit" name="preview" value="Preview" />
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        <input type="submit" name="cancel" value="Cancel" />
-        </p>
-      </wiki:Editor>
+      <%-- End of required area --%>
 
+      <textarea class="editor" wrap="virtual" name="text" rows="15" cols="60"></textarea>
+
+      <p>
+      <label for="authorname">Your name</label>
+      <input type="text" name="author" id="authorname" value="<wiki:UserName/>" />
+      </p>
+
+      <p>      
+      <input type="submit" name="ok" value="Save" />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <input type="submit" name="preview" value="Preview" />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <input type="submit" name="cancel" value="Cancel" />
+      </p>
+      </form>
+
+      <p>
       <wiki:NoSuchPage page="EditPageHelp">
-         <div class="error">
          Ho hum, it seems that the EditPageHelp<wiki:EditLink page="EditPageHelp">?</wiki:EditLink>
          page is missing.  Someone must've done something to the installation...
-         </div>
       </wiki:NoSuchPage>
+      </p>
 
-      <div id="editpagehelp">
-         <wiki:InsertPage page="EditPageHelp" />
-      </div>
+      <wiki:InsertPage page="EditPageHelp" />
+

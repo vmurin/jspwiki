@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet href="<%=wiki.getBaseURL()%>atom.css" type="text/css"?>
 
-<%@ page import="java.util.*"%>
-<%@ page import="com.ecyrd.jspwiki.*" %>
+<%@ page import="java.util.*,com.ecyrd.jspwiki.*" %>
 <%@ page import="org.apache.log4j.*" %>
 <%@ page import="java.text.*" %>
 <%@ page import="com.ecyrd.jspwiki.rss.*" %>
-<%@ page import="com.ecyrd.jspwiki.util.*" %>
 <%!
     public void jspInit()
     {
@@ -33,19 +31,7 @@
     WikiContext wikiContext = wiki.createContext( request, "rss" );
     WikiPage    wikipage    = wikiContext.getPage();
     
-    if( wiki.getBaseURL().length() == 0 )
-    {
-        response.sendError( 500, "The jspwiki.baseURL property has not been defined for this wiki - cannot generate Atom feed" );
-        return;
-    }
-
     NDC.push( wiki.getApplicationName()+":"+wikipage.getName() );    
-
-    //
-    //  Force the TranslatorReader to output absolute URLs
-    //  regardless of the current settings.
-    //
-    wikiContext.setVariable( WikiEngine.PROP_REFSTYLE, "absolute" );
 
     response.setContentType("text/xml; charset=UTF-8" );
 
@@ -53,18 +39,16 @@
     SimpleDateFormat iso8601fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
     Properties properties = wiki.getWikiProperties();
-    String channelDescription, channelLanguage;
-    
-    try
-    {
-        channelDescription = WikiEngine.getRequiredProperty( properties, RSSGenerator.PROP_CHANNEL_DESCRIPTION );
-        channelLanguage    = WikiEngine.getRequiredProperty( properties, RSSGenerator.PROP_CHANNEL_LANGUAGE );
-    }
-    catch( NoRequiredPropertyException e )
-    {
-        throw new JspException("Did not find a required property!");
-    }
+    String channelDescription = wiki.getRequiredProperty( properties, RSSGenerator.PROP_CHANNEL_DESCRIPTION );
+    String channelLanguage    = wiki.getRequiredProperty( properties, RSSGenerator.PROP_CHANNEL_LANGUAGE );
+%>
 
+<feed version="0.3" xmlns="http://purl.org/atom/ns#" xml:lang="<%=wiki.getContentEncoding()%>">
+  <title mode="escaped" type="text/html"><%=wiki.getApplicationName()%></title>
+  <%--<tagline>FIXME: We support no subtitles here</tagline> --%>
+
+  <link rel="alternate" href="<%=wiki.getBaseURL()%>" title="<%=wiki.getApplicationName()%>" type="text/html"/>
+<%
     //
     //  Now, list items.
     //
@@ -77,36 +61,6 @@
 
     Collections.sort( changed, new PageTimeComparator() );
 
-    //
-    //  Check if nothing has changed, so we can just return a 304
-    //
-    boolean hasChanged = false;
-    Date    latest     = new Date(0);
-
-    for( Iterator i = changed.iterator(); i.hasNext(); )
-    {
-        WikiPage p = (WikiPage) i.next();
-
-        if( !HttpUtil.checkFor304( request, p ) ) hasChanged = true;
-        if( p.getLastModified().after( latest ) ) latest = p.getLastModified();
-    }
-
-    if( !hasChanged )
-    {
-        response.sendError( HttpServletResponse.SC_NOT_MODIFIED );
-        return;
-    }
-
-    response.addDateHeader("Last-Modified",latest.getTime());
-
-%>
-
-<feed version="0.3" xmlns="http://purl.org/atom/ns#" xml:lang="<%=wiki.getContentEncoding()%>">
-  <title mode="escaped" type="text/html"><%=wiki.getApplicationName()%></title>
-  <%--<tagline>FIXME: We support no subtitles here</tagline> --%>
-
-  <link rel="alternate" href="<%=wiki.getBaseURL()%>" title="<%=wiki.getApplicationName()%>" type="text/html"/>
-<%
     Date    blogmodified = new Date();
     String  blogauthor   = "";
 
@@ -132,7 +86,7 @@
 
             String encodedName = wiki.encodeName(p.getName());
 
-            String url = wikiContext.getViewURL(p.getName());
+            String url = wiki.getViewURL(p.getName());
 
             out.println(" <entry>");
 
@@ -173,7 +127,7 @@
             if( firstLine > 0 )
             {
                 int maxlen = pageText.length();
-                // if( maxlen > 1000 ) maxlen = 1000; // Assume 112 bytes of growth.
+                if( maxlen > 1000 ) maxlen = 1000; // Assume 112 bytes of growth.
 
                 if( maxlen > 0 )
                 {
@@ -181,7 +135,7 @@
                                                 pageText.substring( firstLine+1,
                                                                     maxlen ).trim() );
                     out.print( pageText );
-                    // if( maxlen == 1000 ) out.print( "..." );
+                    if( maxlen == 1000 ) out.print( "..." );
                 }
                 else
                 {
@@ -233,7 +187,7 @@
             //  This may be useful later on, once I figure out which <link>-tag to use.
             if( wiki.pageExists(author) )
             {
-                out.println("<homepage>"+wikiContext.getViewURL(author)+"</homepage>");
+                out.println("<homepage>"+wiki.getViewURL(author)+"</homepage>");
             }
             */
             out.println("  </author>\n");

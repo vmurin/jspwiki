@@ -33,11 +33,10 @@ public class PageAuthorizerTest
 
     public void tearDown()
     {
-        TestEngine.deleteTestPage( "DefaultPermissions" );
-        TestEngine.deleteTestPage( "TestPage" );
+        m_engine.deletePage( "DefaultPermissions" );
+        m_engine.deletePage( "TestPage" );
     }
 
-     // TODO: Fix this test
     public void testDefaultPermissions()
     {
         AuthorizationManager mgr = m_engine.getAuthorizationManager();
@@ -50,13 +49,15 @@ public class PageAuthorizerTest
                                                     wup,
                                                     WikiPermission.newInstance( "edit" ) ) );
 
-        /*
         wup.setName( "Bob" );
         assertTrue( "Bob", mgr.checkPermission( m_engine.getPage( "TestPage" ),
                                                 wup,
                                                 WikiPermission.newInstance( "view" ) ) );
-         */                                                    
+
+
+                                                    
     }
+
 
     public static Test suite()
     {

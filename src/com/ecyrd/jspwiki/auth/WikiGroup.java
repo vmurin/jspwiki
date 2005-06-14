@@ -8,19 +8,10 @@ import java.util.Enumeration;
 import java.util.Iterator;
 
 public class WikiGroup
-    extends WikiPrincipal
     implements Group
 {
     private Vector m_members = new Vector();
-
-    public WikiGroup()
-    {
-    }
-
-    public WikiGroup( String name )
-    {
-        setName( name );
-    }
+    private String m_name;
 
     public boolean addMember(Principal user)
     {
@@ -35,40 +26,31 @@ public class WikiGroup
     }
 
 
+    public String getName()
+    {
+        return m_name;
+    }
+
+    public void setName( String arg )
+    {
+        m_name = arg;
+    }
+
     public boolean removeMember(Principal user)
     {
-        user = findMember( user.getName() );
-
-        if( user == null ) return false;
+        if( !isMember(user) )
+        {
+            return false;
+        }
 
         m_members.remove( user );
 
         return true;
     }
 
-    public void clearMembers()
+    public boolean isMember(Principal member)
     {
-	m_members.clear();
-    }
-
-    private Principal findMember( String name )
-    {
-        for( Iterator i = m_members.iterator(); i.hasNext(); )
-        {
-            Principal member = (Principal) i.next();
-
-            if( member.getName().equals( name ) )
-            {
-                return member;
-            }
-        }
-
-        return null;
-    }
-
-    public boolean isMember(Principal principal)
-    {
-        return findMember( principal.getName() ) != null;
+        return m_members.contains( member );
     }
 
     public Enumeration members()
@@ -106,22 +88,5 @@ public class WikiGroup
         }
 
         return true;
-    }
-
-    public String toString()
-    {
-        StringBuffer sb = new StringBuffer();
-
-        sb.append( "[Group: "+getName()+", members=" );
-
-        for( Iterator i = m_members.iterator(); i.hasNext(); )
-        {
-            sb.append( i.next() );
-            sb.append(", ");
-        }
-
-        sb.append("]");
-
-        return sb.toString();
     }
 }

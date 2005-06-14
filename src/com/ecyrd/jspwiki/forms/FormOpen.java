@@ -18,11 +18,18 @@
     You should have received a copy of the GNU Lesser General Public License
     along with this program; if not, write to the Free Software
 */
-package com.ecyrd.jspwiki.forms;
+package com.ecyrd.jspwiki.plugin;
 
 import com.ecyrd.jspwiki.*;
-import com.ecyrd.jspwiki.plugin.PluginException;
 import java.util.*;
+
+import org.apache.ecs.ConcreteElement;
+import org.apache.ecs.html.Input;
+import org.apache.ecs.html.Select;
+import org.apache.ecs.html.TextArea;
+
+import com.ecyrd.jspwiki.forms.*;
+import com.ecyrd.jspwiki.util.FormUtil;
 
 /**
  *  Opens a WikiForm.
@@ -41,6 +48,8 @@ import java.util.*;
  * </pre>
  *
  * <p>Mandatory parameters:
+ * <br>The <i>element</i> field specifies that this is a form open 
+ * invocation.
  * <br>The <i>name</i> field identifies this particular form to the 
  * Form plugin across pages.
  * <br>The <i>handler</i> field is a WikiPlugin name; it will be 
@@ -67,7 +76,6 @@ public class FormOpen
     private static org.apache.log4j.Logger log = 
 	org.apache.log4j.Logger.getLogger( FormOpen.class );
 
-    public static final String PARAM_METHOD = "method";
 
     /**
      */
@@ -76,21 +84,13 @@ public class FormOpen
     {
         String formName = (String)params.get( PARAM_FORM );
         if( formName == null )
-            throw new PluginException( "The FormOpen element is missing the '"+PARAM_FORM+"' parameter." ); 
+            throw new PluginException( "The Form 'open' element is missing the 'name' parameter." ); 
         String hide     = (String)params.get( PARAM_HIDEFORM );
         String sourcePage = ctx.getPage().getName();
         String submitServlet = (String)params.get( PARAM_SUBMITHANDLER );
         if( submitServlet == null )
-            submitServlet = ctx.getURL( WikiContext.VIEW, sourcePage );
+            submitServlet = ctx.getEngine().getViewURL( sourcePage );
 
-        String method = (String)params.get( PARAM_METHOD );
-        if( method == null ) method="post";
-        
-        if( !(method.equalsIgnoreCase("get") || method.equalsIgnoreCase("post")) )
-        {
-            throw new PluginException("Method must be either 'post' or 'get'");
-        }
-        
         FormInfo info = getFormInfo( ctx );
         if( info != null )
         {
@@ -102,9 +102,8 @@ public class FormOpen
                 log.debug( "Previous FormInfo for this form was found in context." );
                 // If the FormInfo exists, and if we're supposed to display on
                 // error only, we need to exit now.
-                if( hide != null && 
-                    HIDE_SUCCESS.equals( hide ) && 
-                    info.getStatus() == FormInfo.EXECUTED )
+                if( hide != null && HIDE_SUCCESS.equals( hide ) && 
+		    info.getStatus() == FormInfo.EXECUTED )
                 {
                     info.setHide( true );
                     return( "<p>(no need to show form open now)" );
@@ -132,7 +131,7 @@ public class FormOpen
         tag.append( "<div class=\"wikiform\">\n" );
         tag.append( "<form action=\"" + submitServlet );
         tag.append( "\" name=\"" + formName );
-        tag.append( "\" method=\""+method+"\" enctype=\"application/x-www-form-urlencoded\">\n" );
+        tag.append( "\" method=\"post\" enctype=\"application/x-www-form-urlencoded\">\n" );
         tag.append( "  <input type=\"hidden\" name=\"" + PARAM_FORMNAMEHIDDEN );
         tag.append( "\" value=\"" + formName + "\"/>\n" );
 

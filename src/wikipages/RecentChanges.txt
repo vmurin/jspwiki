@@ -1,5 +1,3 @@
-These are the changes made to these pages during the last 30 days.  Check the [FullRecentChanges] for a complete list of all changed pages.
+These are all the Recent Changes from the past days.
 
-This server lives on [{INSERT CurrentTimePlugin format=zzzz}] and the time here is [{INSERT CurrentTimePlugin format='HH:mm \'on\' dd-MMM-yyyy'}].
-
-[{INSERT com.ecyrd.jspwiki.plugin.RecentChangesPlugin since=30}]
+[{INSERT com.ecyrd.jspwiki.plugin.RecentChangesPlugin}]

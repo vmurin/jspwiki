@@ -13,7 +13,7 @@ public class StressTestVersioningProvider extends TestCase
 
     Properties props = new Properties();
 
-    TestEngine engine;
+    WikiEngine engine;
 
     public StressTestVersioningProvider( String s )
     {
@@ -23,9 +23,9 @@ public class StressTestVersioningProvider extends TestCase
     public void setUp()
         throws Exception
     {
-        props.load( TestEngine.findTestProperties("/jspwiki_vers.properties") );
+        props.load( getClass().getClassLoader().getResourceAsStream("/jspwiki_vers.properties") );
 
-        engine = new TestEngine(props);
+        engine = new TestEngine2(props);
     }
 
     public void tearDown()
@@ -42,7 +42,6 @@ public class StressTestVersioningProvider extends TestCase
     }
 
     public void testMillionChanges()
-        throws Exception
     {
         String text = "";
         String name = NAME1;

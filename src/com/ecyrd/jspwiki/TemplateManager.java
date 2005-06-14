@@ -20,11 +20,11 @@
 package com.ecyrd.jspwiki;
 
 import java.util.Properties;
+import java.util.Hashtable;
 import java.io.InputStream;
 import java.io.IOException;
 
 import javax.servlet.ServletContext;
-import javax.servlet.jsp.PageContext;
 
 import org.apache.log4j.Logger;
 import com.opensymphony.module.oscache.base.Cache;
@@ -40,8 +40,6 @@ public class TemplateManager
 {
     /** The default directory for the properties. */
     public static final String DIRECTORY    = "templates";
-
-    public static final String DEFAULT_TEMPLATE = "default";
 
     /** Name of the file that contains the properties.*/
 
@@ -86,90 +84,6 @@ public class TemplateManager
         return false;
     }
 
-    /**
-     *  An utility method for finding a JSP page.  It searches only under
-     *  either current context or by the absolute name.
-     */
-    public String findJSP( PageContext pageContext, String name )
-    {
-        ServletContext sContext = pageContext.getServletContext();
-        
-        InputStream is = sContext.getResourceAsStream( name );
-
-        if( is == null )
-        {
-            String defname = makeFullJSPName( DEFAULT_TEMPLATE, 
-                                              removeTemplatePart(name) );
-            is = sContext.getResourceAsStream( defname );
-
-            if( is != null )
-                name = defname;
-            else
-                name = null;
-        }
-
-        if( is != null ) try { is.close(); } catch( IOException e ) {}
-
-        return name;
-    }
-
-    /**
-     *  Removes the template part of a name.
-     */
-    private final String removeTemplatePart( String name )
-    {
-        int idx = name.indexOf('/');
-        if( idx != -1 )
-        {
-            idx = name.indexOf('/', idx); // Find second "/"
-
-            if( idx != -1 )
-            {
-                return name.substring( idx+1 );
-            }
-        }
-        
-        return name;
-    }
-
-    private final String makeFullJSPName( String template, String name )
-    {
-        return "/"+DIRECTORY+"/"+template+"/"+name;
-    }
-
-    /**
-     *  Attempts to locate a JSP page under the given template.  If that template
-     *  does not exist, or the page does not exist under that template, will
-     *  attempt to locate a similarly named file under the default template.
-     */
-    public String findJSP( PageContext pageContext, String template, String name )
-    {
-        ServletContext sContext = pageContext.getServletContext();
-
-        if( name.charAt(0) == '/' )
-        {
-            // This is already a full path
-            return findJSP( pageContext, name );
-        }
-
-        String fullname = makeFullJSPName( template, name );
-        InputStream is = sContext.getResourceAsStream( fullname );
-
-        if( is == null )
-        {
-            String defname = makeFullJSPName( DEFAULT_TEMPLATE, name );
-            is = sContext.getResourceAsStream( defname );
-
-            if( is != null )
-                fullname = defname;
-            else
-                fullname = null;
-        }
-
-        if( is != null ) try { is.close(); } catch( IOException e ) {}
-
-        return fullname;
-    }
 
     /**
      *  Returns a property, as defined in the template.  The evaluation

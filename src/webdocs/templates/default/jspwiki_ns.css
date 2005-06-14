@@ -1,4 +1,3 @@
-/* Put any Netscape 4 -specific definitions here. */
 H1,H2,H3,H4 { font-family: Arial, Helvetica, sans-serif }
 H1 { font-size: 36px }
 H2 { font-size: 24px }
@@ -7,30 +6,41 @@ H4 { font-size: 16px }
 P,UL,OL,BODY,TD { font-size: 16px }
 FORM { font-size: 14px }
 PRE { font-size: 14px }
+DIV.small { font-size: 70% }
 H1.pagename {}
+IMG.inline {}
 
+A.footnoteref { vertical-align: super; 
+                font-size: 70%; }
+A.footnote { color: #0044AA; }
+P.versionnote { color: red;
+                font-size: 130%;
+                text-align: center; }
 
-/* For the CalendarTag */
+/* Added in v1.5.1 */
+H3.leftmenuheading { }
+BODY.edit { background-color: #D9E8FF; } /* Edit.jsp BODY element */
+TD.leftmenu { }                          /* Left menu */
+TD.page { }                              /* Page data area */
+A.wikipage { }                           /* Normal, internal wiki reference */
+A.external { }                           /* External reference */
+A.interwiki { }                          /* Interwiki reference */
 
- TABLE.calendar  { font-size: 60%;
-                   text-align: center; }
+/* Added in 1.6.3 */
+TD.diffadd  { background: #99FF99; 
+              font-family: monospace; }
+TD.diffrem  { background: #FF9933; 
+              font-family: monospace; }
+TD.diff     { background: #FFFFFF; 
+              font-family: monospace; }
 
- TD.month        { font-size: 70%;
-                   text-align: center;
-                   font-weight: bold;
-                   font-family: sans-serif; }
+/* Added in 1.6.9 */
 
- TD.weekdays     { color: #FF0000;        /* days heading */
-                   font-size: 60%; }
+TABLE.wikitable { }
+TABLE.wikitable * TD { text-align: left; }
+TABLE.wikitable * TH { }
 
- TD.days         { font-size: 60%; 
-                   text-align: center;}
-										 
- TD.link         { color: #FF2222; background: #E0E0E0;
-                   font-size: 60%;
-                   text-align: center; }
+/* Added in 1.6.13 */
 
- TD.othermonth   { color: #707070; 
-                   font-size: 60%; 
-                   text-align: center}
-
+/* This is the Edit.jsp editor style */
+TEXTAREA.editor {}

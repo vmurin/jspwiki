@@ -26,7 +26,7 @@ import java.util.Date;
 import java.util.TreeSet;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.log4j.Logger;
+import org.apache.log4j.Category;
 
 import com.ecyrd.jspwiki.*;
 
@@ -46,9 +46,9 @@ import com.ecyrd.jspwiki.*;
 public abstract class AbstractFileProvider
     implements WikiPageProvider
 {
-    private static final Logger   log = Logger.getLogger(AbstractFileProvider.class);
+    private static final Category   log = Category.getInstance(AbstractFileProvider.class);
     private String m_pageDirectory = "/tmp/";
-    
+
     protected String m_encoding;
 
     /**
@@ -69,7 +69,7 @@ public abstract class AbstractFileProvider
      *  @throws FileNotFoundException If the specified page directory does not exist.
      *  @throws IOException In case the specified page directory is a file, not a directory.
      */
-    public void initialize( WikiEngine engine, Properties properties )
+    public void initialize( Properties properties )
         throws NoRequiredPropertyException,
                IOException
     {
@@ -80,19 +80,18 @@ public abstract class AbstractFileProvider
 
         if( !f.exists() )
         {
-            f.mkdirs();
+            throw new FileNotFoundException("Page directory does not exist: "+m_pageDirectory);
         }
         else if( !f.isDirectory() )
         {
             throw new IOException("Page directory is not a directory: "+m_pageDirectory);
         }
 
-        m_encoding = properties.getProperty( WikiEngine.PROP_ENCODING, 
-                                             DEFAULT_ENCODING );
+        m_encoding      = properties.getProperty( WikiEngine.PROP_ENCODING, 
+                                                  DEFAULT_ENCODING );
 
         log.info( "Wikipages are read from '" + m_pageDirectory + "'" );
     }
-
 
     String getPageDirectory()
     {
@@ -105,29 +104,25 @@ public abstract class AbstractFileProvider
      */
     protected String mangleName( String pagename )
     {
-        pagename = TextUtil.urlEncode( pagename, m_encoding );
-        
-        pagename = TextUtil.replaceString( pagename, "/", "%2F" );
+        // FIXME: Horrible kludge, very slow, etc.
+        if( "UTF-8".equalsIgnoreCase( m_encoding ) )
+            return TextUtil.urlEncodeUTF8( pagename );
 
-        return pagename;
+        return java.net.URLEncoder.encode( pagename );
     }
 
     /**
-     *  This makes the reverse of mangleName.
+     *  This makes the reverse of mangleName
      */
     protected String unmangleName( String filename )
     {
-        // The exception should never happen.
-        try
-        {
-            return TextUtil.urlDecode( filename, m_encoding );
-        }
-        catch( UnsupportedEncodingException e ) 
-        {
-            throw new InternalWikiException("Faulty encoding; should never happen");
-        }
+        // FIXME: Horrible kludge, very slow, etc.
+        if( "UTF-8".equalsIgnoreCase( m_encoding ) )
+            return TextUtil.urlDecodeUTF8( filename );
+
+        return java.net.URLDecoder.decode( filename );
     }
-    
+
     /**
      *  Finds a Wiki page from the page repository.
      */
@@ -204,7 +199,6 @@ public abstract class AbstractFileProvider
     }
 
     public void putPageText( WikiPage page, String text )        
-        throws ProviderException
     {
         File file = findPage( page.getName() );
         PrintWriter out = null;
@@ -368,22 +362,13 @@ public abstract class AbstractFileProvider
     }
 
     public void deleteVersion( String pageName, int version )
-        throws ProviderException
     {
-        if( version == WikiProvider.LATEST_VERSION )
-        {
-            File f = findPage( pageName );
-
-            f.delete();
-        }
+        // FIXME.
     }
 
     public void deletePage( String pageName )
-        throws ProviderException
     {
-        File f = findPage( pageName );
-
-        f.delete();
+        // FIXME:
     }
 
     public class WikiFileFilter

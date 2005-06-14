@@ -1,7 +1,7 @@
 /* 
     JSPWiki - a JSP-based WikiWiki clone.
 
-    Copyright (C) 2001-2005 Janne Jalkanen (Janne.Jalkanen@iki.fi)
+    Copyright (C) 2001-2003 Janne Jalkanen (Janne.Jalkanen@iki.fi)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU Lesser General Public License as published by
@@ -73,7 +73,7 @@ public class CachingAttachmentProvider
     // FIXME: Make settable.
     private int  m_refreshPeriod = 60*10; // 10 minutes at the moment
 
-    public void initialize( WikiEngine engine, Properties properties )
+    public void initialize( Properties properties )
         throws NoRequiredPropertyException,
                IOException
     {
@@ -98,7 +98,7 @@ public class CachingAttachmentProvider
             m_provider = (WikiAttachmentProvider)providerclass.newInstance();
 
             log.debug("Initializing real provider class "+m_provider);
-            m_provider.initialize( engine, properties );
+            m_provider.initialize( properties );
         }
         catch( ClassNotFoundException e )
         {
@@ -122,9 +122,10 @@ public class CachingAttachmentProvider
         throws ProviderException,
                IOException
     {
-        m_provider.putAttachmentData( att, data );
+        // FIXME: Probably not wise.
 
         m_cache.flushEntry( att.getParentName() );
+        m_provider.putAttachmentData( att, data );
     }
 
     public InputStream getAttachmentData( Attachment att )
@@ -157,7 +158,9 @@ public class CachingAttachmentProvider
         {
             try
             {
-                Collection c = refresh( page );
+                Collection c = m_provider.listAttachments( page );
+                m_cache.putInCache( page.getName(), c );
+                m_cacheMisses++;
 
                 return c;
             }
@@ -223,10 +226,7 @@ public class CachingAttachmentProvider
     public Attachment getAttachmentInfo( WikiPage page, String name, int version )
         throws ProviderException
     {
-        if( log.isDebugEnabled() )
-        {
-            log.debug("Getting attachments for "+page+", name="+name+", version="+version);
-        }
+        log.debug("Getting attachments for "+page+", name="+name+", version="+version);
 
         //
         //  We don't cache previous versions
@@ -296,15 +296,14 @@ public class CachingAttachmentProvider
     public void deleteVersion( Attachment att )
         throws ProviderException
     {
-        // This isn't strictly speaking correct, but it does not really matter
-        m_cache.putInCache( att.getParentName(), null );
+        m_cache.flushEntry( att.getParentName() );
         m_provider.deleteVersion( att );
     }
 
     public void deleteAttachment( Attachment att )
         throws ProviderException
     {
-        m_cache.putInCache( att.getParentName(), null );
+        m_cache.flushEntry( att.getParentName() );
         m_provider.deleteAttachment( att );
     }
 
@@ -314,6 +313,21 @@ public class CachingAttachmentProvider
         int cachedPages = 0;
         long totalSize  = 0;
         
+        /*
+        for( Iterator i = m_cache.values().iterator(); i.hasNext(); )
+        {
+            CacheItem item = (CacheItem) i.next();
+
+            String text = (String) item.m_text.get();
+            if( text != null )
+            {
+                cachedPages++;
+                totalSize += text.length()*2;
+            }
+        }
+
+        totalSize = (totalSize+512)/1024L;
+        */
         return("Real provider: "+m_provider.getClass().getName()+
                "<br />Cache misses: "+m_cacheMisses+
                "<br />Cache hits: "+m_cacheHits);

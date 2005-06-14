@@ -12,11 +12,11 @@
           <%=getVersionText((Integer)pageContext.getAttribute(InsertDiffTag.ATTR_OLDVERSION, PageContext.REQUEST_SCOPE))%> 
           and 
           <%=getVersionText((Integer)pageContext.getAttribute(InsertDiffTag.ATTR_NEWVERSION, PageContext.REQUEST_SCOPE))%>:
-          <div>
+          <DIV>
           <wiki:InsertDiff>
-              <i>No difference detected.</i>
+              <I>No difference detected.</I>
           </wiki:InsertDiff>
-          </div>
+          </DIV>
 
       </wiki:PageExists>
 
@@ -25,7 +25,7 @@
              <wiki:EditLink>create it</wiki:EditLink>?
       </wiki:NoSuchPage>
 
-      <p>
+      <P>
       Back to <wiki:LinkTo><wiki:PageName/></wiki:LinkTo>,
        or to the <wiki:PageInfoLink>Page History</wiki:PageInfoLink>.
-       </p>
+       </P>

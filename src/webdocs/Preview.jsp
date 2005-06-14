@@ -1,9 +1,6 @@
 <%@ page import="org.apache.log4j.*" %>
 <%@ page import="com.ecyrd.jspwiki.*" %>
-<%@ page import="java.util.Date" %>
-<%@ page import="com.ecyrd.jspwiki.tags.WikiTagBase" %>
-<%@ page errorPage="/Error.jsp" %>
-<%@ taglib uri="/WEB-INF/jspwiki.tld" prefix="wiki" %>
+
 <%! 
     public void jspInit()
     {
@@ -12,36 +9,69 @@
     Category log = Category.getInstance("JSPWiki"); 
     WikiEngine wiki;
 %>
+
 <%
-    WikiContext wikiContext = wiki.createContext( request, WikiContext.PREVIEW );
-    String pagereq = wikiContext.getPage().getName();
+    String pagereq = wiki.safeGetParameter( request, "page" );
+    String headerTitle = "Previewing ";
+
+    if( pagereq == null )
+    {
+        throw new ServletException("No page defined");
+    }
 
     NDC.push( wiki.getApplicationName()+":"+pagereq );
 
-    pageContext.setAttribute( WikiTagBase.ATTR_CONTEXT,
-                              wikiContext,
-                              PageContext.REQUEST_SCOPE );
-
+    String pageurl = wiki.encodeName( pagereq );
     response.setContentType("text/html; charset="+wiki.getContentEncoding() );
 
-    pageContext.setAttribute( "usertext",
-                              wiki.safeGetParameter( request, "text" ),
-                              PageContext.REQUEST_SCOPE );
+    String usertext = wiki.safeGetParameter( request, "text" );
 
-    long lastchange = 0;
-
-    Date d = wikiContext.getPage().getLastModified();
-    if( d != null ) lastchange = d.getTime();
-
-    pageContext.setAttribute( "lastchange",
-                              Long.toString( lastchange ),
-                              PageContext.REQUEST_SCOPE );
-
-    String contentPage = wiki.getTemplateManager().findJSP( pageContext,
-                                                            wikiContext.getTemplate(),
-                                                            "ViewTemplate.jsp" );
+    WikiContext wikiContext = new WikiContext( wiki, pagereq );
 %>
-<wiki:Include page="<%=contentPage%>" />
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+
+<HTML>
+
+<HEAD>
+  <TITLE><%=wiki.getApplicationName()%>: Previewing <%=pagereq%></TITLE>
+  <%@ include file="cssinclude.js" %>
+</HEAD>
+
+<BODY CLASS="preview" BGCOLOR="#F0F0F0">
+
+<TABLE BORDER="0" CELLSPACING="8" width="95%">
+
+  <TR>
+    <TD CLASS="leftmenu" WIDTH="10%" VALIGN="top" NOWRAP="true">
+       <%@ include file="LeftMenu.jsp" %>
+       <P>
+       <%@ include file="LeftMenuFooter.jsp" %>
+    </TD>
+
+    <TD CLASS="page" WIDTH="85%" VALIGN="top">
+
+      <%@ include file="PageHeader.jsp" %>
+
+      <P>
+      <B>This is a preview.  Hit "Back" on your browser to go back to editor.</B>
+      </P>
+
+      <P><HR></P>
+
+      <%=wiki.textToHTML( wikiContext, usertext ) %>
+
+      <P><HR>
+    </TD>
+  </TR>
+
+</TABLE>
+
+</BODY>
+
+</HTML>
+
 <%
     NDC.pop();
     NDC.remove();

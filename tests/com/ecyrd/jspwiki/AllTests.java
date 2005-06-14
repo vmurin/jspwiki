@@ -19,7 +19,7 @@ public class AllTests extends TestCase
         Properties props = new Properties();
         try
         {
-            InputStream pin = TestEngine.findTestProperties();
+            InputStream pin = AllTests.class.getClassLoader().getResourceAsStream("/jspwiki.properties");
             if( pin == null )
             {
                 fail( "No property file found!" );
@@ -39,26 +39,16 @@ public class AllTests extends TestCase
 
     public static Test suite()
     {
-        TestSuite suite = new TestSuite("JSPWiki Unit Tests");
+        TestSuite suite = new TestSuite();
 
         suite.addTest( FileUtilTest.suite() );
         suite.addTest( PageManagerTest.suite() );
         suite.addTest( TextUtilTest.suite() );
         suite.addTest( TranslatorReaderTest.suite() );
-        suite.addTest( VariableManagerTest.suite() );
         suite.addTest( WikiEngineTest.suite() );
-        suite.addTest( ReferenceManagerTest.suite() );
         suite.addTest( com.ecyrd.jspwiki.plugin.AllTests.suite() );
         suite.addTest( com.ecyrd.jspwiki.xmlrpc.AllTests.suite() );
         suite.addTest( com.ecyrd.jspwiki.providers.AllTests.suite() );
-        suite.addTest( com.ecyrd.jspwiki.attachment.AllTests.suite() );
-        suite.addTest( com.ecyrd.jspwiki.acl.AllTests.suite() );
-        // TODO: Fix these so that they can be added.
-        // suite.addTest( com.ecyrd.jspwiki.auth.AllTests.suite() );
-        suite.addTest( com.ecyrd.jspwiki.util.AllTests.suite() );
-        suite.addTest( com.ecyrd.jspwiki.filters.AllTests.suite() );
-        suite.addTest( com.ecyrd.jspwiki.rss.AllTests.suite() );
-        suite.addTest( com.ecyrd.jspwiki.htmltowiki.AllTests.suite() );
 
         return suite;
     }

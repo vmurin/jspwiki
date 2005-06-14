@@ -2,8 +2,8 @@
 
 <%-- Inserts a string message. --%>
 
-   <div class="messagecontent">
+   <DIV class="messagecontent">
       <%=pageContext.getAttribute("message",PageContext.REQUEST_SCOPE)%>
-   </div>
+   </DIV>
 
-   <br clear="all" />
+   <BR clear="all" />

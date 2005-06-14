@@ -1,7 +1,7 @@
 /* 
    JSPWiki - a JSP-based WikiWiki clone.
 
-   Copyright (C) 2001-2005 Janne Jalkanen (Janne.Jalkanen@iki.fi)
+   Copyright (C) 2001-2002 Janne Jalkanen (Janne.Jalkanen@iki.fi)
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -27,20 +27,17 @@ import org.apache.log4j.Logger;
 
 import com.ecyrd.jspwiki.NoRequiredPropertyException;
 import com.ecyrd.jspwiki.WikiEngine;
-import com.ecyrd.jspwiki.util.ClassUtil;
 
 
 
 /**
  * Load, initialize and delegate to the DiffProvider that will actually do the work.
- * 
- * @author John Volkar
  */
 public class DifferenceManager
 {
     private static final Logger log = Logger.getLogger(DifferenceManager.class);
 
-    public static final String PROP_DIFF_PROVIDER = "jspwiki.diffProvider";
+    public static final String PROP_DIFF_PROVIDER = "jspwiki.diffProviderClass";
     
     
     private DiffProvider m_provider;
@@ -51,36 +48,34 @@ public class DifferenceManager
 
         initializeProvider(engine, props);
         
-        log.info("Using difference provider: " + m_provider.getProviderInfo());   
+        log.info("Using provider: " + m_provider.getProviderInfo());
+        
     }
 
     private void loadProvider(Properties props)
     {
-        String providerClassName = props.getProperty( PROP_DIFF_PROVIDER, 
-                                                      TraditionalDiffProvider.class.getName() );
-        
+        String providerClassName = props.getProperty( PROP_DIFF_PROVIDER, TraditionalDiffProvider.class.getName() );
+
         try
         {
-            Class providerClass = ClassUtil.findClass( "com.ecyrd.jspwiki.diff", providerClassName );
+            Class providerClass = Class.forName(providerClassName);
             m_provider = (DiffProvider)providerClass.newInstance();
         }
-        catch( ClassNotFoundException e )
+        catch (ClassNotFoundException e)
         {
             log.warn("Failed loading DiffProvider, will use NullDiffProvider.", e);
         }
-        catch( InstantiationException e )
+        catch (InstantiationException e)
         {
             log.warn("Failed loading DiffProvider, will use NullDiffProvider.", e);
         }
-        catch( IllegalAccessException e )
+        catch (IllegalAccessException e)
         {
             log.warn("Failed loading DiffProvider, will use NullDiffProvider.", e);
         }
 		
-        if( null == m_provider )
-        {
+        if (null == m_provider)
             m_provider = new DiffProvider.NullDiffProvider();
-        }
     }
 
     
@@ -103,18 +98,11 @@ public class DifferenceManager
     }
 
     /**
-     *   Returns valid XHTML string to be used in any way you please.
-     * 
-     *   @return XHTML, or empty string, if no difference detected.
+     * Delegate to the underlying provider...
      */
     public String makeDiff(String firstWikiText, String secondWikiText)
     {
-        String diff = m_provider.makeDiffHtml( firstWikiText, secondWikiText);
-        
-        if( diff == null )
-            diff = "";
-        
-        return diff;
+        return m_provider.makeDiffHtml( firstWikiText, secondWikiText);
     }    
 }
 

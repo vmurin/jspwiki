@@ -15,8 +15,6 @@ public class AllTests extends TestCase
         TestSuite suite = new TestSuite("auth package modules tests");
 
         suite.addTest( WikiDatabaseTest.suite() );
-        suite.addTest( PageAuthorizerTest.suite() );
-
 
         return suite;
     }

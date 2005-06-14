@@ -20,7 +20,8 @@
 package com.ecyrd.jspwiki.plugin;
 
 import com.ecyrd.jspwiki.*;
-import org.apache.log4j.Logger;
+import com.ecyrd.jspwiki.providers.ProviderException;
+import org.apache.log4j.Category;
 import org.apache.oro.text.*;
 import org.apache.oro.text.regex.*;
 
@@ -39,7 +40,7 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class Denounce implements WikiPlugin
 {
-    private static Logger     log = Logger.getLogger(Denounce.class);
+    private static Category     log = Category.getInstance(Denounce.class);
 
     public static final String PARAM_LINK = "link";
     public static final String PARAM_TEXT = "text";
@@ -104,8 +105,6 @@ public class Denounce implements WikiPlugin
                     log.error( "Malformed URL pattern in "+PROPERTYFILE+": "+props.getProperty(name), ex );
                 }
             }
-
-            log.debug("Added "+c_refererPatterns.size()+c_agentPatterns.size()+c_hostPatterns.size()+" crawlers to denounce list.");
         }
         catch( IOException e )
         {
@@ -169,17 +168,17 @@ public class Denounce implements WikiPlugin
 
     private boolean matchHeaders( HttpServletRequest request )
     {
+        boolean result = false;
+
         //
         //  User Agent
         //
 
         String userAgent = request.getHeader("User-Agent");
 
-        if( userAgent != null && matchPattern( c_agentPatterns, userAgent ) )
-        {
-            log.debug("Matched user agent "+userAgent+" for denounce.");
-            return true;
-        }
+        log.debug("Matching user agent "+userAgent+" to list of known patterns.");
+
+        result |= matchPattern( c_agentPatterns, userAgent );
 
         //
         //  Referrer header
@@ -187,11 +186,9 @@ public class Denounce implements WikiPlugin
 
         String refererPath = request.getHeader("Referer");
 
-        if( refererPath != null && matchPattern( c_refererPatterns, refererPath ) )
-        {
-            log.debug("Matched referer "+refererPath+" for denounce.");
-            return true;
-        }
+        log.debug("Matching referer "+refererPath+" to list of known patterns.");
+
+        result |= matchPattern( c_refererPatterns, refererPath );
 
         //
         //  Host
@@ -199,12 +196,10 @@ public class Denounce implements WikiPlugin
 
         String host = request.getRemoteHost();
 
-        if( host != null && matchPattern( c_hostPatterns, host ) )
-        {
-            log.debug("Matched host "+host+" for denounce.");
-            return true;
-        }
+        log.debug("Matching host "+host+" to list of known patterns.");
 
-        return false;
+        result |= matchPattern( c_hostPatterns, host );
+
+        return result;
     }
 }

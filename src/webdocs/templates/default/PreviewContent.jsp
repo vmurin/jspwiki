@@ -2,36 +2,18 @@
 
 <%-- Inserts page content for preview. --%>
 
-   <div class="previewnote">
-      <b>This is a PREVIEW!  Hit "Keep Editing" to go back to the editor,
-      or hit "Save" if you're happy with what you see.</b>
-   </div>
+   <DIV class="previewnote">
+      <B>This is a PREVIEW!  Hit "back" on your browser to go back to the editor.</B>
+   </DIV>
 
-   <p><hr /></p>
+   <P><HR></P>
 
-   <div class="previewcontent">
+   <DIV class="previewcontent">
       <wiki:Translate><%=pageContext.getAttribute("usertext",PageContext.REQUEST_SCOPE)%></wiki:Translate>
-   </div>
+   </DIV>
 
-   <br clear="all" />
+   <P><HR></P>
 
-   <p><hr /></p>
-
-   <div class="previewnote">
-      <b>This is a PREVIEW!  Hit "Keep Editing" to go back to the editor,
-      or hit "Save" if you're happy with what you see.</b>
-   </div>
-
-   <p><hr /></p>
-
-   <wiki:Editor>
-     <textarea rows="4" cols="20" readonly="true" style="display:none" name="text"><%=pageContext.getAttribute("usertext", PageContext.REQUEST_SCOPE) %></textarea>
-
-     <div id="previewsavebutton" align="center">
-        <input type="submit" name="edit" value="Keep editing" />
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        <input type="submit" name="ok" value="Save" />
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        <input type="submit" name="cancel" value="Cancel" />
-     </div>
-    </wiki:Editor>
+   <DIV class="previewnote">
+      <B>This is a PREVIEW!  Hit "back" on your browser to go back to the editor.</B>
+   </DIV>

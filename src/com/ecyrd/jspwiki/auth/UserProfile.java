@@ -21,8 +21,8 @@ package com.ecyrd.jspwiki.auth;
 
 import java.util.StringTokenizer;
 import java.util.NoSuchElementException;
-import org.apache.log4j.Logger;
-
+import java.security.Principal;
+import org.apache.log4j.Category;
 import com.ecyrd.jspwiki.TextUtil;
 
 /**
@@ -33,51 +33,14 @@ import com.ecyrd.jspwiki.TextUtil;
  */
 // FIXME: contains magic strings.
 public class UserProfile
-    extends WikiPrincipal
+    implements Principal
 {
-    private Logger log = Logger.getLogger( UserProfile.class );
+    private String m_userName;
 
-    private int m_loginStatus = NONE;
-
-    public static final int NONE      = 0;
-    public static final int COOKIE    = 1;
-    public static final int CONTAINER = 2;  // Container has done auth for us.
-    public static final int PASSWORD  = 3;
-
-
-    private String m_password  = null;
-    private String m_loginName = null;
+    private Category log = Category.getInstance( UserProfile.class );
 
     public UserProfile()
     {
-    }
-
-    /**
-     *  The login name may be different from your WikiName.  The WikiName
-     *  is typically of type FirstnameLastName (like JanneJalkanen), whereas
-     *  the login name is typically a shorter one, such as "jannej" or something
-     *  similar.
-     */
-    public void setLoginName( String name )
-    {
-        m_loginName = name;
-    }
-
-    /**
-     *  Returns the login name.
-     */
-
-    public String getLoginName()
-    {
-        return m_loginName;
-    }
-
-    /**
-     *  Returns true, if the user has been authenticated properly.
-     */
-    public boolean isAuthenticated()
-    {
-        return m_loginStatus >= CONTAINER;
     }
 
     /*
@@ -88,9 +51,19 @@ public class UserProfile
     */
     public String getStringRepresentation()
     {
-        String res = "username="+TextUtil.urlEncodeUTF8(getName());
+        String res = "username="+TextUtil.urlEncodeUTF8(m_userName);
 
         return res;
+    }
+
+    public String getName()
+    {
+        return m_userName;
+    }
+
+    public void setName( String name )
+    {
+        m_userName = name;
     }
 
     public static UserProfile parseStringRepresentation( String res )
@@ -98,7 +71,7 @@ public class UserProfile
     {
         UserProfile prof = new UserProfile();
 
-        if( res != null && res.length() > 0 )
+        if( res != null )
         {
             //
             //  Not all browsers or containers do proper cookie
@@ -108,7 +81,7 @@ public class UserProfile
             //
             res = TextUtil.urlDecodeUTF8( res );
             StringTokenizer tok = new StringTokenizer( res, " ,=" );
-            
+
             while( tok.hasMoreTokens() )
             {
                 String param = tok.nextToken();
@@ -138,31 +111,6 @@ public class UserProfile
         }
 
         return false;
-    }
-
-    public int getLoginStatus()
-    {
-        return m_loginStatus;
-    }
-
-    public void setLoginStatus( int arg )
-    {
-        m_loginStatus = arg;
-    }
-
-    /**
-     *  Returns the password that the user gave.  We store the password
-     *  because some authenticators may need to reissue it at periodical
-     *  intervals; or possibly use the same password to multiple services.
-     */
-    public String getPassword()
-    {
-        return m_password;
-    }
-
-    public void setPassword( String arg )
-    {
-        m_password = arg;
     }
 
     public String toString()

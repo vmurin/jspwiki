@@ -10,7 +10,7 @@
          </tr>
       </table>
 
-      <hr />
+      <p><hr></p>
 
       <wiki:CheckVersion mode="notlatest">
          <p class="versionnote">You are about to restore version <wiki:PageVersion/>.
@@ -27,17 +27,39 @@
          </p>
       </wiki:CheckLock>
 
-      <wiki:Editor />
+      <form action="<wiki:EditLink format="url" />" method="POST" 
+            accept-charset="<wiki:ContentEncoding />">
 
+      <p>
+      <%-- These are required parts of this form.  If you do not include these,
+           horrible things will happen.  Do not modify them either. --%>
+
+      <%-- FIXME: This is not required, is it? --%>
+      <input type="hidden" name="page"     value="<wiki:PageName/>" />
+      <input type="hidden" name="action"   value="save" />
+      <input type="hidden" name="edittime" value="<%=pageContext.getAttribute("lastchange", PageContext.REQUEST_SCOPE )%>" />
+      <wiki:CheckRequestContext context="comment">
+         <input type="hidden" name="comment" value="true" />
+      </wiki:CheckRequestContext>
+
+      <%-- End of required area --%>
+
+      <textarea class="editor" wrap="virtual" name="text" rows="25" cols="80" style="width:100%;"><wiki:CheckRequestContext context="edit"><wiki:InsertPage mode="plain" /></wiki:CheckRequestContext></textarea>
+
+      <p>      
+      <input type="submit" name="ok" value="Save" />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <input type="submit" name="preview" value="Preview" />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <input type="submit" name="cancel" value="Cancel" />
+      </p>
+      </form>
+
+      <p>
       <wiki:NoSuchPage page="EditPageHelp">
-         <div class="error">
          Ho hum, it seems that the EditPageHelp<wiki:EditLink page="EditPageHelp">?</wiki:EditLink>
          page is missing.  Someone must've done something to the installation...
-         <br /><br />
-         You can copy the text from the <a href="http://www.jspwiki.org/Wiki.jsp?page=EditPageHelp">EditPageHelp page on jspwiki.org</a>.
-         </div>
       </wiki:NoSuchPage>
+      </p>
 
-      <div id="editpagehelp">
-         <wiki:InsertPage page="EditPageHelp" />
-      </div>
+      <wiki:InsertPage page="EditPageHelp" />

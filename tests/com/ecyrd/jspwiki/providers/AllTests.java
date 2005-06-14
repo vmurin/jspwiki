@@ -12,13 +12,11 @@ public class AllTests extends TestCase
 
     public static Test suite()
     {
-        TestSuite suite = new TestSuite("Providers suite");
+        TestSuite suite = new TestSuite();
 
         suite.addTest( FileSystemProviderTest.suite() );
         suite.addTest( RCSFileProviderTest.suite() );
         suite.addTest( VersioningFileProviderTest.suite() );
-        suite.addTest( BasicAttachmentProviderTest.suite() );
-        suite.addTest( CachingProviderTest.suite() );
 
         return suite;
     }

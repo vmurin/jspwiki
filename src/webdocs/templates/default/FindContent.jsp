@@ -4,59 +4,66 @@
 
 <%-- FIXME: Get rid of the scriptlets. --%>
 <%
+    Collection list = (Collection)pageContext.getAttribute( "searchresults",
+                                                             PageContext.REQUEST_SCOPE );
+
     String query = (String)pageContext.getAttribute( "query",
                                                      PageContext.REQUEST_SCOPE );
     if( query == null ) query = "";
 %>
 
-      <h2>Find pages</h2>
+      <H2>Find pages</H2>
 
-      <wiki:SearchResults>
-          <h4>Search results for '<%=query%>'</h4>
+      <% if( list != null ) 
+      {
+      %>
+          <H4>Search results for '<%=query%>'</H4>
 
-          <p>
-          <i>Found <wiki:SearchResultsSize/> hits, here are the top 20.</i>
-          </p>
+          <P>
+          <I>Found <%=list.size()%> hits, here are the top 20.</I>
+          </P>
 
           <table border="0" cellpadding="4">
 
           <tr>
              <th width="30%" align="left">Page</th>
              <th align="left">Score</th>
-          </tr>
-
-          <wiki:SearchResultIterator id="searchref" maxItems="20">
-              <tr>
-                  <td width="30%"><wiki:LinkTo><wiki:PageName/></wiki:LinkTo></td>
-                  <td><%=searchref.getScore()%></td>
-              </tr>
-          </wiki:SearchResultIterator>
-
-          <wiki:IfNoSearchResults>
-              <tr>
-                  <td colspan="2"><b>No results</b></td>
-              </tr>
-          </wiki:IfNoSearchResults>
+          </tr>          
+          <% if( list.size() > 0 ) { %>
+              <wiki:SearchResultIterator list="<%=list%>" id="searchref" maxItems="20">
+                  <TR>
+                      <TD WIDTH="30%"><wiki:LinkTo><wiki:PageName/></wiki:LinkTo></TD>
+                      <TD><%=searchref.getScore()%></TD>
+                  </TR>
+              </wiki:SearchResultIterator>
+          <% } else { %>
+              <TR>
+                  <TD width="30%"><B>No results</B></TD>
+              </TR>
+          <% } %>
 
           </table>
-          <p>
-          <a href="http://www.google.com/search?q=<%=query%>" target="_blank">Try this same search on Google!</a>
-          </p>
-          <p><hr /></p>
-      </wiki:SearchResults>
+          <P>
+          <A HREF="http://www.google.com/search?q=<%=query%>" TARGET="_blank">Try this same search on Google!</A>
+          </P>
+          <P><HR></P>
+      <%
+      }
+      %>
 
-      <form action="<wiki:Variable var="baseURL"/>Search.jsp"
-            accept-charset="<wiki:ContentEncoding/>">
+      <P>
 
-      <p>
-      Enter your query here:<br />
-      <input type="text" name="query" size="40" value="<%=query%>" /></p>
+      <FORM action="<wiki:Variable var="jspwiki.baseURL"/>Search.jsp"
+            ACCEPT-CHARSET="ISO-8859-1,UTF-8">
 
-      <p>
-      <input type="submit" name="ok" value="Find!" /></p>
-      </form>
+      Enter your query here:<BR>
+      <INPUT type="text" name="query" size="40" value="<%=query%>">
 
-      <p>
+      <P>
+      <input type="submit" name="ok" value="Find!" />
+      </FORM>
+
+      <P>
       Use '+' to require a word, '-' to forbid a word.  For example:
 
       <pre>
@@ -65,8 +72,7 @@
 
       finds pages that MUST include the word "java", and MAY NOT include
       the word "emacs".  Also, pages that contain the word "jsp" are
-      ranked before the pages that don't.</p>
-      <p>
+      ranked before the pages that don't.
+      <P>
       All searches are case insensitive.  If a page contains both
-      forbidden and required keywords, it is not shown.</p>
-
+      forbidden and required keywords, it is not shown.

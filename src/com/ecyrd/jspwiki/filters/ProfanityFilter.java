@@ -12,6 +12,7 @@ public class ProfanityFilter
 
     public String preTranslate( WikiContext context, String content )
     {
+        System.out.println("prechecking");
         for( int i = 0; i < c_profanities.length; i++ )
         {
             String word = c_profanities[i];

@@ -1,9 +1,10 @@
 
 package com.ecyrd.jspwiki;
 
+import com.ecyrd.jspwiki.*;
 import junit.framework.*;
-import java.util.*;
 import java.io.*;
+import java.util.*;
 
 /**
  *  @author Torsten Hildebrandt.
@@ -25,17 +26,6 @@ public class ReferenceManagerTest extends TestCase
         props.load( TestEngine.findTestProperties() );
         props.setProperty( "jspwiki.translatorReader.matchEnglishPlurals", "true");
 
-        //
-        //  We must make sure that the reference manager cache is cleaned before.
-        //
-        String workDir = props.getProperty( "jspwiki.workDir" );
-
-        if( workDir != null )
-        {
-            File refmgrfile = new File( workDir, "refmgr.ser" );
-            if( refmgrfile.exists() ) refmgrfile.delete();
-        }
-
         engine = new TestEngine(props);
 
         engine.saveText( "TestPage", "Reference to [Foobar]." );
@@ -46,38 +36,34 @@ public class ReferenceManagerTest extends TestCase
 
     public void tearDown()
     {
-        TestEngine.deleteTestPage( "TestPage" );
-        TestEngine.deleteTestPage( "Foobar" );
-        TestEngine.deleteTestPage( "Foobars" );
-        TestEngine.deleteTestPage( "Foobar2" );
-        TestEngine.deleteTestPage( "Foobar2s" );
-
+        engine.deletePage( "TestPage" );
+        engine.deletePage( "Foobar" );
+        engine.deletePage( "Foobars" );
+        engine.deletePage( "Foobar2" );
+        engine.deletePage( "Foobar2s" );
     }
 
     public void testUnreferenced()
         throws Exception
     {
         Collection c = mgr.findUnreferenced();
-        assertTrue( "Unreferenced page not found by ReferenceManager",
-		    Util.collectionContains( c, "TestPage" ));
+        
+        assertTrue( c.size()==1 && ((String) c.iterator().next()).equals("TestPage") );
     }
-
 
     public void testBecomesUnreferenced()
         throws Exception
     {
-        engine.saveText( "Foobar2", "[TestPage]" );
+        engine.saveText( "TestPage", "norefs" );
 
         Collection c = mgr.findUnreferenced();
-        assertEquals( "Wrong # of orphan pages, stage 1", 0, c.size() );
-
-        engine.saveText( "Foobar2", "norefs" );
-        c = mgr.findUnreferenced();
-        assertEquals( "Wrong # of orphan pages", 1, c.size() );
+        assertTrue( c.size()==2 );
 
         Iterator i = c.iterator();
         String first = (String) i.next();
-        assertEquals( "Not correct referrers", "TestPage", first );
+        String second = (String) i.next();
+        assertTrue( ( first.equals("Foobar") && second.equals("TestPage") )
+            || ( first.equals("TestPage") && second.equals("Foobar") ));
     }
 
     public void testUncreated()
@@ -107,10 +93,6 @@ public class ReferenceManagerTest extends TestCase
     /** 
      *  Is a page recognized as referenced if only plural form links exist.
      */
-
-    // NB: Unfortunately, cleaning out self-references in the case there's
-    //     a plural and a singular form of the page becomes nigh impossible, so we
-    //     just don't do it.
     public void testUpdatePluralOnlyRef()
         throws Exception
     {
@@ -119,20 +101,13 @@ public class ReferenceManagerTest extends TestCase
         assertTrue( "Foobar unreferenced", c.size()==1 && ((String) c.iterator().next()).equals("TestPage") );
 
         c = mgr.findReferrers( "Foobar" );
-        Iterator it = c.iterator();
-        String s1 = (String)it.next();
-        String s2 = (String)it.next();
-        assertTrue( "Foobar referrers", 
-                    c.size()==2 && 
-                    ( (s1.equals("TestPage") && s2.equals("Foobar")) || ((s1.equals("Foobar") && s2.equals("TestPage"))) ));
+        assertTrue( "Foobar referrers", c.size()==1 && ((String) c.iterator().next()).equals("TestPage") );
     }
-
 
     /** 
      *  Opposite to testUpdatePluralOnlyRef(). Is a page with plural form recognized as
      *  the page referenced by a singular link.
      */
-
     public void testUpdateFoobar2s()
         throws Exception
     {
@@ -187,67 +162,5 @@ public class ReferenceManagerTest extends TestCase
         junit.textui.TestRunner.main( new String[] { ReferenceManagerTest.class.getName() } );
     }
     
-    
-    /**
-     * Test method: dumps the contents of  ReferenceManager link lists to stdout.
-     * This method is NOT synchronized, and should be used in testing
-     * with one user, one WikiEngine only.
-     */
-    public static String dumpReferenceManager( ReferenceManager rm )
-    {
-        StringBuffer buf = new StringBuffer();
-        try
-        {
-            buf.append( "================================================================\n" );
-            buf.append( "Referred By list:\n" );
-            Set keys = rm.getReferredBy().keySet();
-            Iterator it = keys.iterator();
-            while( it.hasNext() )
-            {
-                String key = (String) it.next();
-                buf.append( key + " referred by: " );
-                Set refs = (Set)rm.getReferredBy().get( key );
-                Iterator rit = refs.iterator();
-                while( rit.hasNext() )
-                {
-                    String aRef = (String)rit.next();
-                    buf.append( aRef + " " );
-                }
-                buf.append( "\n" );
-            }
-            
-            
-            buf.append( "----------------------------------------------------------------\n" );
-            buf.append( "Refers To list:\n" );
-            keys = rm.getRefersTo().keySet();
-            it = keys.iterator();
-            while( it.hasNext() )
-            {
-                String key = (String) it.next();
-                buf.append( key + " refers to: " );
-                Collection refs = (Collection)rm.getRefersTo().get( key );
-                if(refs != null)
-                {
-                    Iterator rit = refs.iterator();
-                    while( rit.hasNext() )
-                    {
-                        String aRef = (String)rit.next();
-                        buf.append( aRef + " " );
-                    }
-                    buf.append( "\n" );
-                }
-                else
-                    buf.append("(no references)\n");
-            }
-            buf.append( "================================================================\n" );
-        }
-        catch(Exception e)
-        {
-            buf.append("Problem in dump(): " + e + "\n" );
-        }
-        
-        return( buf.toString() );
-    }
-
 }
 

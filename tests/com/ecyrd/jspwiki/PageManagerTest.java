@@ -2,17 +2,14 @@
 package com.ecyrd.jspwiki;
 
 import junit.framework.*;
+import java.io.*;
 import java.util.*;
-
-import org.apache.log4j.*;
 
 import com.ecyrd.jspwiki.providers.*;
 
 public class PageManagerTest extends TestCase
 {
     Properties props = new Properties();
-
-    TestEngine engine;
 
     public PageManagerTest( String s )
     {
@@ -22,9 +19,7 @@ public class PageManagerTest extends TestCase
     public void setUp()
         throws Exception
     {
-        props.load( TestEngine.findTestProperties() );
-        PropertyConfigurator.configure(props);
-        engine = new TestEngine(props);
+        props.load( getClass().getClassLoader().getResourceAsStream("/jspwiki.properties") );
     }
 
     public void tearDown()
@@ -35,7 +30,7 @@ public class PageManagerTest extends TestCase
         throws Exception
     {
         props.setProperty( "jspwiki.usePageCache", "true" );
-        PageManager m = new PageManager( engine, props );
+        PageManager m = new PageManager( props );
 
         assertTrue( m.getProvider() instanceof CachingProvider );
     }
@@ -44,7 +39,7 @@ public class PageManagerTest extends TestCase
         throws Exception
     {
         props.setProperty( "jspwiki.usePageCache", "false" );
-        PageManager m = new PageManager( engine, props );
+        PageManager m = new PageManager( props );
 
         assertTrue( !(m.getProvider() instanceof CachingProvider) );
     }
@@ -53,5 +48,4 @@ public class PageManagerTest extends TestCase
     {
         return new TestSuite( PageManagerTest.class );
     }
-
 }

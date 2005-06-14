@@ -13,7 +13,7 @@ public class StressTestSpeed extends TestCase
 
     Properties props = new Properties();
 
-    TestEngine engine;
+    WikiEngine engine;
 
     public StressTestSpeed( String s )
     {
@@ -23,9 +23,9 @@ public class StressTestSpeed extends TestCase
     public void setUp()
         throws Exception
     {
-        props.load( TestEngine.findTestProperties("/jspwiki_rcs.properties") );
+        props.load( getClass().getClassLoader().getResourceAsStream("/jspwiki_rcs.properties") );
 
-        engine = new TestEngine(props);
+        engine = new TestEngine2(props);
     }
 
     public void tearDown()
@@ -48,7 +48,7 @@ public class StressTestSpeed extends TestCase
     public void testSpeed1()
         throws Exception
     {
-        InputStream is = getClass().getResourceAsStream("/TextFormattingRules.txt");
+        InputStream is = getClass().getClassLoader().getResourceAsStream("/TextFormattingRules.txt");
         Reader      in = new InputStreamReader( is, "ISO-8859-1" );
         StringWriter out = new StringWriter();
         Benchmark mark = new Benchmark();
@@ -68,32 +68,6 @@ public class StressTestSpeed extends TestCase
         mark.stop();
 
         System.out.println( ITERATIONS+" pages took "+mark.getDurationMs()+" ms (="+
-                            mark.getDurationMs()/ITERATIONS+" ms/page)" );
-    }
-
-    public void testSpeed2()
-        throws Exception
-    {
-        InputStream is = getClass().getResourceAsStream("/TestPlugins.txt");
-        Reader      in = new InputStreamReader( is, "ISO-8859-1" );
-        StringWriter out = new StringWriter();
-        Benchmark mark = new Benchmark();
-
-        FileUtil.copyContents( in, out );
-
-        engine.saveText( NAME1, out.toString() );
-
-        mark.start();
-
-        for( int i = 0; i < ITERATIONS; i++ )
-        {
-            String txt = engine.getHTML( NAME1 );
-            assertTrue( 0 != txt.length() );
-        }
-
-        mark.stop();
-
-        System.out.println( ITERATIONS+" plugin pages took "+mark.getDurationMs()+" ms (="+
                             mark.getDurationMs()/ITERATIONS+" ms/page)" );
     }
 

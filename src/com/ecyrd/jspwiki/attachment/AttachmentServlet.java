@@ -4,16 +4,16 @@
     Copyright (C) 2001-2002 Janne Jalkanen (Janne.Jalkanen@iki.fi)
 
     This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation; either version 2.1 of the License, or
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
+    GNU General Public License for more details.
 
-    You should have received a copy of the GNU Lesser General Public License
+    You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
@@ -21,23 +21,12 @@ package com.ecyrd.jspwiki.attachment;
 
 import javax.servlet.*;
 import javax.servlet.http.*;
-
 import java.util.*;
 import java.io.*;
-import java.text.SimpleDateFormat;
-import java.text.DateFormat;
 
-import org.apache.log4j.Logger;
-
+import org.apache.log4j.Category;
 import com.ecyrd.jspwiki.*;
-import com.ecyrd.jspwiki.util.HttpUtil;
-import com.ecyrd.jspwiki.auth.UserProfile;
-import com.ecyrd.jspwiki.auth.AuthorizationManager;
-import com.ecyrd.jspwiki.providers.ProviderException;
-import com.ecyrd.jspwiki.dav.WebdavServlet;
-import com.ecyrd.jspwiki.dav.methods.DavMethod;
-import com.ecyrd.jspwiki.dav.methods.PropFindMethod;
-import com.ecyrd.jspwiki.filters.RedirectException;
+import com.ecyrd.jspwiki.providers.WikiAttachmentProvider;
 
 // multipartrequest.jar imports:
 import http.utils.multipartrequest.*;
@@ -49,38 +38,32 @@ import http.utils.multipartrequest.*;
  * temporarily, figures out what WikiName to use to store it, checks for
  * previously existing versions.
  *
+ * <p>For a ready, well thought out library to do this (and much more), take
+ * a look at O'Reilly's <A HREF="http://www.servlets.com/cos/index.html">COS package</A>.
+ * (Its licensing _might_ suit us, but I really want to keep our source visible, so
+ * here, we use our own implementation.)
+ *
  * <p>This servlet does not worry about authentication; we leave that to the 
  * container, or a previous servlet that chains to us.
  *
  * @author Erik Bunn
- * @author Janne Jalkanen
- *
- * @since 1.9.45.
  */
 public class AttachmentServlet
-    extends WebdavServlet
+    extends HttpServlet
 {
     private WikiEngine m_engine;
-    Logger log = Logger.getLogger(this.getClass().getName());
+    private Category log = Category.getInstance( AttachmentServlet.class ); 
+
 
     public static final String HDR_VERSION     = "version";
-    public static final String HDR_NAME        = "page";
+    public static final String HDR_WIKINAME    = "wikiname";
+    public static final String HDR_ACTION      = "action";
+    public static final String ATTR_MSG        = "msg";
+    public static final String ATTR_ATTACHMENT = "attachment";
 
-    /** Default expiry period is 1 day */
-    protected static final long DEFAULT_EXPIRY = 1 * 24 * 60 * 60 * 1000; 
-
+    private String m_resultPage;
     private String m_tmpDir;
 
-    /**
-     *  The maximum size that an attachment can be.
-     */
-    private int   m_maxSize = Integer.MAX_VALUE;
-
-    //
-    // Not static as DateFormat objects are not thread safe.
-    // Used to handle the RFC date format = Sat, 13 Apr 2002 13:23:01 GMT
-    //
-    private final DateFormat rfcDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z");
 
     /**
      * Initializes the servlet from WikiEngine properties.
@@ -92,42 +75,16 @@ public class AttachmentServlet
 
         m_engine         = WikiEngine.getInstance( config );
         Properties props = m_engine.getWikiProperties();
-
-        m_tmpDir         = m_engine.getWorkDir()+File.separator+"attach-tmp";
+            
+        m_resultPage = m_engine.getBaseURL()+"Attachment.jsp";
+        m_tmpDir     = System.getProperty( "java.io.tmpdir" );
  
-        m_maxSize        = TextUtil.getIntegerProperty( props, 
-                                                        AttachmentManager.PROP_MAXSIZE,
-                                                        Integer.MAX_VALUE );
-
-        File f = new File( m_tmpDir );
-        if( !f.exists() )
-        {
-            f.mkdirs();
-        }
-        else if( !f.isDirectory() )
-        {
-            log.fatal("A file already exists where the temporary dir is supposed to be: "+m_tmpDir+".  Please remove it.");
-        }
-
         log.debug( "UploadServlet initialized. Using " + 
-                   m_tmpDir + " for temporary storage." );
+                   m_tmpDir + " for temporary storage, directing to " + 
+                   m_resultPage + " after upload." );
     }
 
-	public void doPropFind( HttpServletRequest req, HttpServletResponse res )
-    throws IOException, ServletException
-    {
-        DavMethod dm = new PropFindMethod( m_engine );
-        
-        dm.execute( req, res );
-	}
 
-    protected void doOptions( HttpServletRequest req, HttpServletResponse res )
-    {
-        res.setHeader( "DAV", "1" ); // We support only Class 1
-        res.setHeader( "Allow", "GET, PUT, POST, OPTIONS, PROPFIND, PROPPATCH, MOVE, COPY, DELETE");
-        res.setStatus( HttpServletResponse.SC_OK );
-    }
-	
     /**
      * Serves a GET with two parameters: 'wikiname' specifying the wikiname
      * of the attachment, 'version' specifying the version indicator.
@@ -137,94 +94,41 @@ public class AttachmentServlet
     public void doGet( HttpServletRequest  req, HttpServletResponse res ) 
         throws IOException, ServletException 
     {
-        String version  = m_engine.safeGetParameter( req, HDR_VERSION );
-        String nextPage = m_engine.safeGetParameter( req, "nextpage" );
-
-        String msg      = "An error occurred. Ouch.";
-        int    ver      = WikiProvider.LATEST_VERSION;
+        String name    = req.getParameter( HDR_WIKINAME );
+        String version = req.getParameter( HDR_VERSION );
+        String msg     = "An error occurred. Ouch.";
+        int    ver     = -1;
 
         AttachmentManager mgr = m_engine.getAttachmentManager();
-        AuthorizationManager authmgr = m_engine.getAuthorizationManager();
 
-        UserProfile wup = m_engine.getUserManager().getUserProfile( req );
-
-        WikiContext context = m_engine.createContext( req, WikiContext.ATTACH );
-        String page = context.getPage().getName();
-
-        if( page == null )
+        if( name == null || version == null )
         {
-            log.info("Invalid attachment name.");
-            res.sendError( HttpServletResponse.SC_BAD_REQUEST );
-            return;
+            msg = "Invalid attachment name/version.";
         }
         else
         {
-            OutputStream out = null;
-            InputStream  in  = null;
-            
             try 
             {
-                log.debug("Attempting to download att "+page+", version "+version);
-                if( version != null )
-                {
-                    ver = Integer.parseInt( version );
-                }
+                //  FIXME: Uses provider I/F directly; should go through
+                //         manager.
 
-                Attachment att = mgr.getAttachmentInfo( page, ver );
+                ver = Integer.parseInt( version );
+
+                Attachment att = mgr.getAttachmentInfo( name, ver );
 
                 if( att != null )
                 {
-                    //
-                    //  Check if the user has permission for this attachment
-                    //
+                    res.setContentType( "application/binary" );
+                    // Won't work, must be "attachement"
+                    res.setHeader( "Content-Disposition", 
+                                   "attachment; filename=" + name + ";" );
 
-                    if( !authmgr.checkPermission( att, wup, "view" ) )
-                    {
-                        log.debug("User does not have permission for this");
-                        res.sendError( HttpServletResponse.SC_FORBIDDEN );
-                        return;
-                    }
-                                                 
-
-                    //
-                    //  Check if the client already has a version of this attachment.
-                    //
-                    if( HttpUtil.checkFor304( req, att ) )
-                    {
-                        log.debug("Client has latest version already, sending 304...");
-                        res.sendError( HttpServletResponse.SC_NOT_MODIFIED );
-                        return;
-                    }
-
-                    String mimetype = getServletConfig().getServletContext().getMimeType( att.getFileName().toLowerCase() );
-
-                    if( mimetype == null )
-                    {
-                        mimetype = "application/binary";
-                    }
-
-                    res.setContentType( mimetype );
-
-                    //
-                    //  We use 'inline' instead of 'attachment' so that user agents
-                    //  can try to automatically open the file.
-                    //
-
-                    res.addHeader( "Content-Disposition",
-                                   "inline; filename=\"" + att.getFileName() + "\";" );
-                    // long expires = new Date().getTime() + DEFAULT_EXPIRY;
-                    // res.addDateHeader("Expires",expires);
-                    res.addDateHeader("Last-Modified",att.getLastModified().getTime());
-
-                    // If a size is provided by the provider, report it.
+                    // If a size is provided by the provider, report it. 
                     if( att.getSize() >= 0 )
-                    {
-                        // log.info("size:"+att.getSize());
                         res.setContentLength( (int)att.getSize() );
-                    }
 
-                    out = res.getOutputStream();
-                    in  = mgr.getAttachmentStream( att );
+                    OutputStream out = res.getOutputStream();
+                    InputStream  in  = mgr.getAttachmentStream( att );
 
                     int read = 0;
                     byte buffer[] = new byte[8192];
@@ -234,53 +138,39 @@ public class AttachmentServlet
                         out.write( buffer, 0, read );
                     }
                     
-                    if(log.isDebugEnabled())
-                    {
-                        msg = "Attachment "+att.getFileName()+" sent to "+req.getRemoteUser()+" on "+req.getRemoteAddr();
-                        log.debug( msg );
-                    }
-                    if( nextPage != null ) res.sendRedirect( nextPage );
+                    in.close();
+                    out.close();
 
-                    return;
-                }               
+                    msg = "Attachment "+name+" sent to "+req.getRemoteUser()+" on "+req.getRemoteHost();
+                    log.debug( msg );
+
+		    return;
+                }
                 else
                 {
-                    msg = "Attachment '" + page + "', version " + ver + 
+                    msg = "Attachment " + name + " version " + ver + 
                           " does not exist.";
-
-                    log.info( msg );
-                    res.sendError( HttpServletResponse.SC_NOT_FOUND,
-                                   msg );
-                    return;
                 }
                 
-            }
-            catch( ProviderException pe )
-            {
-                msg = "Provider error: "+pe.getMessage();
-                res.sendError( HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                               msg );
-                return;
             }
             catch( NumberFormatException nfe )
             {
                 msg = "Invalid version number (" + version + ")";
-                res.sendError( HttpServletResponse.SC_BAD_REQUEST,
-                               msg );
-                return;
             }
             catch( IOException ioe )
             {
                 msg = "Error: " + ioe.getMessage();
-                res.sendError( HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                               msg );
-                return;
             }
-            finally
-            {
-                if( in != null ) in.close();
-                if( out != null ) out.close();
-            }
+        }
+        log.info( msg );
+
+	// Direct back to the Attachment page with informative message.
+        ServletContext ctx   = getServletContext();
+	RequestDispatcher rd = ctx.getRequestDispatcher( m_resultPage );
+
+        if( msg != null )
+        {
+            req.setAttribute( ATTR_MSG, msg );
         }
     }
 
@@ -292,214 +182,95 @@ public class AttachmentServlet
      * Uses other parameters to determine which name to store as.
      *
      * <p>The input to this servlet is generated by an HTML FORM with
-     * two parts. The first, named 'page', is the WikiName identifier
-     * for the parent file. The second, named 'content', is the binary
+     * two parts. The first, named 'wikiname', is the WikiName identifier
+     * for the attachment. The second, named 'content', is the binary
      * content of the file.
+     *
+     * <p>After handling, the request is forwarded to m_resultPage.
      */
     public void doPost( HttpServletRequest  req, HttpServletResponse res ) 
         throws IOException, ServletException 
     {
-        try
-        {
-            String nextPage = upload( req );
-            req.getSession().removeAttribute("msg");
-            res.sendRedirect( nextPage );
-        }
-        catch( RedirectException e )
-        {
-            req.getSession().setAttribute("msg", e.getMessage());
-            res.sendRedirect( e.getRedirect() );
-        }
+        ServletContext ctx = getServletContext();
+        String msg = "";
+
+        String action = req.getParameter( HDR_ACTION );
+
+        // Only the one action at this time, but preparing for more.
+        upload( req );
+
+        RequestDispatcher rd = ctx.getRequestDispatcher( m_resultPage );
+        log.debug( "Forwarding to " + m_resultPage );
+        rd.forward( req, res );
     }
 
 
+
+
     /**
-     *  Uploads a specific mime multipart input set, intercepts exceptions.
-     *
-     *  @return The page to which we should go next.
+     * Uploads a specific mime multipart input set, intercepts exceptions.
      */
     protected String upload( HttpServletRequest req )
-        throws RedirectException,
-               IOException
     {
         String msg     = "";
         String attName = "(unknown)";
-        String errorPage = m_engine.getURL( WikiContext.ERROR, "", null, false ); // If something bad happened, Upload should be able to take care of most stuff
-        String nextPage = errorPage;
 
         try
         {
-            MultipartRequest multi;
+            // System.out.println( "Maximum size: " + Integer.MAX_VALUE );
+            //MultipartRequest multi = new MultipartRequest( req, m_tmpDir, Integer.MAX_VALUE );
+            MultipartRequest multi = new ServletMultipartRequest( req, m_tmpDir, Integer.MAX_VALUE );
 
-            multi = new MultipartRequest( null, // no debugging
-                                          req.getContentType(), 
-                                          req.getContentLength(), 
-                                          req.getInputStream(), 
-                                          m_tmpDir, 
-                                          Integer.MAX_VALUE,
-                                          m_engine.getContentEncoding() );
-
-            nextPage        = multi.getURLParameter( "nextpage" );
-            String wikipage = multi.getURLParameter( "page" );
-
-            WikiContext context = m_engine.createContext( req, WikiContext.UPLOAD );
-            errorPage = context.getURL( WikiContext.UPLOAD,
-                                        wikipage );
-
-            //
-            //  FIXME: This has the unfortunate side effect that it will receive the
-            //  contents.  But we can't figure out the page to redirect to
-            //  before we receive the file, due to the stupid constructor of MultipartRequest.
-            //
-            if( req.getContentLength() > m_maxSize )
+            if( log.isDebugEnabled() )
             {
-                // FIXME: Does not delete the received files.
-                throw new RedirectException( "File exceeds maximum size ("+m_maxSize+" bytes)",
-                                             errorPage );
+                debugContentList( multi );
             }
 
-            UserProfile user    = context.getCurrentUser();
+            //
+            // We expect to get parameters 'user', 'wikiname'
+            //
+            // FIXME: Should be read from standard UserProfile.
+            String user       = multi.getURLParameter( "user" );
+            String wikiname   = multi.getURLParameter( "wikiname" );
 
-            //
-            //  Go through all files being uploaded.
-            //
             Enumeration files = multi.getFileParameterNames();
 
-            while( files.hasMoreElements() )
-            {
-                String part = (String) files.nextElement();
-                File   f    = multi.getFile( part );
-                AttachmentManager mgr = m_engine.getAttachmentManager();
-                InputStream in;
+            //
+            // We only accept one file for now.
+            //
+            String name = (String)files.nextElement();
+            File   f    = multi.getFile( name );
 
-                try
-                {
-                    //
-                    //  Is a file to be uploaded.
-                    //
+            Attachment att = new Attachment( wikiname );
+            att.setAuthor( user );
+            att.setFileName( name );
 
-                    String filename = multi.getFileSystemName( part );
+            m_engine.getAttachmentManager().storeAttachment( att, f );
 
-                    if( filename == null || filename.trim().length() == 0 )
-                    {
-                        log.error("Empty file name given.");
+            // FIXME: If deletion fails, attachment still stored.
+            f.delete();
 
-                        throw new RedirectException("Empty file name given.",
-                                                    errorPage);
-                    }
-
-                    //
-                    //  Should help with IE 5.22 on OSX
-                    //
-                    filename = filename.trim();
-
-                    log.debug("file="+filename);
-                    //
-                    //  Attempt to open the input stream
-                    //
-                    if( f != null )
-                    {
-                        in = new FileInputStream( f );
-                    }
-                    else
-                    {
-                        //
-                        //  This happens onl when the size of the 
-                        //  file is small enough to be cached in memory
-                        //
-                        in = multi.getFileContents( part );
-                    }
-
-                    if( in == null )
-                    {
-                        log.error("File could not be opened.");
-
-                        throw new RedirectException("File could not be opened.",
-                                                    errorPage);
-                    }
-
-                    //
-                    //  Check whether we already have this kind of a page.
-                    //  If the "page" parameter already defines an attachment
-                    //  name for an update, then we just use that file.
-                    //  Otherwise we create a new attachment, and use the
-                    //  filename given.  Incidentally, this will also mean
-                    //  that if the user uploads a file with the exact
-                    //  same name than some other previous attachment,
-                    //  then that attachment gains a new version.
-                    //
-
-                    Attachment att = mgr.getAttachmentInfo( wikipage );
-
-                    if( att == null )
-                    {
-                        att = new Attachment( wikipage, filename );
-                    }
-
-                    //
-                    //  Check if we're allowed to do this?
-                    //
-
-                    if( m_engine.getAuthorizationManager().checkPermission( att,
-                                                                            user,
-                                                                            "upload" ) )
-                    {
-                        if( user != null )
-                        {
-                            att.setAuthor( user.getName() );
-                        }
-                
-                        m_engine.getAttachmentManager().storeAttachment( att, in );
-
-                        log.info( "User " + user + " uploaded attachment to " + wikipage + 
-                                  " called "+filename+", size " + multi.getFileSize(part) );
-                    }
-                    else
-                    {
-                        throw new RedirectException("No permission to upload a file",
-                                                    errorPage);
-                    }
-                }
-                finally
-                {
-                    if( f != null )
-                        f.delete();
-                }
-            }
+            log.info( "User " + user + " uploaded attachment " + wikiname + 
+                      ", size " + f.length() );
 
             // Inform the JSP page of which file we are handling:
-            // req.setAttribute( ATTR_ATTACHMENT, wikiname );
-        }
-        catch( ProviderException e )
-        {
-            msg = "Upload failed because the provider failed: "+e.getMessage();
-            log.warn( msg + " (attachment: " + attName + ")", e );
-
-            throw new IOException(msg);
+            req.setAttribute( ATTR_ATTACHMENT, wikiname );
         }
         catch( IOException e )
         {
             // Show the submit page again, but with a bit more 
             // intimidating output.
             msg = "Upload failure: " + e.getMessage();
-            log.warn( msg + " (attachment: " + attName + ")", e );
-
-            throw e;
-        }
-        finally
-        {
-            // FIXME: In case of exceptions should absolutely
-            //        remove the uploaded file.
+            log.debug( msg + " (attachment: " + attName + ")" );
         }
 
-        return nextPage;
+        return( msg );
     }
 
 
     /**
      * Produces debug output listing parameters and files.
      */
-    /*
     private void debugContentList( MultipartRequest  multi )
     {
         StringBuffer sb = new StringBuffer();
@@ -537,7 +308,6 @@ public class AttachmentServlet
 
         log.debug( sb.toString() );
     }
-    */
 
 }
 

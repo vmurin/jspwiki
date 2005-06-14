@@ -1,38 +1,38 @@
 <%@ taglib uri="/WEB-INF/jspwiki.tld" prefix="wiki" %>
 
-   <div class="conflictnote">
-      <p><b>Oops!  Someone modified the page while you were editing it!</b></p>
+   <DIV class="conflictnote">
+      <P><B>Oops!  Someone modified the page while you were editing it!</B></P>
 
-      <p>Since I am stupid and can't figure out what the difference
+      <P>Since I am stupid and can't figure out what the difference
       between those pages is, you will need to do that for me.  I've
       printed here the text (in Wiki) of the new page, and the
       modifications you made.  You'll now need to copy the text onto a
       scratch pad (Notepad or emacs will do just fine), and then edit
-      the page again.</p>
+      the page again.</P>
 
-      <p>Note that when you go back into the editing mode, someone might have
-      changed the page again.  So be quick.</p>
+      <P>Note that when you go back into the editing mode, someone might have
+      changed the page again.  So be quick.</P>
 
-   </div>
+   </DIV>
 
-      <p><font color="#0000FF">Here is the modified text (by someone else):</font></p>
+      <P><font color="#0000FF">Here is the modified text (by someone else):</FONT></P>
 
-      <p><hr /></p>
+      <P><HR></P>
 
-      <tt>
+      <TT>
         <%=pageContext.getAttribute("conflicttext",PageContext.REQUEST_SCOPE)%>
-      </tt>      
+      </TT>      
 
-      <p><hr /></p>
+      <P><HR></P>
 
-      <p><font color="#0000FF">And here's your text:</font></p>
+      <P><FONT COLOR="#0000FF">And here's your text:</FONT></P>
 
-      <tt>
+      <TT>
         <%=pageContext.getAttribute("usertext",PageContext.REQUEST_SCOPE)%>
-      </tt>
+      </TT>
 
-      <p><hr /></p>
+      <P><HR></P>
 
-      <p>
-       <i>Go edit <wiki:EditLink><wiki:PageName /></wiki:EditLink>.</i>
-      </p>
+      <P>
+       <I>Go edit <wiki:EditLink><wiki:PageName /></wiki:EditLink>.</I>
+      </P>

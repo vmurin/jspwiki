@@ -1,6 +1,7 @@
 package com.ecyrd.jspwiki.acl;
 
 import junit.framework.*;
+import java.util.*;
 
 import java.security.acl.*;
 
@@ -23,7 +24,6 @@ public class AclImplTest
      *  Alice = may view
      *  Bob   = may view, may edit
      *  Charlie = may view, may NOT edit
-     *  Dave = may view, may NOT edit, may create
      *
      *  groupAcl:
      *  FooGroup = Alice, Bob - may edit
@@ -37,72 +37,55 @@ public class AclImplTest
 
         //  User 1
 
-        UserProfile u_alice = new UserProfile();
-        u_alice.setName( "Alice" );
+        UserProfile u1 = new UserProfile();
+        u1.setName( "Alice" );
 
-        UserProfile u_bob = new UserProfile();
-        u_bob.setName( "Bob" );
+        UserProfile u2 = new UserProfile();
+        u2.setName( "Bob" );
         
-        UserProfile u_charlie = new UserProfile();
-        u_charlie.setName( "Charlie" );
-
-        UserProfile u_dave = new UserProfile();
-        u_dave.setName( "Dave" );
-
+        UserProfile u3 = new UserProfile();
+        u3.setName( "Charlie" );
 
         //  ALLOW VIEW
 
         AclEntry ae = new AclEntryImpl();
         ae.addPermission( new ViewPermission() );
-        ae.setPrincipal( u_alice );
+        ae.setPrincipal( u1 );
 
         //  DENY EDIT
 
         AclEntry ae2 = new AclEntryImpl();
         ae2.addPermission( new EditPermission() );
         ae2.setNegativePermissions();
-        ae2.setPrincipal( u_charlie );
+        ae2.setPrincipal( u3 );
 
         AclEntry ae2b = new AclEntryImpl();
         ae2b.addPermission( new ViewPermission() );
-        ae2b.setPrincipal( u_charlie );
+        ae2b.setPrincipal( u3 );
 
         //  ALLOW VIEW, EDIT
 
         AclEntry ae3 = new AclEntryImpl();
         ae3.addPermission( new ViewPermission() );
         ae3.addPermission( new EditPermission() );
-        ae3.setPrincipal( u_bob );
+        ae3.setPrincipal( u2 );
 
-	// ALLOW VIEW, CREATE, DENY EDIT
-
-        AclEntry ae4 = new AclEntryImpl();
-        ae4.addPermission( new ViewPermission() );
-        ae4.addPermission( new CreatePermission() );
-        ae4.setPrincipal( u_dave );
-
-        AclEntry ae4b = new AclEntryImpl();
-        ae4b.addPermission( new EditPermission() );
-        ae4b.setNegativePermissions();
-        ae4b.setPrincipal( u_dave );
 
         m_acl.addEntry( null, ae );
         m_acl.addEntry( null, ae2 );
         m_acl.addEntry( null, ae2b );
         m_acl.addEntry( null, ae3 );
-        m_acl.addEntry( null, ae4 );
-        m_acl.addEntry( null, ae4b );
 
         //  Groups
 
         WikiGroup group1 = new WikiGroup();
-        group1.addMember( u_alice );
-        group1.addMember( u_bob );
+        group1.addMember( u1 );
+        group1.addMember( u2 );
         group1.setName( "FooGroup" );
 
         WikiGroup group2 = new WikiGroup();
-        group2.addMember( u_bob );
-        group2.addMember( u_charlie );
+        group2.addMember( u2 );
+        group2.addMember( u3 );
         group2.setName( "BarGroup" );
        
         AclEntry ag1 = new AclEntryImpl();
@@ -131,14 +114,9 @@ public class AclImplTest
 
         assertTrue( "view", m_acl.checkPermission( wup, new ViewPermission() ) );
         assertFalse( "edit", m_acl.checkPermission( wup, new EditPermission() ) );
-        assertFalse( "comment", m_acl.checkPermission( wup, new CommentPermission() ) );
 
         assertEquals( "edit none", AclImpl.NONE, 
                       m_acl.findPermission( wup, new EditPermission() ) );
-
-        assertEquals( "comment none", AclImpl.NONE, 
-                      m_acl.findPermission( wup, new CommentPermission() ) );
-
 
         assertEquals( "view allow", AclImpl.ALLOW, 
                       m_acl.findPermission( wup, new ViewPermission() ) );
@@ -151,14 +129,11 @@ public class AclImplTest
 
         assertTrue( "view", m_acl.checkPermission( wup, new ViewPermission() ) );
         assertTrue( "edit", m_acl.checkPermission( wup, new EditPermission() ) );
-        assertTrue( "comment", m_acl.checkPermission( wup, new CommentPermission() ) );
 
         assertEquals( "view allow", AclImpl.ALLOW, 
                       m_acl.findPermission( wup, new ViewPermission() ) );
         assertEquals( "edit allow", AclImpl.ALLOW, 
                       m_acl.findPermission( wup, new EditPermission() ) );
-        assertEquals( "comment allow", AclImpl.ALLOW,
-                      m_acl.findPermission( wup, new CommentPermission() ) );
     }
 
     public void testCharlie()
@@ -171,25 +146,6 @@ public class AclImplTest
 
         assertEquals( "view allow", AclImpl.ALLOW, 
                       m_acl.findPermission( wup, new ViewPermission() ) );
-
-        assertEquals( "edit deny", AclImpl.DENY, 
-                      m_acl.findPermission( wup, new EditPermission() ) );
-    }
-
-    public void testDave()
-    {
-        UserProfile wup = new UserProfile();
-        wup.setName("Dave");
-
-        assertTrue( "view", m_acl.checkPermission( wup, new ViewPermission() ) );
-        assertTrue( "create", m_acl.checkPermission( wup, new CreatePermission() ) );
-        assertFalse( "edit", m_acl.checkPermission( wup, new EditPermission() ) );
-
-        assertEquals( "view allow", AclImpl.ALLOW, 
-                      m_acl.findPermission( wup, new ViewPermission() ) );
-
-        assertEquals( "create allow", AclImpl.ALLOW, 
-                      m_acl.findPermission( wup, new CreatePermission() ) );
 
         assertEquals( "edit deny", AclImpl.DENY, 
                       m_acl.findPermission( wup, new EditPermission() ) );
@@ -208,7 +164,7 @@ public class AclImplTest
 
         wup.setName( "Bob" );
 
-        assertEquals( "allow edit Bob", AclImpl.ALLOW,
+        assertEquals( "deny edit Bob", AclImpl.DENY,
                       m_aclGroup.findPermission( wup, new EditPermission() ) );
         
         assertEquals( "allow view Bob", AclImpl.NONE,

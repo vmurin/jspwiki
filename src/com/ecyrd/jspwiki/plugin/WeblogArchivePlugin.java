@@ -52,9 +52,8 @@ public class WeblogArchivePlugin implements WikiPlugin
         if( weblogName == null ) weblogName = context.getPage().getName();
         
 
-        m_monthUrlFormat = new SimpleDateFormat("'"+
-                                                context.getURL( WikiContext.VIEW, weblogName,
-                                                                "weblog.startDate='ddMMyy'&amp;weblog.days=%d")+"'");
+        m_monthUrlFormat = new SimpleDateFormat("'"+engine.getViewURL( weblogName )
+                                                +"&amp;weblog.startDate='ddMMyy'&amp;weblog.days=%d'");
 
         StringBuffer sb = new StringBuffer();
 
@@ -134,6 +133,10 @@ public class WeblogArchivePlugin implements WikiPlugin
 
             Calendar cal = new ArchiveCalendar( urCalendar );
             cal.setTime( d );
+            cal.set( Calendar.DATE, 0 );
+            cal.set( Calendar.MINUTE, 0 );
+            cal.set( Calendar.SECOND, 0 );
+            cal.set( Calendar.MILLISECOND, 0 );
 
             res.add( cal );
         }
@@ -191,7 +194,7 @@ public class WeblogArchivePlugin implements WikiPlugin
 
                 if( equals( c ) ) return 0;
 
-                return c.getTime().before( getTime() ) ? 1 : -1;
+                return c.getTime().after( getTime() ) ? 1 : -1;
             }
 
             return 0;

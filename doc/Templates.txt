@@ -2,8 +2,8 @@
 TEMPLATES
 =========
 
-JSPWiki v2 now supports the concept of "templates" and "skins".  These
-are actually two different things:
+Since 1.9.something JSPWiki has supported the concept of "templates"
+and "skins".  These are actually two different things:
 
   *Templates* are set by the site administrator.  They are a core set
   of HTML and JSP files, that define how your site looks.  All
@@ -17,7 +17,7 @@ are actually two different things:
 
 JSPWiki comes currently with a single template, called "default".
 This is also the template that gets used if no template has been
-defined.  Unfortunately, the default template has only one "skin".
+defined.
 
 
 Rolling your own

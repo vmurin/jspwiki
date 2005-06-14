@@ -3,8 +3,10 @@
 <%-- Provides a small login/logout form to include in a side bar. --%>
 
 <div class="loginbox" align="center">
+  <p>
+  <hr />
   <wiki:UserCheck status="unvalidated">
-    <form action="<wiki:Variable var="baseURL"/>Login.jsp" accept-charset="UTF-8" method="post" >
+    <form action="<wiki:Variable var="baseURL"/>Login.jsp" accept-charset="UTF-8" method="POST" >
     <p>
       <input type="hidden" name="page" value="<wiki:Variable var="pagename"/>" />
       <input type="text" name="uid" size="8" />
@@ -23,5 +25,7 @@
     </p>
     </form>
   </wiki:UserCheck>
+  </p>
+
 </div>
 

@@ -22,7 +22,7 @@ public class CounterPluginTest extends TestCase
     public void setUp()
         throws Exception
     {
-        props.load( TestEngine.findTestProperties() );
+        props.load( getClass().getClassLoader().getResourceAsStream("/jspwiki.properties") );
 
         testEngine = new TestEngine(props);
     }
@@ -37,7 +37,7 @@ public class CounterPluginTest extends TestCase
                ServletException
     {
         WikiContext context = new WikiContext( testEngine,
-                                               new WikiPage("TestPage") );
+                                               "TestPage" );
         Reader r = new TranslatorReader( context, 
                                          new BufferedReader( new StringReader(src)) );
         StringWriter out = new StringWriter();
@@ -56,7 +56,7 @@ public class CounterPluginTest extends TestCase
     {
         String src = "[{Counter}], [{Counter}]";
 
-        assertEquals( "1, 2",
+        assertEquals( "1, 2\n",
                       translate(src) );
     }
 
@@ -65,7 +65,7 @@ public class CounterPluginTest extends TestCase
     {
         String src = "[{Counter}], [{Counter}], [{$counter}]";
 
-        assertEquals( "1, 2, 2",
+        assertEquals( "1, 2, 2\n",
                       translate(src) );
     }
 
@@ -74,12 +74,12 @@ public class CounterPluginTest extends TestCase
     {
         String src = "[{Counter}], [{Counter name=aa}], [{$counter-aa}]";
 
-        assertEquals( "1, 1, 1",
+        assertEquals( "1, 1, 1\n",
                       translate(src) );
     }
 
     public static Test suite()
     {
-        return new TestSuite( CounterPluginTest.class );
+        return new TestSuite( ReferringPagesPluginTest.class );
     }
 }

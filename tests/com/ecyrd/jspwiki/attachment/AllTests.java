@@ -12,7 +12,7 @@ public class AllTests extends TestCase
 
     public static Test suite()
     {
-        TestSuite suite = new TestSuite("Attachment package");
+        TestSuite suite = new TestSuite();
 
         suite.addTest( AttachmentManagerTest.suite() );
 
