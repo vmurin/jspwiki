@@ -10,14 +10,24 @@ import java.security.Principal;
 public class NamedGroup
     extends AllGroup
 {
+    public NamedGroup()
+    {
+        setName( UserManager.GROUP_NAMEDGUEST );
+    }
+
     public boolean isMember( Principal user )
     {
         if( user instanceof UserProfile )
         {
             UserProfile p = (UserProfile) user;
 
-            return ( p.getLoginStatus() == UserProfile.PASSWORD ||
-                     p.getLoginStatus() == UserProfile.COOKIE );
+            return p.getLoginStatus() >= UserProfile.COOKIE;
+        }
+        else if( user instanceof WikiGroup )
+        {
+            WikiGroup wg = (WikiGroup) user;
+
+            return equals( wg );
         }
 
         throw new InternalWikiException("Someone offered us a Principal that is not an UserProfile!");

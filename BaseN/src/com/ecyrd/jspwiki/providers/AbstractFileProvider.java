@@ -26,7 +26,7 @@ import java.util.Date;
 import java.util.TreeSet;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
 
 import com.ecyrd.jspwiki.*;
 
@@ -46,9 +46,9 @@ import com.ecyrd.jspwiki.*;
 public abstract class AbstractFileProvider
     implements WikiPageProvider
 {
-    private static final Category   log = Category.getInstance(AbstractFileProvider.class);
+    private static final Logger   log = Logger.getLogger(AbstractFileProvider.class);
     private String m_pageDirectory = "/tmp/";
-
+    
     protected String m_encoding;
 
     /**
@@ -65,11 +65,13 @@ public abstract class AbstractFileProvider
 
     public static final String DEFAULT_ENCODING = "ISO-8859-1";
 
+    private boolean m_WindowsHackNeeded = false;
+    
     /**
      *  @throws FileNotFoundException If the specified page directory does not exist.
      *  @throws IOException In case the specified page directory is a file, not a directory.
      */
-    public void initialize( Properties properties )
+    public void initialize( WikiEngine engine, Properties properties )
         throws NoRequiredPropertyException,
                IOException
     {
@@ -80,49 +82,84 @@ public abstract class AbstractFileProvider
 
         if( !f.exists() )
         {
-            throw new FileNotFoundException("Page directory does not exist: "+m_pageDirectory);
+            f.mkdirs();
         }
         else if( !f.isDirectory() )
         {
             throw new IOException("Page directory is not a directory: "+m_pageDirectory);
         }
 
-        m_encoding      = properties.getProperty( WikiEngine.PROP_ENCODING, 
-                                                  DEFAULT_ENCODING );
+        m_encoding = properties.getProperty( WikiEngine.PROP_ENCODING, 
+                                             DEFAULT_ENCODING );
 
+        String os = System.getProperty( "os.name" ).toLowerCase();
+        
+        if( os.startsWith("windows") || os.equals("nt") )
+        {
+            m_WindowsHackNeeded = true;
+        }
+        
         log.info( "Wikipages are read from '" + m_pageDirectory + "'" );
     }
+
 
     String getPageDirectory()
     {
         return m_pageDirectory;
     }
 
+    private static final String[] WINDOWS_DEVICE_NAMES =
+    {
+        "con", "prn", "nul", "aux", "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9",
+        "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8", "com9"
+    };
+    
     /**
      *  This makes sure that the queried page name
      *  is still readable by the file system.
      */
     protected String mangleName( String pagename )
     {
-        // FIXME: Horrible kludge, very slow, etc.
-        if( "UTF-8".equalsIgnoreCase( m_encoding ) )
-            return TextUtil.urlEncodeUTF8( pagename );
+        pagename = TextUtil.urlEncode( pagename, m_encoding );
+        
+        pagename = TextUtil.replaceString( pagename, "/", "%2F" );
 
-        return java.net.URLEncoder.encode( pagename );
+        if( m_WindowsHackNeeded )
+        {
+            String pn = pagename.toLowerCase();
+            for( int i = 0; i < WINDOWS_DEVICE_NAMES.length; i++ )
+            {
+                if( WINDOWS_DEVICE_NAMES[i].equals(pn) )
+                {
+                    pagename = "$$$" + pagename;
+                }
+            }
+        }
+        
+        return pagename;
     }
 
     /**
-     *  This makes the reverse of mangleName
+     *  This makes the reverse of mangleName.
      */
     protected String unmangleName( String filename )
     {
-        // FIXME: Horrible kludge, very slow, etc.
-        if( "UTF-8".equalsIgnoreCase( m_encoding ) )
-            return TextUtil.urlDecodeUTF8( filename );
-
-        return java.net.URLDecoder.decode( filename );
+        // The exception should never happen.
+        try
+        {
+            if( m_WindowsHackNeeded && filename.startsWith( "$$$") && filename.length() > 3 )
+            {
+                filename = filename.substring(3);
+            }
+            
+            return TextUtil.urlDecode( filename, m_encoding );
+        }
+        catch( UnsupportedEncodingException e ) 
+        {
+            throw new InternalWikiException("Faulty encoding; should never happen");
+        }
     }
-
+    
     /**
      *  Finds a Wiki page from the page repository.
      */
@@ -199,6 +236,7 @@ public abstract class AbstractFileProvider
     }
 
     public void putPageText( WikiPage page, String text )        
+        throws ProviderException
     {
         File file = findPage( page.getName() );
         PrintWriter out = null;
@@ -362,13 +400,22 @@ public abstract class AbstractFileProvider
     }
 
     public void deleteVersion( String pageName, int version )
+        throws ProviderException
     {
-        // FIXME.
+        if( version == WikiProvider.LATEST_VERSION )
+        {
+            File f = findPage( pageName );
+
+            f.delete();
+        }
     }
 
     public void deletePage( String pageName )
+        throws ProviderException
     {
-        // FIXME:
+        File f = findPage( pageName );
+
+        f.delete();
     }
 
     public class WikiFileFilter

@@ -7,61 +7,34 @@ output is inserted into the page, verbatim.
 
 The form is:
 
-  [{INSERT <plugin class> WHERE <param1=value1>,<param2=value2>,...}]
+  [[{INSERT <plugin class> WHERE <param1=value1>,<param2=value2>,...}]
 
-Here are some sample plugins included in the archive:
+You can also use a shortcut: instead of using {{[[{INSERT com.ecyrd.jspwiki.plugin.RecentChangesPlugin}} you can also use {{[[{INSERT RecentChangesPlugin}]}}.  This works only with the plugins that come with JSPWiki, though.
 
-!!com.ecyrd.jspwiki.plugin.RecentChangesPlugin
+In addition, you can now (since 1.9.30) omit even the "INSERT", so the shortest possible version for plugins becomes:
 
-Inserts the latest changes in order. 
+[[{CurrentTimePlugin}]
 
-!Parameters: 
-* __since__=''n'' : show changes from the last n days.
-* __format__=''(full|compact)'' : if "full", then display a long
-  version with all possible info.  If "compact", then be as compact as possible.
+If a parameter contains spaces, you can use single quotes (') around the parameter.  Like this:
 
-!Example:
-{{{
-[{INSERT com.ecyrd.jspwiki.plugin.RecentChangesPlugin since=5, format=compact}]
-}}}
+In the examples on the plugin documentation pages these forms are used interchangeably.
 
-Inserts the changes from the past 5 days in a compact format.  You
-might use this to make an automatical list of changes to the [LeftMenu], or [LeftMenuFooter], for example.
+[[{INSERT CurrentTimePlugin format='dd MM yyyy'}]
 
-  
-!!com.ecyrd.jspwiki.plugin.UnusedPagesPlugin
+!!List of plugins included with JSPWiki
 
-Lists all pages that are not currently referred to by any other page, thus meaning they are inaccessible through any other means.
-
-!Parameters
-
-None.
-
-!Example:
-
-See [UnusedPages].
-
-!!com.ecyrd.jspwiki.plugin.UndefinedPagesPlugin
-
-Lists all pages that are referred to, but not yet created.
-
-!Parameters
-
-None.
-
-!Example:
-
-See [UndefinedPages].
-
-!!com.ecyrd.jspwiki.plugin.ReferringPagesPlugin
-
-Finds and lists all pages that refer to the current page.
-
-!Parameters 
-
-* __max__=''n'' : How many pages to list.  Default is 10. Some pages might create very long lists, so it's a good idea to limit the list size.
-
-!Example
-
-See [LeftMenuFooter].
-
+* [Counter] - Insert a simple counter on a page.
+* [CurrentTimePlugin] - Show the current time.
+* [Denounce] - Denounce a link.
+* [Image] - Have deep control over how an image is placed on the page.
+* [IndexPlugin] - Index of all pages.
+* [InsertPage] - Inserts a portion of another page.
+* [ListLocksPlugin] - Lists page locks.
+* [RecentChangesPlugin] - Displays the [recent changes].
+* [ReferringPagesPlugin] - Lists pages that refer to this page.
+* [TableOfContents] - Generates a table of contents
+* [UndefinedPagesPlugin] - Lists pages that are missing.
+* [UnusedPagesPlugin] - Lists pages that have been orphaned.
+* [WeblogArchivePlugin] - Displays a list to older weblog entries.
+* [WeblogEntryPlugin] - Makes a "new entry" link.
+* [WeblogPlugin] - Builds a [weblog].

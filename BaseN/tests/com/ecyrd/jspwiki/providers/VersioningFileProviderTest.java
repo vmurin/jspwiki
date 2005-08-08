@@ -16,7 +16,7 @@ public class VersioningFileProviderTest extends TestCase
 
     Properties props = new Properties();
 
-    WikiEngine engine;
+    TestEngine engine;
 
     public VersioningFileProviderTest( String s )
     {
@@ -26,9 +26,9 @@ public class VersioningFileProviderTest extends TestCase
     public void setUp()
         throws Exception
     {
-        props.load( getClass().getClassLoader().getResourceAsStream("/jspwiki_vers.properties") );
+        props.load( TestEngine.findTestProperties("/jspwiki_vers.properties") );
 
-        engine = new TestEngine2(props);
+        engine = new TestEngine(props);
     }
 
     public void tearDown()
@@ -69,10 +69,11 @@ public class VersioningFileProviderTest extends TestCase
     }
 
     public void testMillionChanges()
+        throws Exception
     {
         String text = "";
         String name = NAME1;
-        int    maxver = 1000; // Save 1000 versions.
+        int    maxver = 100; // Save 100 versions.
 
         for( int i = 0; i < maxver; i++ )
         {
@@ -89,6 +90,7 @@ public class VersioningFileProviderTest extends TestCase
     }
 
     public void testCheckin()
+        throws Exception
     {
         String text = "diddo\r\n";
 
@@ -99,7 +101,21 @@ public class VersioningFileProviderTest extends TestCase
         assertEquals( text, res );
     }
 
+    public void testGetByVersion()
+        throws Exception
+    {
+        String text = "diddo\r\n";
+
+        engine.saveText( NAME1, text );
+
+        WikiPage page = engine.getPage( NAME1, 1 );
+       
+        assertEquals( "name", NAME1, page.getName() );
+        assertEquals( "version", 1, page.getVersion() );
+    }
+
     public void testPageInfo()
+        throws Exception
     {
         String text = "diddo\r\n";
 
@@ -111,10 +127,54 @@ public class VersioningFileProviderTest extends TestCase
     }
 
     public void testGetOldVersion()
+        throws Exception
     {
         String text = "diddo\r\n";
         String text2 = "barbar\r\n";
         String text3 = "Barney\r\n";
+
+        engine.saveText( NAME1, text );
+        engine.saveText( NAME1, text2 );
+        engine.saveText( NAME1, text3 );
+
+        WikiPage res = engine.getPage(NAME1);
+
+        assertEquals("wrong version", 3, res.getVersion() );
+
+        assertEquals("ver1", text, engine.getText( NAME1, 1 ) );
+        assertEquals("ver2", text2, engine.getText( NAME1, 2 ) );
+        assertEquals("ver3", text3, engine.getText( NAME1, 3 ) );
+    }
+
+    public void testGetOldVersion2()
+        throws Exception
+    {
+        String text = "diddo\r\n";
+        String text2 = "barbar\r\n";
+        String text3 = "Barney\r\n";
+
+        engine.saveText( NAME1, text );
+        engine.saveText( NAME1, text2 );
+        engine.saveText( NAME1, text3 );
+
+        WikiPage res = engine.getPage(NAME1);
+
+        assertEquals("wrong version", 3, res.getVersion() );
+
+        assertEquals("ver1", 1, engine.getPage( NAME1, 1 ).getVersion() );
+        assertEquals("ver2", 2, engine.getPage( NAME1, 2 ).getVersion() );
+        assertEquals("ver3", 3, engine.getPage( NAME1, 3 ).getVersion() );
+}
+
+    /**
+     *  2.0.7 and before got this wrong.
+     */
+    public void testGetOldVersionUTF8()
+        throws Exception
+    {
+        String text = "åäö\r\n";
+        String text2 = "barbaröö\r\n";
+        String text3 = "Barneyää\r\n";
 
         engine.saveText( NAME1, text );
         engine.saveText( NAME1, text2 );
@@ -135,6 +195,7 @@ public class VersioningFileProviderTest extends TestCase
     }
 
     public void testVersionHistory()
+        throws Exception
     {
         String text = "diddo\r\n";
         String text2 = "barbar\r\n";
@@ -147,6 +208,62 @@ public class VersioningFileProviderTest extends TestCase
         Collection history = engine.getVersionHistory(NAME1);
 
         assertEquals( "size", 3, history.size() );
+    }
+
+    public void testDelete()
+        throws Exception
+    {
+        engine.saveText( NAME1, "v1" );
+        engine.saveText( NAME1, "v2" );
+        engine.saveText( NAME1, "v3" );
+
+        PageManager mgr = engine.getPageManager();
+        WikiPageProvider provider = mgr.getProvider();
+
+        provider.deletePage( NAME1 );
+
+        String files = props.getProperty( FileSystemProvider.PROP_PAGEDIR );
+
+        File f = new File( files, NAME1+FileSystemProvider.FILE_EXT );
+
+        assertFalse( "file exists", f.exists() );
+
+        f = new File( files+File.separator+"RCS", NAME1+FileSystemProvider.FILE_EXT+",v" );
+
+        assertFalse( "RCS file exists", f.exists() );
+    }
+
+    public void testDeleteVersion()
+        throws Exception
+    {
+        engine.saveText( NAME1, "v1\r\n" );
+        engine.saveText( NAME1, "v2\r\n" );
+        engine.saveText( NAME1, "v3\r\n" );
+
+        PageManager mgr = engine.getPageManager();
+        WikiPageProvider provider = mgr.getProvider();
+
+        List l = provider.getVersionHistory( NAME1 );
+        assertEquals( "wrong # of versions", 3, l.size() );
+
+        provider.deleteVersion( NAME1, 2 );
+
+        l = provider.getVersionHistory( NAME1 );
+
+        assertEquals( "wrong # of versions", 2, l.size() );
+
+        assertEquals( "v1", "v1\r\n", provider.getPageText( NAME1, 1 ) );
+        assertEquals( "v3", "v3\r\n", provider.getPageText( NAME1, 3 ) );
+
+        try
+        {
+            provider.getPageText( NAME1, 2 );
+            fail( "v2" );
+        }
+        catch( NoSuchVersionException e )
+        {
+            // This is expected
+        }
     }
 
     public static Test suite()

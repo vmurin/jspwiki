@@ -56,7 +56,8 @@ function googleSearchHighlight()
     {
         qsip = qsa[i].split('=');
         if (qsip.length == 1) continue;
-
+        if (qsip[1].length == 0) continue;
+        
         // q= for Google, p= for Yahoo
         // query= for JSPWiki
 
@@ -72,4 +73,3 @@ function googleSearchHighlight()
     }
 }
 
-window.onload = googleSearchHighlight;

@@ -4,10 +4,11 @@
  */
 package com.ecyrd.jspwiki.dav.items;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.TreeSet;
 
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.jdom.Element;
@@ -15,6 +16,8 @@ import org.jdom.Namespace;
 
 import com.ecyrd.jspwiki.WikiContext;
 import com.ecyrd.jspwiki.WikiEngine;
+import com.ecyrd.jspwiki.dav.DavPath;
+import com.ecyrd.jspwiki.dav.DavProvider;
 
 /**
  *  @author jalkanen
@@ -25,12 +28,22 @@ public class DirectoryItem extends DavItem
 {
     private String    m_name;
     
-    public DirectoryItem( WikiEngine engine, String name )
+    public DirectoryItem( DavProvider provider, String name )
     {
-        super( engine );
+        super( provider, new DavPath(name) );
         m_name = name;
     }
     
+    public String getContentType()
+    {
+        return "text/plain; charset=UTF-8";
+    }
+
+    public long getLength()
+    {
+        return -1;
+    }
+
     public Collection getPropertySet()
     {
         ArrayList ts = new ArrayList();
@@ -51,15 +64,26 @@ public class DirectoryItem extends DavItem
 
     public String getHref()
     {
-        String davurl = "dav"+(m_name.equals("/") ? "" : "/") +m_name; //FIXME: Fixed, should determine from elsewhere
+        String davurl = m_name; //FIXME: Fixed, should determine from elsewhere
         
         if( !davurl.endsWith("/") ) davurl+="/";
         
-        return m_engine.getURL( WikiContext.NONE, davurl, null, true );
+        return m_provider.getURL( davurl );
     }
     
     public void addDavItem( DavItem di )
     {
         m_items.add( di );
+    }
+
+    
+    
+    /* (non-Javadoc)
+     * @see com.ecyrd.jspwiki.dav.items.DavItem#getInputStream()
+     */
+    public InputStream getInputStream()
+    {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

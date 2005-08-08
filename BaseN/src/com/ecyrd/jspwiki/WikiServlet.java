@@ -26,7 +26,7 @@ import java.io.*;
 
 import org.apache.log4j.Logger;
 
-import com.ecyrd.jspwiki.util.HttpUtil;
+import com.ecyrd.jspwiki.url.DefaultURLConstructor;
 
 /**
  */
@@ -47,6 +47,12 @@ public class WikiServlet
         log.info("WikiServlet initialized.");
     }
 
+    public void doPost( HttpServletRequest req, HttpServletResponse res )
+        throws IOException, ServletException
+    {
+        doGet( req, res );
+    }
+    
     public void doGet( HttpServletRequest req, HttpServletResponse res ) 
         throws IOException, ServletException 
     {
@@ -55,7 +61,11 @@ public class WikiServlet
 
         log.info("Request for page: "+pageName);
 
-        RequestDispatcher dispatcher = req.getRequestDispatcher("/Wiki.jsp?page="+m_engine.encodeName(pageName)+"&amp;"+req.getQueryString() );
+        if( pageName == null ) pageName = m_engine.getFrontPage(); // FIXME: Add special pages as well
+        
+        String jspPage = m_engine.getURLConstructor().getForwardPage( req );
+        
+        RequestDispatcher dispatcher = req.getRequestDispatcher("/"+jspPage+"?page="+m_engine.encodeName(pageName)+"&"+req.getQueryString() );
 
         dispatcher.forward( req, res );
     }

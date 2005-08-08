@@ -1,18 +1,41 @@
-Hi!  I am Janne's [own Wiki|About].
+!!!Congratulations!
 
-If you want to test this Wiki out, please use [SandBox].
+You have successfully installed [JSPWiki|About].
 
-If you're new to Wiki, please see [OneMinuteWiki] for tips on how this whole shebang works.
+You have some pages set up for you:
 
-Please participate on [DiscussionAboutWiki].
+!Quick start
 
-There is also a [TODO list], and a list of recent [News].
+* For testing things, try the [SandBox].
+* For a quick look on what Wiki is, check out [OneMinuteWiki].
+* For a guideline on good working habits with wiki, see [WikiEtiquette].
 
-There are not very many places to see right now.  Use the list below for some more or less interesting things:
+!Installation issues
 
-* [Java Tips]
-* [JavaScript tips]
+* If you run Microsoft Windows, then probably you want to take a look
+  at [WindowsInstall] for more tips.
 
+!Full documentation
 
+* For all of the Wiki markup features, see [TextFormattingRules].
+* The [WikiRPCInterface] might interest you if you're into scripting.
+* [WikiAttachments] - very useful things.
+* [WikiVariables] - putting things on top of other things.
+* [JSPWikiPlugins] - The documentation on plugins.
+* [JSPWikiFAQ] - A list of some frequently asked questions.
+* [JSPWikiTags] - A list of tags for those who want to make their own [WikiTemplates].
+* [MultipleWikis] - If you want to run multiple Wikis using the least amount of effort.
+* [Page aliases] and redirecting.
+* [PageFilters] - for more complex processing.
+* [WikiForms] - for putting interactivity in your pages
+* [URLConstructors] - for constructing your URLs.
 
-[Here's a list of the regular users|UserList]
+!Miscellaneous
+
+* [JSPWikiTips] may help you a bit.
+* To see what this particular wiki is about, click on the Wiki name
+  on the top left corner of the browser window, or [click here|SystemInfo].
+
+Good luck, and thanks for choosing JSPWiki!
+
+--[Janne Jalkanen|mailto:jalkanen+jspwiki@ecyrd.com].

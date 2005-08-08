@@ -1,24 +1,28 @@
-Testing, one, two three.
----
-ebu: Just getting my bearings here. (Nothing to see, go back to 
-[main page|Main].) I wonder if there is an easy way of finding
-local page names to link to and return here to add them in...
+This page has [{VotePlugin value='yes'}] positive and [{VotePlugin value='no'}] negative votes.
 
-[JanneJalkanen]: On Wikis you typically just link everything by writing [hyperlinks|Hyperlink].  The [Find pages|http://www.ecyrd.com:8080/JSPWiki/Search.jsp] should be able to give you your bearings.
+[Vote yes|http://192.168.0.10:8080/JSPWiki/Vote.jsp?page=SandBox&vote=yes].
 
-!!!Really big heading
-Text.
-!! Just a normal heading [with a hyperlink|Main]
-More text.
-!Just a small heading.
 
-This should be __bold__ text.
+[Vote no|http://192.168.0.10:8080/JSPWiki/Vote.jsp?page=SandBox&vote=no].
 
-__more bold text__
+%%(color:red;font-size:200%;)
+Testing
+%%
 
-__oops, forgot to close
+[jspwiki_logo.png]
 
-This should be normal.
+[jspwiki_logo.png]
 
-Now, let's try ''italic text''.
+[{Denounce link='http://www.ecyrd.com'}]
+
+[{DENY edit Guest}]
+[{ALLOW edit JanneJalkanen,AdminGroup}]
+
+----
+
+[{WeblogPlugin  days=60 allowComments=true}]
+
+[{WeblogEntryPlugin entrytext='Put in a new entry'}]
+
+[{SET jspwiki.translatorReader.camelCaseLinks=true}]
 

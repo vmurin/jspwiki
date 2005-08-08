@@ -5,9 +5,6 @@
 package com.ecyrd.jspwiki.dav;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Properties;
 
 import javax.servlet.ServletConfig;
@@ -16,20 +13,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
-import org.jdom.Document;
-import org.jdom.JDOMException;
-import org.jdom.input.SAXBuilder;
-import org.jdom.xpath.XPath;
 
-import com.ecyrd.jspwiki.WikiContext;
 import com.ecyrd.jspwiki.WikiEngine;
-import com.ecyrd.jspwiki.WikiPage;
-import com.ecyrd.jspwiki.WikiProvider;
 import com.ecyrd.jspwiki.dav.methods.DavMethod;
 import com.ecyrd.jspwiki.dav.methods.GetMethod;
 import com.ecyrd.jspwiki.dav.methods.PropFindMethod;
 import com.ecyrd.jspwiki.dav.methods.PropPatchMethod;
-import com.ecyrd.jspwiki.providers.ProviderException;
 
 /**
  *  @author jalkanen
@@ -40,7 +29,9 @@ public class WikiDavServlet extends WebdavServlet
 {
     private WikiEngine m_engine;
     Logger log = Logger.getLogger(this.getClass().getName());
-
+    private DavProvider m_rawProvider;
+    private DavProvider m_rootProvider;
+    
     public void init( ServletConfig config )
     throws ServletException 
     {
@@ -48,6 +39,9 @@ public class WikiDavServlet extends WebdavServlet
 
         m_engine         = WikiEngine.getInstance( config );
         Properties props = m_engine.getWikiProperties();
+        
+        m_rawProvider    = new RawPagesDavProvider( m_engine );
+        m_rootProvider   = new WikiRootProvider( m_engine );
     }
     
     private String parsePage( HttpServletRequest req )
@@ -56,15 +50,28 @@ public class WikiDavServlet extends WebdavServlet
     }
     
     public void doPropFind( HttpServletRequest req, HttpServletResponse res )
-    throws IOException,ServletException
+        throws IOException,ServletException
     {
-        PropFindMethod m = new PropFindMethod( m_engine );
+        // Do the "sanitize url" trick
+        String p = new String(req.getPathInfo().getBytes("ISO-8859-1"), "UTF-8");
         
-        m.execute( req, res );
+        DavPath path = new DavPath( p );
+        if( path.isRoot() )
+        {
+            DavMethod dm = new PropFindMethod( m_rootProvider );
+            dm.execute( req, res, path );
+        }
+        else if( path.get(0).equals("raw") )
+        {
+            PropFindMethod m = new PropFindMethod( m_rawProvider );
+            m.execute( req, res, path.subPath(1) );
+        }        
     }
     
     protected void doOptions( HttpServletRequest req, HttpServletResponse res )
     {
+        log.debug("DAV doOptions for path "+req.getPathInfo());
+        
         res.setHeader( "DAV", "1" ); // We support only Class 1
         res.setHeader( "Allow", "GET, PUT, POST, OPTIONS, PROPFIND, PROPPATCH, MOVE, COPY, DELETE");
         res.setStatus( HttpServletResponse.SC_OK );
@@ -87,9 +94,9 @@ public class WikiDavServlet extends WebdavServlet
     
     public void doPropPatch( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException
     {
-        DavMethod dm = new PropPatchMethod( m_engine );
+        //DavMethod dm = new PropPatchMethod( m_rawProvider );
         
-        dm.execute( request, response );
+        //dm.execute( request, response );
     }
     
     public void doCopy( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException
@@ -126,10 +133,23 @@ public class WikiDavServlet extends WebdavServlet
      * 
      */
     protected void doGet( HttpServletRequest req, HttpServletResponse res ) 
-    throws ServletException, IOException
+        throws ServletException, IOException
     {
-        DavMethod dm = new GetMethod( m_engine );
+        // Do the "sanitize url" trick
+        String p = new String(req.getPathInfo().getBytes("ISO-8859-1"), "UTF-8");
         
-        dm.execute( req, res );
+        DavPath path = new DavPath( p );
+        
+        if( path.isRoot() )
+        {
+            DavMethod dm = new GetMethod( m_rootProvider );
+            dm.execute( req, res, path );
+        }
+        else if( path.get(0).equals("raw") )
+        {
+            DavMethod dm = new GetMethod( m_rawProvider );
+        
+            dm.execute( req, res, path.subPath(1) );
+        }
     }
 }

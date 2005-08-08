@@ -1,98 +1,65 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
-        "http://www.w3.org/TR/html4/loose.dtd">
+<%@ taglib uri="/WEB-INF/jspwiki.tld" prefix="wiki" %>
 
-<HTML>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<HEAD>
-  <TITLE><wiki:ApplicationName />: <wiki:PageName /></TITLE>
-  <%@ include file="../cssinclude.js" %>
-  <wiki:RSSLink />
-</HEAD>
+<html>
 
-<BODY BGCOLOR="#FFFFFF">
+<head>
+  <title><wiki:Variable var="applicationname" />: <wiki:PageName /></title>
+  <wiki:Include page="commonheader.jsp"/>
+  <wiki:CheckVersion mode="notlatest">
+        <meta name="robots" content="noindex,nofollow" />
+  </wiki:CheckVersion>
+</head>
 
-<TABLE BORDER="0" CELLSPACING="8" width="95%">
+<body class="view" bgcolor="#FFFFFF">
 
-  <TR>
-    <TD CLASS="leftmenu" WIDTH="10%" VALIGN="top" NOWRAP="true">
-       <%@ include file="LeftMenu.jsp" %>
-       <P>
-       <wiki:Permission permission="edit">
-          <wiki:EditLink>Edit this page</wiki:EditLink>
-       </wiki:Permission>
-       </P>
-       <%@ include file="LeftMenuFooter.jsp" %>
-       <P>
-           <DIV ALIGN="center">
-           <wiki:RSSImageLink title="Aggregate the RSS feed" /><BR />
-           <wiki:RSSUserlandLink title="Aggregate the RSS feed in Radio Userland!" />
-           </DIV>
-       </P>
-    </TD>
+<table border="0" cellspacing="8" width="95%">
 
-    <TD CLASS="page" WIDTH="85%" VALIGN="top">
+  <tr>
+    <td class="leftmenu" width="10%" valign="top" nowrap="nowrap">
+       <wiki:Include page="LeftMenu.jsp"/>
+       <p>
+       <wiki:CheckRequestContext context="view">
+          <wiki:Permission permission="edit">
+             <wiki:EditLink>Edit this page</wiki:EditLink>
+          </wiki:Permission>
+       </wiki:CheckRequestContext>
+       </p>
+       <wiki:Include page="LeftMenuFooter.jsp"/>
 
-      <%@ include file="PageHeader.jsp" %>
+       <br /><br />
+       <div align="center">
+           <wiki:RSSImageLink title="Aggregate the RSS feed" />
+       </div>
+    </td>
 
-      <% if( version > 0 ) { %>
-         <FONT COLOR="red">
-            <P CLASS="versionnote">This is version <%=version%>.  It is not the current version,
-            and thus it cannot be edited.  <wiki:LinkTo>(Back to current version)</wiki:LinkTo></P> 
-         </FONT>
-      <% } %>
+    <td class="page" width="85%" valign="top">
 
-      <wiki:InsertPage />
-
-      <wiki:NoSuchPage>
-           <!-- FIXME: Should also note when a wrong version has been fetched. -->
-           This page does not exist.  Why don't you go and
-           <wiki:EditLink>create it</wiki:EditLink>?
-      </wiki:NoSuchPage>
-
-      <P><HR>
-      <table border="0" width="100%">
-        <tr>
-          <td align="left">
-             <wiki:Permission permission="edit">
-                 <wiki:EditLink>Edit this page</wiki:EditLink>&nbsp;&nbsp;
-             </wiki:Permission>
-             <wiki:PageInfoLink>More info...</wiki:PageInfoLink><BR>
-          </td>
-        </tr>
-        <tr>
-          <td align="left">
-             <FONT size="-1">
-	     <%
-             if( wikipage != null )
-             {
-                 java.util.Date lastchange = wikipage.getLastModified();
-
-                 if( version == -1 )
-                 {
-                     %>                
-                     <I>This page last changed on <A HREF="<%=wiki.getBaseURL()%>Diff.jsp?page=<%=pageurl%>&r1=<%=version%>"><%=lastchange%></A> by <wiki:Author />.</I>
-                     <%
-                 } else {
-                     %>
-                     <I>This particular version was published on <%=lastchange%> by <wiki:Author /></I>.
-                     <%
-                 }
-             }
-             %>
-             <wiki:NoSuchPage>
-                 <I>Page not created yet.</I>
-             </wiki:NoSuchPage>
-
-             </FONT>
-          </td>
-        </tr>
+      <table width="100%" cellspacing="0" cellpadding="0" border="0">
+         <tr>
+            <td align="left">
+                <h1 class="pagename"><a name="Top"><wiki:PageName/></a></h1>
+            </td>
+            <td align="right"><wiki:Include page="SearchBox.jsp"/></td>
+         </tr>
+         <tr>
+            <td colspan="2" class="breadcrumbs">Your trail: <wiki:Breadcrumbs /></td>
+         </tr>
       </table>
-    </TD>
-  </TR>
 
-</TABLE>
+      <hr />
 
-</BODY>
+      <wiki:Content/>
 
-</HTML>
+    </td>
+  </tr>
+
+</table>
+
+</body>
+
+</html>
 

@@ -21,11 +21,19 @@ package com.ecyrd.jspwiki.plugin;
 
 import org.apache.log4j.Logger;
 import com.ecyrd.jspwiki.*;
+import com.ecyrd.jspwiki.auth.UserProfile;
 import java.util.*;
 import java.io.*;
 import java.text.SimpleDateFormat;
 
 /**
+ *  Provides a handler for bug reports.  Still under construction.
+ *
+ *  <ul>
+ *   <li>"title" = title of the bug.  This is required.  If it is empty (as in "")
+ *       it is a signal to the handler to return quietly.</li>
+ *  </ul>
+ *
  *  @author Janne Jalkanen
  */
 public class BugReportHandler
@@ -39,6 +47,8 @@ public class BugReportHandler
     public static String MAPPINGS       = "map";
     public static String PAGE           = "page";
 
+    public static final String DEFAULT_DATEFORMAT = "dd-MMM-yyyy HH:mm:ss zzz";
+
     public String execute( WikiContext context, Map params )
         throws PluginException
     {
@@ -46,10 +56,20 @@ public class BugReportHandler
         String    title;
         String    description;
         String    version;
+        String    submitter = null;
+        SimpleDateFormat format = new SimpleDateFormat( DEFAULT_DATEFORMAT );
+
 
         title       = (String) params.get( TITLE );
         description = (String) params.get( DESCRIPTION );
         version     = (String) params.get( VERSION );
+
+        UserProfile wup = context.getCurrentUser();
+
+        if( wup != null )
+        {
+            submitter = wup.getName();
+        }
 
         if( title == null ) throw new PluginException("Title is required");
         if( title.length() == 0 ) return "";
@@ -68,10 +88,23 @@ public class BugReportHandler
             StringWriter str = new StringWriter();
             PrintWriter out = new PrintWriter( str );
 
-            out.println("|"+mappings.getProperty(TITLE,"Title")+"|"+title);
-            out.println("|Date|"+new Date());
-            out.println("|"+mappings.getProperty(VERSION,"Version")+"|"+version);
+            Date d = new Date();
 
+            //
+            //  Outputting of basic data
+            //
+            out.println("|"+mappings.getProperty(TITLE,"Title")+"|"+title);
+            out.println("|"+mappings.getProperty("date","Date")+"|"+format.format(d));
+            out.println("|"+mappings.getProperty(VERSION,"Version")+"|"+version);
+            if( submitter != null )
+            {
+                out.println("|"+mappings.getProperty("submitter","Submitter")+
+                            "|"+submitter);
+            }
+
+            //
+            //  Outputting the other parameters added to this.
+            //
             for( Iterator i = params.entrySet().iterator(); i.hasNext(); )
             {
                 Map.Entry entry = (Map.Entry) i.next();
@@ -80,7 +113,8 @@ public class BugReportHandler
                     entry.getKey().equals( DESCRIPTION ) ||
                     entry.getKey().equals( VERSION ) ||
                     entry.getKey().equals( MAPPINGS ) ||
-                    entry.getKey().equals( PAGE ) )
+                    entry.getKey().equals( PAGE ) ||
+                    entry.getKey().equals( PluginManager.PARAM_BODY ) )
                 {
                     // Ignore this
                 }
@@ -105,6 +139,9 @@ public class BugReportHandler
 
             out.close();
 
+            //
+            //  Now create a new page for this bug report
+            //
             String pageName = findNextPage( context, title, 
                                             (String)params.get( PAGE ) );
 
@@ -115,7 +152,7 @@ public class BugReportHandler
             context.getEngine().saveText( newContext,
                                           str.toString() );
 
-            return "A new bug report has been created: <a href=\""+context.getEngine().getViewURL(pageName)+"\">"+pageName+"</a>";
+            return "A new bug report has been created: <a href=\""+context.getViewURL(pageName)+"\">"+pageName+"</a>";
         }
         catch( WikiException e )
         {
@@ -125,11 +162,15 @@ public class BugReportHandler
         }
     }
     
+    /**
+     *  Finds a free page name for adding the bug report.  Tries to construct a page,
+     *  and if it's found, adds a number to it and tries again.
+     */
     private synchronized String findNextPage( WikiContext context, 
                                               String title,
                                               String baseName )
     {
-        String basicPageName = "Bug"+((baseName != null)?baseName:"")+TranslatorReader.cleanLink(title);
+        String basicPageName = ((baseName != null)?baseName:"Bug")+TranslatorReader.cleanLink(title);
 
         WikiEngine engine = context.getEngine();
         
@@ -167,7 +208,7 @@ public class BugReportHandler
 
             if( colon > 0 )
             {
-                key = t.substring(0,colon-1);
+                key = t.substring(0,colon);
                 value = t.substring(colon+1);
             }
             else

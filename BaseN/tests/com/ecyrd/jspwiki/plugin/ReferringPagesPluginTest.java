@@ -3,13 +3,12 @@ package com.ecyrd.jspwiki.plugin;
 
 import com.ecyrd.jspwiki.*;
 import junit.framework.*;
-import java.io.*;
 import java.util.*;
 
 public class ReferringPagesPluginTest extends TestCase
 {
     Properties props = new Properties();
-    TestEngine2 engine;
+    TestEngine engine;
     WikiContext context;
     PluginManager manager;
     
@@ -21,9 +20,10 @@ public class ReferringPagesPluginTest extends TestCase
     public void setUp()
         throws Exception
     {
-        props.load( getClass().getClassLoader().getResourceAsStream("/jspwiki.properties") );
+        props.load( TestEngine.findTestProperties() );
 
-        engine = new TestEngine2(props);
+        props.setProperty( "jspwiki.breakTitleWithSpaces", "false" );
+        engine = new TestEngine(props);
 
         engine.saveText( "TestPage", "Reference to [Foobar]." );
         engine.saveText( "Foobar", "Reference to [TestPage]." );
@@ -34,36 +34,41 @@ public class ReferringPagesPluginTest extends TestCase
         engine.saveText( "Foobar6", "Reference to [TestPage]." );
         engine.saveText( "Foobar7", "Reference to [TestPage]." );
 
-        context = new WikiContext( engine, "TestPage" );
-        manager = new PluginManager();
+        context = new WikiContext( engine, new WikiPage("TestPage") );
+        manager = new PluginManager( props );
     }
 
     public void tearDown()
     {
-        engine.deletePage( "TestPage" );
-        engine.deletePage( "Foobar" );
-        engine.deletePage( "Foobar2" );
-        engine.deletePage( "Foobar3" );
-        engine.deletePage( "Foobar4" );
-        engine.deletePage( "Foobar5" );
-        engine.deletePage( "Foobar6" );
-        engine.deletePage( "Foobar7" );
+        TestEngine.deleteTestPage( "TestPage" );
+        TestEngine.deleteTestPage( "Foobar" );
+        TestEngine.deleteTestPage( "Foobar2" );
+        TestEngine.deleteTestPage( "Foobar3" );
+        TestEngine.deleteTestPage( "Foobar4" );
+        TestEngine.deleteTestPage( "Foobar5" );
+        TestEngine.deleteTestPage( "Foobar6" );
+        TestEngine.deleteTestPage( "Foobar7" );
     }
 
     private String mkLink( String page )
     {
-        return "<A CLASS=\"wikipage\" HREF=\"Wiki.jsp?page="+page+"\">"+page+"</A>";        
+        return mkFullLink( page, page );
+    }
+
+    private String mkFullLink( String page, String link )
+    {
+        return "<a class=\"wikipage\" href=\"Wiki.jsp?page="+link+"\">"+page+"</a>";        
     }
 
     public void testSingleReferral()
         throws Exception
     {
-        WikiContext context2 = new WikiContext( engine, "Foobar" );
+        WikiContext context2 = new WikiContext( engine, new WikiPage("Foobar") );
 
         String res = manager.execute( context2,
                                       "{INSERT com.ecyrd.jspwiki.plugin.ReferringPagesPlugin WHERE max=5}");
 
-        assertEquals( mkLink( "TestPage" )+"\n<BR>\n",
+        assertEquals( mkLink( "TestPage" )+"<br />",
                       res );
     }
 
@@ -78,14 +83,30 @@ public class ReferringPagesPluginTest extends TestCase
         // Count the number of hyperlinks.  We could check their
         // correctness as well, though.
 
-        while( (index = res.indexOf("<A",index+1)) != -1 )
+        while( (index = res.indexOf("<a",index+1)) != -1 )
         {
             count++;
         }
 
         assertEquals( 5, count );
+
+        String expected = "...and 2 more<br />";
+
+        assertEquals( "End", expected, 
+                      res.substring( res.length()-expected.length() ) );
     }
 
+    public void testReferenceWidth()
+        throws Exception
+    {
+        WikiContext context2 = new WikiContext( engine, new WikiPage("Foobar") );
+
+        String res = manager.execute( context2,
+                                      "{INSERT com.ecyrd.jspwiki.plugin.ReferringPagesPlugin WHERE maxwidth=5}");
+
+        assertEquals( mkFullLink( "TestP...", "TestPage" )+"<br />",
+                      res );        
+    }
 
     public static Test suite()
     {

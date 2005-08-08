@@ -4,28 +4,29 @@
     Copyright (C) 2001-2002 Janne Jalkanen (Janne.Jalkanen@iki.fi)
 
     This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
+    it under the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation; either version 2.1 of the License, or
     (at your option) any later version.
 
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    GNU Lesser General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+    You should have received a copy of the GNU Lesser General Public License
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 package com.ecyrd.jspwiki.providers;
 
 import java.io.*;
-import java.util.Properties;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.Properties;
 import java.util.Date;
-import java.util.TreeSet;
 import java.util.ArrayList;
-import org.apache.log4j.Category;
+import java.util.List;
+import org.apache.log4j.Logger;
 
 import com.ecyrd.jspwiki.*;
 
@@ -57,18 +58,18 @@ import com.ecyrd.jspwiki.*;
  *  @author Janne Jalkanen
  */
 public class VersioningFileProvider
-    extends FileSystemProvider
+    extends AbstractFileProvider
 {
-    private static final Category   log = Category.getInstance(VersioningFileProvider.class);
+    private static final Logger     log = Logger.getLogger(VersioningFileProvider.class);
    
     public static final String      PAGEDIR      = "OLD";
     public static final String      PROPERTYFILE = "page.properties";
 
-    public void initialize( Properties properties )
+    public void initialize( WikiEngine engine, Properties properties )
         throws NoRequiredPropertyException,
                IOException
     {
-        super.initialize(properties);
+        super.initialize( engine, properties );
     }
 
     /**
@@ -77,6 +78,11 @@ public class VersioningFileProvider
      */
     private File findOldPageDir( String page )
     {
+        if( page == null )
+        {
+            throw new InternalWikiException("Page may NOT be null in the provider!");
+        }
+
         File oldpages = new File( getPageDirectory(), PAGEDIR );
 
         return new File( oldpages, mangleName(page) );
@@ -89,6 +95,9 @@ public class VersioningFileProvider
      *  @return Latest version number in the repository, or -1, if
      *          there is no page in the repository.
      */
+
+    // FIXME: This is relatively slow.
+    /*
     private int findLatestVersion( String page )
     {
         File pageDir = findOldPageDir( page );
@@ -122,6 +131,48 @@ public class VersioningFileProvider
             }
         }
 
+        return version;
+    }
+*/
+    private int findLatestVersion( String page )
+        throws ProviderException
+    {
+        int version = -1;
+        
+        try
+        {
+            Properties props = getPageProperties( page );
+            
+            for( Iterator i = props.keySet().iterator(); i.hasNext(); )
+            {
+                String key = (String)i.next();
+                
+                if( key.endsWith(".author") )
+                {
+                    int cutpoint = key.indexOf('.');
+                    if( cutpoint > 0 )
+                    {
+                        String pageNum = key.substring(0,cutpoint);
+                        
+                        try
+                        {
+                            int res = Integer.parseInt( pageNum );
+                            
+                            if( res > version )
+                            {
+                                version = res;
+                            }
+                        }
+                        catch( NumberFormatException e ) {} // It's okay to skip these. 
+                    }
+                }
+            }
+        }
+        catch( IOException e )
+        {
+            log.error("Unable to figure out latest version - dying...",e);
+        }
+        
         return version;
     }
 
@@ -163,14 +214,46 @@ public class VersioningFileProvider
         out.close();
     }
 
-    public synchronized String getPageText( String page, int version )
+    /**
+     *  Figures out the real version number of the page and also checks
+     *  for its existence.
+     *
+     *  @throws NoSuchVersionException if there is no such version.
+     */
+    private int realVersion( String page, int requestedVersion )
+        throws NoSuchVersionException,
+               ProviderException
     {
-        File dir = findOldPageDir( page );
+        //
+        //  Quickly check for the most common case.
+        //
+        if( requestedVersion == WikiProvider.LATEST_VERSION )
+        {
+            return -1;
+        }
 
         int latest = findLatestVersion(page);
 
-        if( version == WikiPageProvider.LATEST_VERSION ||
-            version == latest+1 )
+        if( requestedVersion == latest ||
+            (requestedVersion == 1 && latest == -1 ) )
+        {
+            return -1;
+        }
+        else if( requestedVersion <= 0 || requestedVersion > latest )
+        {
+            throw new NoSuchVersionException("Requested version "+requestedVersion+", but latest is "+latest );
+        }
+
+        return requestedVersion;
+    }
+
+    public synchronized String getPageText( String page, int version )
+        throws ProviderException
+    {
+        File dir = findOldPageDir( page );
+
+        version = realVersion( page, version );
+        if( version == -1 )
         {
             // We can let the FileSystemProvider take care
             // of these requests.
@@ -179,12 +262,16 @@ public class VersioningFileProvider
 
         File pageFile = new File( dir, ""+version+FILE_EXT );
 
+        if( !pageFile.exists() )
+            throw new NoSuchVersionException("Version "+version+"does not exist.");
+        
         return readFile( pageFile );
     }
 
 
     // FIXME: Should this really be here?
     private String readFile( File pagedata )
+        throws ProviderException
     {
         String      result = null;
         InputStream in     = null;
@@ -201,6 +288,7 @@ public class VersioningFileProvider
                 catch( IOException e )
                 {
                     log.error("Failed to read", e);
+                    throw new ProviderException("I/O error: "+e.getMessage());
                 }
                 finally
                 {
@@ -217,6 +305,7 @@ public class VersioningFileProvider
             else
             {
                 log.warn("Failed to read page from '"+pagedata.getAbsolutePath()+"', possibly a permissions problem");
+                throw new ProviderException("I cannot read the requested page.");
             }
         }
         else
@@ -241,6 +330,7 @@ public class VersioningFileProvider
            3         Main.txt (3)  1.txt, 2.txt
     */
     public synchronized void putPageText( WikiPage page, String text )
+        throws ProviderException
     {
         //
         //  This is a bit complicated.  We'll first need to
@@ -269,14 +359,13 @@ public class VersioningFileProvider
             // "most recent" = -1 ==> 1
             // "first"       = 1  ==> 2
 
-            int versionNumber = (latest >= 0) ? latest+1 : 1;
+            int versionNumber = (latest > 0) ? latest : 1;
 
             if( oldFile != null && oldFile.exists() )
             {
-                BufferedReader in = new BufferedReader( new FileReader( oldFile ) );
+                InputStream in = new BufferedInputStream( new FileInputStream( oldFile ) );
                 File pageFile = new File( pageDir, Integer.toString( versionNumber )+FILE_EXT );
-                PrintWriter out = new PrintWriter(new OutputStreamWriter( new FileOutputStream( pageFile ),
-                                                                          m_encoding ));
+                OutputStream out = new BufferedOutputStream( new FileOutputStream( pageFile ) );
 
                 FileUtil.copyContents( in, out );
 
@@ -307,10 +396,7 @@ public class VersioningFileProvider
             // FIXME: No rollback available.
             Properties props = getPageProperties( page.getName() );
 
-            if( page.getAuthor() != null )
-            {
-                props.setProperty( versionNumber+".author", page.getAuthor() );
-            }
+            props.setProperty( versionNumber+".author", (page.getAuthor() != null) ? page.getAuthor() : "unknown" );
 
             putPageProperties( page.getName(), props );
         }
@@ -329,7 +415,8 @@ public class VersioningFileProvider
         WikiPage p = null;
 
         if( version == WikiPageProvider.LATEST_VERSION ||
-            version == latest+1 )
+            version == latest || 
+            (version == 1 && latest == -1) )
         {
             //
             // Yes, we need to talk to the top level directory
@@ -339,7 +426,7 @@ public class VersioningFileProvider
             // the good old C64 "Wizardry" -tune at this moment.
             // Oh, the memories...
             //
-            realVersion = latest >= 0 ? latest+1 : 1;
+            realVersion = (latest >= 0) ? latest : 1;
 
             p = super.getPageInfo( page, WikiPageProvider.LATEST_VERSION );
 
@@ -401,14 +488,14 @@ public class VersioningFileProvider
     /**
      *  FIXME: Does not get user information.
      */
-    public Collection getVersionHistory( String page )
+    public List getVersionHistory( String page )
         throws ProviderException
     {
         ArrayList list = new ArrayList();
 
         int latest = findLatestVersion( page );
 
-        list.add( getPageInfo(page,WikiPageProvider.LATEST_VERSION) );
+        // list.add( getPageInfo(page,WikiPageProvider.LATEST_VERSION) );
         
         for( int i = latest; i > 0; i-- )
         {
@@ -423,6 +510,137 @@ public class VersioningFileProvider
         return list;
     }
 
+    /**
+     *  Removes the relevant page directory under "OLD" -directory as well,
+     *  but does not remove any extra subdirectories from it.  It will only
+     *  touch those files that it thinks to be WikiPages.
+     */
+    // FIXME: Should log errors.
+    public void deletePage( String page )
+        throws ProviderException
+    {
+        super.deletePage( page );
+
+        File dir = findOldPageDir( page );
+
+        if( dir.exists() && dir.isDirectory() )
+        {
+            File[] files = dir.listFiles( new WikiFileFilter() );
+
+            for( int i = 0; i < files.length; i++ )
+            {
+                files[i].delete();
+            }
+
+            File propfile = new File( dir, PROPERTYFILE );
+
+            if( propfile.exists() )
+            {
+                propfile.delete();
+            }
+
+            dir.delete();
+        }
+    }
+
+    public void deleteVersion( String page, int version )
+        throws ProviderException
+    {
+        File dir = findOldPageDir( page );
+
+        int latest = findLatestVersion( page );
+
+        if( version == WikiPageProvider.LATEST_VERSION ||
+            version == latest || 
+            (version == 1 && latest == -1) )
+        {
+            //
+            //  Delete the properties
+            //
+            try
+            {
+                Properties props = getPageProperties( page );
+                props.remove( ((latest > 0) ? latest : 1)+".author" );
+                putPageProperties( page, props );
+            }
+            catch( IOException e )
+            {
+                log.error("Unable to modify page properties",e);
+                throw new ProviderException("Could not modify page properties");
+            }
+
+            // We can let the FileSystemProvider take care
+            // of the actual deletion
+            super.deleteVersion( page, WikiPageProvider.LATEST_VERSION );
+            
+            //
+            //  Copy the old file to the new location
+            //
+            latest = findLatestVersion( page );
+            
+            File pageDir = findOldPageDir( page );
+            File previousFile = new File( pageDir, Integer.toString(latest)+FILE_EXT );
+
+            try
+            {
+                if( previousFile != null && previousFile.exists() )
+                {
+                    InputStream in = new BufferedInputStream( new FileInputStream( previousFile ) );
+                    File pageFile = findPage(page);
+                    OutputStream out = new BufferedOutputStream( new FileOutputStream( pageFile ) );
+
+                    FileUtil.copyContents( in, out );
+
+                    out.close();
+                    in.close();
+
+                    //
+                    // We need also to set the date, since we rely on this.
+                    //
+                    pageFile.setLastModified( previousFile.lastModified() );
+                }
+            }
+            catch( IOException e )
+            {
+                log.fatal("Something wrong with the page directory - you may have just lost data!",e);
+            }
+                        
+            return;
+        }
+
+        File pageFile = new File( dir, ""+version+FILE_EXT );
+
+        if( pageFile.exists() )
+        {
+            if( !pageFile.delete() )
+            {
+                log.error("Unable to delete page.");
+            }
+        }
+        else
+        {
+            throw new NoSuchVersionException("Page "+page+", version="+version);
+        }
+    }
+
+    // FIXME: This is kinda slow, we should need to do this only once.
+    public Collection getAllPages() throws ProviderException
+    {
+        Collection pages = super.getAllPages();
+        Collection returnedPages = new ArrayList();
+        
+        for( Iterator i = pages.iterator(); i.hasNext(); )
+        {
+            WikiPage page = (WikiPage) i.next();
+            
+            WikiPage info = getPageInfo( page.getName(), WikiProvider.LATEST_VERSION );
+ 
+            returnedPages.add( info );
+        }
+        
+        return returnedPages;
+    }
+    
     public String getProviderInfo()
     {
         return "";
