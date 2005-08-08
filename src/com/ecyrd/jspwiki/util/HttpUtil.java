@@ -19,8 +19,14 @@
  */
 package com.ecyrd.jspwiki.util;
 
+import java.text.*;
+import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.Cookie;
+
+import org.apache.log4j.Logger;
+
+import com.ecyrd.jspwiki.WikiPage;
 
 /**
  *  Contains useful utilities for some common HTTP tasks.
@@ -30,6 +36,8 @@ import javax.servlet.http.Cookie;
  */
 public class HttpUtil
 {
+    static Logger log = Logger.getLogger( HttpUtil.class );
+
     /**
      *  Attempts to retrieve the given cookie value from the request.
      *  Returns the string value (which may or may not be decoded
@@ -57,5 +65,96 @@ public class HttpUtil
         }
 
         return( null );
+    }
+
+    /**
+     *  If returns true, then should return a 304 (HTTP_NOT_MODIFIED)
+     */
+    public static boolean checkFor304( HttpServletRequest req,
+                                       WikiPage page )
+    {
+        DateFormat rfcDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z");
+        Date lastModified = page.getLastModified();
+
+        //
+        //  We'll do some handling for CONDITIONAL GET (and return a 304)
+        //  If the client has set the following headers, do not try for a 304.
+        //
+        //    pragma: no-cache
+        //    cache-control: no-cache
+        //
+
+        if( "no-cache".equalsIgnoreCase(req.getHeader("Pragma"))
+            || "no-cache".equalsIgnoreCase(req.getHeader("cache-control"))) 
+        {
+            // Wants specifically a fresh copy
+        } 
+        else 
+        {
+            long ifModifiedSince = req.getDateHeader("If-Modified-Since");
+
+            //log.info("ifModifiedSince:"+ifModifiedSince);
+            if( ifModifiedSince != -1 )
+            {
+                long lastModifiedTime = lastModified.getTime();
+
+                //log.info("lastModifiedTime:" + lastModifiedTime);
+                if( lastModifiedTime <= ifModifiedSince )
+                {
+                    return true;
+                }
+            } 
+            else
+            {
+                try 
+                {
+                    String s = req.getHeader("If-Modified-Since");
+
+                    if( s != null ) 
+                    {
+                        Date ifModifiedSinceDate = rfcDateFormat.parse(s);
+                        //log.info("ifModifiedSinceDate:" + ifModifiedSinceDate);
+                        if( lastModified.before(ifModifiedSinceDate) ) 
+                        {
+                            return true;
+                        }
+                    }
+                } 
+                catch (ParseException e) 
+                {
+                    log.warn(e.getLocalizedMessage(), e);
+                }
+            }
+        }
+         
+        return false;
+    }
+
+    /**
+     *  Attempts to form a valid URI based on the string given.  Currently
+     *  it can guess email addresses (mailto:).  If nothing else is given,
+     *  it assumes it to be a http:// url.
+     * 
+     *  @param uri  URI to take a poke at
+     *  @return Possibly a valid URI
+     *  @since 2.2.8
+     */
+    public static String guessValidURI( String uri )
+    {
+        if( uri.indexOf('@') != -1 )
+        {
+            if( !uri.startsWith("mailto:") )
+            {
+                // Assume this is an email address
+            
+                uri = "mailto:"+uri;
+            }
+        }
+        else if( uri.length() > 0 && !((uri.startsWith("http://") || uri.startsWith("https://")) ))
+        {
+            uri = "http://"+uri;
+        }
+        
+        return uri;
     }
 }

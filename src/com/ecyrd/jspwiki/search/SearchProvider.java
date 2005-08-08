@@ -19,11 +19,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 package com.ecyrd.jspwiki.search;
 
+import java.io.IOException;
 import java.util.Collection;
 
-import com.ecyrd.jspwiki.QueryItem;
 import com.ecyrd.jspwiki.WikiPage;
 import com.ecyrd.jspwiki.WikiProvider;
+import com.ecyrd.jspwiki.providers.ProviderException;
 
 /**
  *  Interface for the search providers that handle searching the Wiki
@@ -31,27 +32,29 @@ import com.ecyrd.jspwiki.WikiProvider;
  *  @author Arent-Jan Banck for Informatica
  *  @since 2.2.21.
  */
-public interface SearchProvider extends WikiProvider{
+public interface SearchProvider extends WikiProvider
+{
     /**
      * Delete a page from the search index
      * @param page Page to remove from search index
      */
-    public void deletePage(WikiPage page);
-
-
-    public void addToQueue(WikiPage page, String text);
+    public void pageRemoved(WikiPage page);
 
     /**
-     * Search for pages using an array of query items. Deprecate?
-     * @param query array of query items to search for
-     * @return collection of pages that match query
+     *  Adds a WikiPage for indexing queue.  This is called a queue, since
+     *  this method is expected to return pretty quickly, and indexing to
+     *  be done in a separate thread.
+     *  
+     *  @param page The WikiPage to be indexed.
      */
-    public Collection findPages( QueryItem[] query );
+    public void reindexPage(WikiPage page);
 
     /**
      * Search for pages matching a search query
      * @param query query to search for
      * @return collection of pages that match query
+     * @throws ProviderException, if the search provider failed.
+     * @throws IOException, if for some reason the query could not be executed.
      */
-    public Collection findPages(String query);
+    public Collection findPages(String query) throws ProviderException, IOException;
 }

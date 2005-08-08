@@ -8,8 +8,8 @@
 
 <head>
   <title><wiki:Variable var="applicationname"/>: Add Attachment</title>
-  <%@ include file="cssinclude.js" %>
-  <META NAME="ROBOTS" CONTENT="NOINDEX">
+  <wiki:Include page="commonheader.jsp" />
+  <meta name="robots" content="noindex">
 </head>
 
 <body class="upload" bgcolor="#FFFFFF">
@@ -18,18 +18,19 @@
       <hr /><p>
 
       <wiki:HasAttachments>
-         <B>Currently existing attachments:</B>
-
-         <div class="attachments" align="center">
+         <div class="attachments">
+         <h3>Currently existing attachments:</h3>
+         <div class="zebra-table" align="center">
          <table width="90%">
          <wiki:AttachmentsIterator id="att">
              <tr>
              <td><wiki:LinkTo><%=att.getFileName()%></wiki:LinkTo></td>
-             <td><wiki:PageInfoLink><img src="images/attachment_big.png" alt="Info on <%=att.getFileName()%>"></wiki:PageInfoLink></td>
+             <td><wiki:PageInfoLink><img src="<wiki:BaseURL/>images/attachment_big.png" border="0" alt="Info on <%=att.getFileName()%>"></wiki:PageInfoLink></td>
              <td><%=att.getSize()%> bytes</td>
              </tr>
          </wiki:AttachmentsIterator>
          </table>
+         </div>
          </div>
          <hr />
 
@@ -38,7 +39,7 @@
       <table border="0" width="100%">
       <tr>
         <td>
-           <form action="attach" method="POST" enctype="multipart/form-data">
+           <form action="<wiki:BaseURL/>attach" method="post" enctype="multipart/form-data" accept-charset="<wiki:ContentEncoding/>">
 
            <%-- Do NOT change the order of wikiname and content, otherwise the 
                 servlet won't find its parts. --%>
@@ -48,12 +49,15 @@
            In order to upload a new attachment to this page, please use the following
            box to find the file, then click on "Upload".
 
-           <P>
+           <p>
            <input type="file" name="content">
            <input type="submit" name="upload" value="Upload">
            <input type="hidden" name="action" value="upload">
            <input type="hidden" name="nextpage" value="<wiki:UploadLink format="url"/>">
+           </p>
            </form>
+
+           <span class="error"><wiki:Variable var="msg"/></span>
 
         </td>
 

@@ -1,96 +1,71 @@
 <%@ page import="org.apache.log4j.*" %>
 <%@ page import="com.ecyrd.jspwiki.*" %>
 <%@ page import="java.util.*" %>
+<%@ page import="com.ecyrd.jspwiki.tags.WikiTagBase" %>
+<%@ page errorPage="/Error.jsp" %>
+<%@ taglib uri="/WEB-INF/jspwiki.tld" prefix="wiki" %>
 
 <%! 
+    public void jspInit()
+    {
+        wiki = WikiEngine.getInstance( getServletConfig() );
+    }
+
     Category log = Category.getInstance("JSPWikiSearch");
-    WikiEngine wiki = new WikiEngine(); 
+    WikiEngine wiki;
 %>
 
 
 <%
-    String query = request.getParameter("query");
+    WikiContext wikiContext = wiki.createContext( request, WikiContext.FIND );
+    String pagereq = wikiContext.getPage().getName();
+
+    NDC.push( wiki.getApplicationName()+":"+pagereq );
+
+    String query = wiki.safeGetParameter( request, "query");
     Collection list = null;
+
+    pageContext.setAttribute( WikiTagBase.ATTR_CONTEXT,
+                              wikiContext,
+                              PageContext.REQUEST_SCOPE );
+
+    response.setContentType("text/html; charset="+wiki.getContentEncoding() );
 
     if( query != null )
     {
         log.info("Searching for string "+query);
 
-        list = wiki.findPages( query );
+        try
+        {
+            list = wiki.findPages( query );
 
-        log.info("Found "+list.size()+" pages");
+            pageContext.setAttribute( "searchresults",
+                                      list,
+                                      PageContext.REQUEST_SCOPE );
+        }
+        catch( Exception e )
+        {
+            pageContext.setAttribute( "err", e.getMessage(), PageContext.REQUEST_SCOPE );
+        }
+        
+        query = TextUtil.replaceEntities( query );
+
+        pageContext.setAttribute( "query",
+                                  query,
+                                  PageContext.REQUEST_SCOPE );
+
     }
+
+    String contentPage = wiki.getTemplateManager().findJSP( pageContext,
+                                                            wikiContext.getTemplate(),
+                                                            "ViewTemplate.jsp" );
 %>
 
-<HTML>
+<wiki:Include page="<%=contentPage%>" />
 
-<HEAD>
-  <TITLE>JSPWiki Search</TITLE>
-</HEAD>
-
-<BODY BGCOLOR="#FFFFFF">
-
-<TABLE BORDER="0" CELLSPACING="8">
-
-  <TR>
-    <TD WIDTH="15%" VALIGN="top">
-       <%@ include file="LeftMenu.jsp" %>
-       <P>
-       <A HREF="Wiki.jsp?page=HelpOnSearching">Help on searching</A>
-       </P>
-    </TD>
-    <TD WIDTH="85%" VALIGN="top">
-      <H1>Find pages</H1>
-
-      <% if( list != null ) 
-      {
-      %>
-          <H4>Search results for '<%=query%>'</H4>
-
-          <table border="0" cellpadding="4">
-          <%
-          if( list.size() > 0 )
-          {
-              for( Iterator i = list.iterator(); i.hasNext(); )
-              {
-                  String pageref = (String) i.next();
-                  %>
-                  <TR>
-                      <TD WIDTH="30%"><A HREF="Wiki.jsp?page=<%=pageref%>"><%=pageref%></A></TD>
-                      <TD>100%</TD>
-                  </TR>
-                  <%
-              }
-           }
-           else
-           {
-              %>
-              <TR>
-                  <TD><B>No results</B></TD>
-              </TR>
-              <%
-           }
-          %>
-          </table>
-      <%
-      }
-      %>
-
-      <P>
-      
-      <FORM action="Search.jsp">
-
-      <INPUT type="text" name="query">
-
-      <P>
-      <input type="submit" name="ok" value="Find!" />
-      </FORM>
-
-    </TD>
-  </TR>
-
-</TABLE>
-
-</BODY>
-
-</HTML>
+<%
+    NDC.pop();
+    NDC.remove();
+    
+    log.info("SEARCH COMPLETE");
+%>

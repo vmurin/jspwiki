@@ -1,11 +1,14 @@
 <%@ page import="org.apache.log4j.*" %>
 <%@ page import="com.ecyrd.jspwiki.*" %>
 <%@ page import="java.util.Calendar,java.util.Date" %>
+<%@ page import="com.ecyrd.jspwiki.tags.WikiTagBase" %>
+<%@ page errorPage="/Error.jsp" %>
+<%@ taglib uri="/WEB-INF/jspwiki.tld" prefix="wiki" %>
 
 <%! 
     public void jspInit()
     {
-        wiki = new WikiEngine( getServletContext() );
+        wiki = WikiEngine.getInstance( getServletConfig() );
     }
 
     Category log = Category.getInstance("JSPWiki");
@@ -15,75 +18,47 @@
 
 
 <%
-    String pagereq = request.getParameter("page");
+    WikiContext wikiContext = wiki.createContext( request, WikiContext.CONFLICT );
+    String pagereq = wikiContext.getPage().getName();
 
-    if( pagereq == null )
-    {
-        throw new ServletException("No page defined");
-    }
+    NDC.push( wiki.getApplicationName()+":"+pagereq );
 
-    // FIXME: Should the usertext be removed from the session?
-    String usertext = getSession().getParameter("usertext");
+    String usertext = wiki.safeGetParameter( request, "text" );
+
+    pageContext.setAttribute( WikiTagBase.ATTR_CONTEXT,
+                              wikiContext,
+                              PageContext.REQUEST_SCOPE );
+
+    response.setContentType("text/html; charset="+wiki.getContentEncoding() );
+
+    usertext = TextUtil.replaceString( usertext, "<", "&lt;" );
+    usertext = TextUtil.replaceString( usertext, ">", "&gt;" );
+    usertext = TextUtil.replaceString( usertext, "\n", "<BR />" );
+
+    pageContext.setAttribute( "usertext",
+                              usertext,
+                              PageContext.REQUEST_SCOPE );
+    
+    String conflicttext = wiki.getText(pagereq);
+
+    conflicttext = TextUtil.replaceString( conflicttext, "<", "&lt;" );
+    conflicttext = TextUtil.replaceString( conflicttext, ">", "&gt;" );
+    conflicttext = TextUtil.replaceString( conflicttext, "\n", "<BR />" );
+
+    pageContext.setAttribute( "conflicttext",
+                              conflicttext,
+                              PageContext.REQUEST_SCOPE );
 
     log.info("Page concurrently modified "+pagereq);
+
+    String contentPage = wiki.getTemplateManager().findJSP( pageContext,
+                                                            wikiContext.getTemplate(),
+                                                            "ViewTemplate.jsp" );
 %>
 
-<HTML>
+<wiki:Include page="<%=contentPage%>" />
 
-<HEAD>
-  <TITLE>JSPWiki Error</TITLE>
-</HEAD>
-
-<BODY BGCOLOR="#FFFFFF">
-
-<TABLE BORDER="0" CELLSPACING="8">
-
-  <TR>
-    <TD WIDTH="15%" VALIGN="top">
-       <%@ include file="LeftMenu.jsp" %>
-       <P>
-       <A HREF="Wiki.jsp?page=EditingWikiPages">Help on editing</A>
-       <A HREF="Edit.jsp?page=<%=pagereq%>">Go edit <%=pagereq%></A>
-       </P>
-       <%@ include file="LeftMenuFooter.jsp" %>
-    </TD>
-    <TD WIDTH="85%" VALIGN="top">
-      <H1>Concurrent modification of <%=pagereq%></H1>
-
-      <P>
-      <B>Oops!  Someone modified the page while you were editing it!</B>
-      </P>
-
-      <P>Since I am stupid and can't figure out what the difference 
-      between those pages is, you will need to do that for me.  I've printed here
-      the text (in Wiki) of the new page, and the modifications you made.  You'll
-      now copy the text onto a scratch pad (Notepad or emacs will do just fine),
-      and then edit the page again.</P>
-
-      <P>Note that when you go back into the editing mode, someone might have
-      changed the page again.  So be quick.</P>
-
-      <P><font color="#0000FF">Here is the modified text (by someone else):</FONT></P>
-
-      <P><HR></P>
-
-      <PRE>
-        <%=wiki.getText(pagereq)%>
-      </PRE>      
-
-      <P><HR></P>
-
-      <P><FONT COLOR="#0000FF">And here's your text:</FONT></P>
-
-      <PRE>
-        <%=usertext%>
-      </PRE>
-
-    </TD>
-  </TR>
-
-</TABLE>
-
-</BODY>
-
-</HTML>
+<%
+    NDC.pop();
+    NDC.remove();
+%>

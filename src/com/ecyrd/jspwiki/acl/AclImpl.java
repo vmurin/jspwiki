@@ -1,7 +1,25 @@
+/* 
+    JSPWiki - a JSP-based WikiWiki clone.
+
+    Copyright (C) 2001-2004 Janne Jalkanen (Janne.Jalkanen@iki.fi)
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
 package com.ecyrd.jspwiki.acl;
 
 import java.security.acl.AclEntry;
-import java.security.acl.Acl;
 import java.security.acl.Permission;
 import java.security.acl.Group;
 import java.security.Principal;
@@ -49,11 +67,24 @@ public class AclImpl
 
     private boolean hasEntry( AclEntry entry )
     {
+        if( entry == null )
+        {
+            return false;
+        }
+
         for( Iterator i = m_entries.iterator(); i.hasNext(); )
         {
             AclEntry e = (AclEntry) i.next();
 
-            if( e.getPrincipal().equals( entry.getPrincipal() ) &&
+            Principal ep     = e.getPrincipal();
+            Principal entryp = entry.getPrincipal();
+
+            if( ep == null || entryp == null )
+            {
+                throw new IllegalArgumentException("Entry is null; check code, please (entry="+entry+"; e="+e+")");
+            }
+            
+            if( ep.getName().equals( entryp.getName() ) &&
                 e.isNegative() == entry.isNegative() )
             {
                 return true;
@@ -66,6 +97,11 @@ public class AclImpl
     public boolean addEntry(Principal caller,
                             AclEntry entry)
     {
+        if( entry.getPrincipal() == null )
+        {
+            throw new IllegalArgumentException("Entry principal cannot be null");
+        }
+
         if( hasEntry( entry ) )
         {
             return false;
@@ -97,9 +133,9 @@ public class AclImpl
                 //  Principal direct match.
                 //
 
-                for( Enumeration enum = ae.permissions(); enum.hasMoreElements(); )
+                for( Enumeration myEnum = ae.permissions(); myEnum.hasMoreElements(); )
                 {
-                    perms.add( enum.nextElement() );
+                    perms.add( myEnum.nextElement() );
                 }
             }
         }
@@ -146,6 +182,12 @@ public class AclImpl
     {
         boolean posEntry = false;
 
+        /*
+        System.out.println("****");
+        System.out.println( toString() );
+        System.out.println("Checking user="+principal);
+        System.out.println("Checking permission="+permission);
+        */
         for( Enumeration e = m_entries.elements(); e.hasMoreElements(); )
         {
             AclEntry entry = (AclEntry) e.nextElement();
@@ -154,39 +196,60 @@ public class AclImpl
             {
                 if( entry.checkPermission( permission ) )
                 {
+                    // System.out.println("  Found person/permission match");
                     if( entry.isNegative() )
                     {
                         return DENY;
                     }
                     else
                     {
-                        posEntry = true;
+                        return ALLOW;
+                        // posEntry = true;
                     }
                 }
             }
         }
 
         //
+        //  In case both positive and negative permissions have been set, 
+        //  we'll err for the negative by quitting immediately if we see
+        //  a match.  For positive, we have to wait until here.
+        //
+
+        if( posEntry ) return ALLOW;
+        
+        // System.out.println("-> groups");
+
+        //
         //  Now, if the individual permissions did not match, we'll go through
         //  it again but this time looking at groups.
         //
+
         for( Enumeration e = m_entries.elements(); e.hasMoreElements(); )
         {
             AclEntry entry = (AclEntry) e.nextElement();
+
+            // System.out.println("  Checking entry="+entry);
 
             if( entry.getPrincipal() instanceof Group )
             {
                 Group entryGroup = (Group) entry.getPrincipal();
 
+                // System.out.println("  Checking group="+entryGroup);
+
                 if( entryGroup.isMember( principal ) && entry.checkPermission( permission ) )
                 {
+                    // System.out.println("    ismember&haspermission");
                     if( entry.isNegative() )
                     {
+                        // System.out.println("    DENY");
                         return DENY;
                     }
                     else
                     {
-                        posEntry = true;
+                        // System.out.println("    ALLOW");
+                        return ALLOW;
+                        //                        posEntry = true;
                     }
                 }
             }
@@ -202,16 +265,32 @@ public class AclImpl
      */
     public String toString()
     {
-        StringBuffer res = new StringBuffer();
+        StringBuffer sb = new StringBuffer();
 
-        for( Enumeration e = m_entries.elements(); e.hasMoreElements(); )
+        for( Enumeration myEnum = entries(); myEnum.hasMoreElements(); )
         {
-            AclEntry entry = (AclEntry) e.nextElement();
+            AclEntry entry = (AclEntry) myEnum.nextElement();
 
-            res.append( entry.toString() +"\n" );
-        }        
+            Principal pal = entry.getPrincipal();
 
-        return res.toString();
+            if( pal != null )
+                sb.append("  user = "+pal.getName()+": ");
+            else
+                sb.append("  user = null: ");
+
+            if( entry.isNegative() ) sb.append("NEG");
+
+            sb.append("(");
+            for( Enumeration perms = entry.permissions(); perms.hasMoreElements(); )
+            {
+                Permission perm = (Permission) perms.nextElement();
+                sb.append( perm.toString() );
+            }
+            sb.append(")\n");
+        }
+
+        return sb.toString();
     }
+
 }
     

@@ -1,7 +1,5 @@
 package com.ecyrd.jspwiki.providers;
 
-import junit.framework.*;
-import java.io.*;
 import java.util.*;
 
 import org.apache.log4j.*;
@@ -29,9 +27,17 @@ public class CounterProvider
 
     String defaultText = "[Foo], [Bar], [Blat], [Blah]";
 
-    public void initialize( Properties props )
+
+    public void initialize( WikiEngine engine, Properties props )
     {
         m_initCalls++;
+        
+        for( int i = 0; i < m_pages.length; i++ ) 
+        {
+            m_pages[i].setAuthor("Unknown");
+            m_pages[i].setLastModified( new Date(0L) );
+            m_pages[i].setVersion(1);
+        }
     }
 
     public String getProviderInfo()
@@ -78,8 +84,7 @@ public class CounterProvider
         //TestEngine.trace();
 
         WikiPage p = findPage(page);
-        p.setVersion( 1 );
-        p.setAuthor( "default-author" );
+
         return p;
     }
 

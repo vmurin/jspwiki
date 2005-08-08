@@ -3,7 +3,6 @@ package com.ecyrd.jspwiki.plugin;
 
 import com.ecyrd.jspwiki.*;
 import junit.framework.*;
-import java.io.*;
 import java.util.*;
 
 public class UndefinedPagesPluginTest extends TestCase
@@ -21,21 +20,22 @@ public class UndefinedPagesPluginTest extends TestCase
     public void setUp()
         throws Exception
     {
-        props.load( getClass().getClassLoader().getResourceAsStream("/jspwiki.properties") );
+        props.load( TestEngine.findTestProperties() );
 
         engine = new TestEngine(props);
 
         engine.saveText( "TestPage", "Reference to [Foobar]." );
         engine.saveText( "Foobar", "Reference to [Foobar2], [Foobars]" );
 
-        context = new WikiContext( engine, "TestPage" );
+        context = new WikiContext( engine, new WikiPage("TestPage") );
         manager = new PluginManager( props );
     }
 
     public void tearDown()
     {
-        engine.deletePage( "TestPage" );
-        engine.deletePage( "Foobar" );
+        TestEngine.deleteTestPage( "TestPage" );
+        TestEngine.deleteTestPage( "Foobar" );
+        TestEngine.emptyWorkDir();
     }
 
     private String wikitize( String s )
@@ -51,12 +51,12 @@ public class UndefinedPagesPluginTest extends TestCase
     public void testSimpleUndefined()
         throws Exception
     {
-        WikiContext context2 = new WikiContext( engine, "Foobar" );
+        WikiContext context2 = new WikiContext( engine, new WikiPage("Foobar") );
 
         String res = manager.execute( context2,
                                       "{INSERT com.ecyrd.jspwiki.plugin.UndefinedPagesPlugin");
 
-        String exp = "[Foobar2]\n\\\\";
+        String exp = "[Foobar 2]\\\\";
 
         assertEquals( wikitize(exp), res );
     }

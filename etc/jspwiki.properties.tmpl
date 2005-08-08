@@ -49,13 +49,24 @@ jspwiki.usePageCache = true
 jspwiki.fileSystemProvider.pageDir = @pagedir@
 
 #
+#  The JSPWiki working directory.  If not set, a temporary path will
+#  be used.  You can see the location of the workdir in the logs.
+#  It is HIGHLY recommended that you set this.
+#
+#  The working directory is used to cache things like Lucene search
+#  results.
+#
+#jspwiki.workDir =
+
+#
 #  ATTACHMENTS:
 #
 #  Use the following property to define which attachment provider
 #  you want to use.  You have basically two choices:
-#    * BasicAttachmentProvider - a simple, flat file, versioning provider
-#    * nothing - Set this property to empty, and the attachment functionality
-#                is disabled.
+#    * Set the value to BasicAttachmentProvider  
+#      a simple, flat file versioning provider
+#    * Leave the value empty (or just comment the line out) 
+#      the attachment functionality is disabled
 #
 jspwiki.attachmentProvider = BasicAttachmentProvider
 
@@ -71,6 +82,36 @@ jspwiki.attachmentProvider = BasicAttachmentProvider
 #
 jspwiki.basicAttachmentProvider.storageDir = @pagedir@
 
+#
+#  You can limit the maximum size of an attachment by setting this
+#  value.  The value is in bytes, and by default all attachments
+#  are accepted.
+#
+#  The following line would limit the attachment size to 100,000 bytes
+#jspwiki.attachment.maxsize=100000
+
+#
+#  page Diff Representation
+#
+#  To show differences between page versions, you can define a 
+# difference provider. 
+#  The following choices are available:
+#    * TraditionalDiffProvider - Uses internal (java) diff
+#        to create a list of changes and shows it line by
+#        line colored. This is the default
+#    * ContextualDiffProvider - Uses internal (java) diff
+#        to create changes inline and shows it on a word by
+#        word basis using CSS. This is much superior to the
+#        traditional diff provider, however, it is still quite
+#        new and not much tested. YMMV.
+#    * ExternalDiffProvider - uses a system diff program (which
+#        can be configured using "jspwiki.diffCommand") to 
+#        create an unified (!) diff.
+#
+#        Example for a diff command:
+#        jspwiki.diffCommand = /usr/bin/diff -u %s1 %s2
+#
+jspwiki.diffProvider = TraditionalDiffProvider
 
 #
 #  BaseURL can be used to rewrite all of JSPWiki's internal references.
@@ -90,21 +131,27 @@ jspwiki.basicAttachmentProvider.storageDir = @pagedir@
 #
 #jspwiki.baseURL=
 
+#  Determines if you need to have relative urls or not.  If the baseURL
+#  is not set, then this has no effect, but if you set the baseURL (which
+#  is highly recommended), you can use this to set relative urls.
+#
+#  Possible values are "absolute" and "relative".
+#
+#jspwiki.referenceStyle=relative
+
 #
 #  Determines which character encoding JSPWiki should use.  If you want
 #  to support all languages in your Wiki, you probably want to enable
-#  this.  If you're upgrading, or are planning just to use the ISO-Latin1
-#  character set (like most western people would), you can just leave
-#  it at the default.  If you enable it, remember that most people won't
-#  be able to type in special characters anyway.
+#  this.  From JSPWiki 2.2, it is strongly suggested that you use UTF-8.
 #  
 #  Note that you can't switch these in the mean time, since the way the
 #  files are encoded on disk is incompatible between ISO-Latin1 and UTF-8.
 #  Don't try.  You'll get all sorts of interesting problems, if you do.
 #
-#  Possible values are 'ISO-8859-1' (default) and 'UTF-8'.
+#  Possible values are 'ISO-8859-1' (default, if none has been specified) 
+#  and 'UTF-8'.
 
-#jspwiki.encoding = UTF-8
+jspwiki.encoding = UTF-8
 
 #
 #  Determines whether raw HTML is allowed as Wiki input.
@@ -159,6 +206,8 @@ jspwiki.translatorReader.matchEnglishPlurals = true
 #
 #  By default this is false, since traditional WikiLinks may confuse newbies.
 #
+#  This option can be overridden on a per-page basis using the SET directive.
+#
 jspwiki.translatorReader.camelCaseLinks = false
 
 #
@@ -167,6 +216,8 @@ jspwiki.translatorReader.camelCaseLinks = false
 #  basic templates from that directory: "ViewTemplate" and "EditTemplate".
 #
 #  By default this is called "default".
+#
+#  This option can be overridden on a per-page basis using the SET directive.
 #
 jspwiki.templateDir = default
 
@@ -189,6 +240,19 @@ jspwiki.translatorReader.useOutlinkImage = true
 #  for while he is editing it.
 #
 jspwiki.lockExpiryTime = 60
+
+#
+#  Search provider used for searching pages and attachments.
+#  Default is LuceneSearchProvider, but you can fall back to BasicSearchProvider
+#
+jspwiki.searchProvider = LuceneSearchProvider
+
+#
+#  If your wiki's language is something else than English, you might
+#  want to visit jakarta.apache.org/lucene and download a proper Analyzer
+#  for your language.  Default is to use StandardAnalyzer.
+#
+#jspwiki.lucene.analyzer = org.apache.lucene.analysis.standard.StandardAnalyzer
 
 ############################################################################
 #
@@ -230,38 +294,12 @@ jspwiki.plugin.searchPath =
 #
 #  Page filters
 #
-#  The format is "jspwiki.pageFilter.XXX = classname", where XXX is a priority.
-#  Those filters with higher priority will be executed first.
+#  Normally, the filter configuration is in your WEB-INF/ directory, so you
+#  do not need to go and specify this.  However, if your filters.xml live somewhere
+#  else, you'll have to specify it here.
 #
-#  Example:
-#jspwiki.pageFilter.100 = ProfanityFilter
+#jspwiki.filterConfig = /some/path/to/your/filters.xml
 
-#############################################################################
-#
-#  Authentication and authorization
-#
-#  JSPWiki supports a plugin-based interface for talking to different kinds
-#  of authentication systems.  In JSPWiki talk, the term "Authorizer" means
-#  a module that basically checks if the username and password match.
-#
-#  Define here the module you want to use for plugins.  You can either
-#  define a full class name (with the package), or a shortened version,
-#  if you're using one of the JSPWiki-provided ones.
-#
-#jspwiki.authorizer = FileAuthorizer
-
-
-#
-#  FileAuthorizer is a simple authorizer that basically reads the passwords
-#  from a file.
-#
-#  FileAuthorizer supports the following options
-#
-#  Define where the password file lives.  The password file is simply in
-#  a format "username = password", one entry per line.  This is a required
-#  attribute.
-#
-#jspwiki.fileAuthorizer.fileName = /tmp/mypasswordfile.txt
 
 #############################################################################
 #
@@ -294,6 +332,9 @@ jspwiki.interWikiRef.Wikipedia = http://www.wikipedia.com/wiki/%s
 
 #  Google, the ubiquitous search engine.
 jspwiki.interWikiRef.Google = http://www.google.com/search?q=%s
+
+#  JSPWiki documentation (for this release)
+jspwiki.interWikiRef.Doc = http://doc.jspwiki.org/2.2/Wiki.jsp?page=%s
 
 ############################################################################
 #
@@ -433,3 +474,4 @@ log4j.rootCategory=INFO,FileLog
 #log4j.rootCategory=INFO,FileLog,mail
 
 ### End of configuration file.
+

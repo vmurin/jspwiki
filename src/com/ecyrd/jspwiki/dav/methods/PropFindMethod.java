@@ -24,13 +24,12 @@ import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
 import org.jdom.xpath.XPath;
 
-import com.ecyrd.jspwiki.WikiContext;
 import com.ecyrd.jspwiki.WikiEngine;
-import com.ecyrd.jspwiki.WikiPage;
 import com.ecyrd.jspwiki.dav.DavContext;
+import com.ecyrd.jspwiki.dav.DavPath;
+import com.ecyrd.jspwiki.dav.DavProvider;
 import com.ecyrd.jspwiki.dav.WebdavServlet;
 import com.ecyrd.jspwiki.dav.items.DavItem;
-import com.ecyrd.jspwiki.dav.items.DavItemFactory;
 import com.ecyrd.jspwiki.providers.ProviderException;
 
 /**
@@ -43,19 +42,16 @@ public class PropFindMethod
 {
     private static Logger log = Logger.getLogger( PropFindMethod.class );
     
-    private DavItemFactory m_difactory;
-    
     /**
      * 
      */
-    public PropFindMethod( WikiEngine engine )
+    public PropFindMethod( DavProvider provider )
     {
-        super( engine );
-        m_difactory = new DavItemFactory( m_engine );
+        super( provider );
     }
 
     public void sendMultiResponse( HttpServletResponse res, Element response )
-    throws IOException
+        throws IOException
     {
         res.setContentType("application/xml; charset=\"UTF-8\"");
         res.setStatus( WebdavServlet.SC_MULTISTATUS );
@@ -66,9 +62,9 @@ public class PropFindMethod
         
         XMLOutputter output = new XMLOutputter();
      
-        // System.out.println("Returning");
+        System.out.println("Returning");
         output.setFormat( Format.getPrettyFormat() );
-        // output.output( doc, System.out );
+        output.output( doc, System.out );
         output.output( doc, res.getWriter() );
     }
     
@@ -92,9 +88,9 @@ public class PropFindMethod
         Namespace davns = Namespace.getNamespace( "DAV:" );
         Element root = new Element("multistatus", davns);
         
-        DavItem di = m_difactory.newItem( dc );
+        DavItem di = m_provider.getItem( dc.getPath() );
 
-        for( Iterator i = di.iterator(dc.m_depth); i.hasNext(); )
+        for( Iterator i = di.iterator(dc.getDepth()); i.hasNext(); )
         {
             di = (DavItem) i.next();
                     
@@ -130,20 +126,20 @@ public class PropFindMethod
     }
     
     private Element getProperties( DavContext dc, List askedprops )
-    throws IOException
+        throws IOException
     {
         Namespace davns = Namespace.getNamespace( "DAV:" );
         
         Element root = new Element("multistatus", davns);
 
-        DavItem di = m_difactory.newItem( dc );
+        DavItem di = m_provider.getItem( dc.getPath() );
 
         if( di == null )
         {
-            throw new FileNotFoundException( dc.m_page );
+            throw new FileNotFoundException( dc.getPath().toString() );
         }
         
-        for( Iterator i = di.iterator(dc.m_depth); i.hasNext(); )
+        for( Iterator i = di.iterator(dc.getDepth()); i.hasNext(); )
         {
             di = (DavItem) i.next();
                     
@@ -181,7 +177,7 @@ public class PropFindMethod
                         Element el = (Element)j.next();
                     
                         if( askedElement.getNamespaceURI().equals( el.getNamespaceURI() ) &&
-                                askedElement.getName().equals( el.getName() ) )
+                            askedElement.getName().equals( el.getName() ) )
                         {
                             props.addContent( el );
                             found = true;
@@ -221,18 +217,18 @@ public class PropFindMethod
     }
     
     private Element getAllProps( DavContext dc )
-    throws ProviderException, IOException
+        throws ProviderException, IOException
     {
-        log.debug("Retrieving all properties for context "+dc.m_davcontext);
+        log.debug("Retrieving all properties for context "+dc.getPath());
         
         return getProperties( dc, null );
     }
     
 
-    public void execute( HttpServletRequest req, HttpServletResponse res )
-    throws ServletException, IOException
-    {
-        DavContext dc = new DavContext( req );
+    public void execute( HttpServletRequest req, HttpServletResponse res, DavPath dp )
+        throws ServletException, IOException
+    {  
+        DavContext dc = new DavContext( req, dp );
 
         try
         {
@@ -247,9 +243,9 @@ public class PropFindMethod
 
             log.debug("First node is:"+firstnode);
             
-            // System.out.println("Request="+dc.m_davcontext+" / "+dc.m_page+ " depth="+dc.m_depth);
+            System.out.println("Request="+dc.getPath()+" depth="+dc.getDepth());
 
-            // debugXML( doc.getRootElement() );
+            debugXML( doc.getRootElement() );
             
             if( firstnode == null || firstnode.getName().equals("allprop") )
             {
@@ -273,7 +269,8 @@ public class PropFindMethod
         }
         catch( JDOMException e )
         {
-            log.error( "Broken XML received", e );
+            // This is probably someone trying to poke at us
+            log.info( "Broken XML received", e );
             
             res.sendError( HttpServletResponse.SC_BAD_REQUEST, "Parse error" );
         }

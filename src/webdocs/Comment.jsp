@@ -3,11 +3,13 @@
 <%@ page import="java.util.*" %>
 <%@ page import="java.text.SimpleDateFormat" %>
 <%@ page import="com.ecyrd.jspwiki.tags.WikiTagBase" %>
-<%@ page import="com.ecyrd.jspwiki.WikiProvider" %>
+<%@ page import="com.ecyrd.jspwiki.tags.EditorAreaTag" %>
+<%@ page import="com.ecyrd.jspwiki.util.HttpUtil" %>
 <%@ page import="com.ecyrd.jspwiki.auth.AuthorizationManager" %>
 <%@ page import="com.ecyrd.jspwiki.auth.UserProfile" %>
-<%@ page import="com.ecyrd.jspwiki.auth.permissions.EditPermission" %>
+<%@ page import="com.ecyrd.jspwiki.auth.permissions.CommentPermission" %>
 <%@ page errorPage="/Error.jsp" %>
+<%@ page import="javax.servlet.http.Cookie" %>
 <%@ taglib uri="/WEB-INF/jspwiki.tld" prefix="wiki" %>
 
 <%! 
@@ -16,7 +18,7 @@
         wiki = WikiEngine.getInstance( getServletConfig() );
     }
 
-    Logger log = Category.getLogger("JSPWiki");
+    Logger log = Logger.getLogger("JSPWiki");
     WikiEngine wiki;
 %>
 
@@ -26,7 +28,10 @@
     String ok      = request.getParameter("ok");
     String preview = request.getParameter("preview");
     String cancel  = request.getParameter("cancel");
+    String edit    = request.getParameter("edit");
     String author  = wiki.safeGetParameter( request, "author" );
+    String link    = wiki.safeGetParameter( request, "link" );
+    String remember = request.getParameter("remember");
 
     WikiContext wikiContext = wiki.createContext( request, 
                                                   WikiContext.COMMENT );
@@ -60,6 +65,11 @@
                               wikiContext,
                               PageContext.REQUEST_SCOPE );
 
+    String storedlink = HttpUtil.retrieveCookieValue( request, "link" );
+    if( storedlink == null ) storedlink = "";
+    
+    pageContext.setAttribute( "link", storedlink, PageContext.REQUEST_SCOPE );
+
     //
     //  Set the response type before we branch.
     //
@@ -73,7 +83,7 @@
 
     if( ok != null )
     {
-        log.info("Saving page "+pagereq+". User="+request.getRemoteUser()+", host="+request.getRemoteHost() );
+        log.info("Saving page "+pagereq+". User="+request.getRemoteUser()+", host="+request.getRemoteAddr() );
 
         //  FIXME: I am not entirely sure if the JSP page is the
         //  best place to check for concurrent changes.  It certainly
@@ -107,32 +117,51 @@
         //  Set author information
         //
 
-        wikiContext.getPage().setAuthor( currentUser.getName() );        
+        wikipage.setAuthor( currentUser.getName() );
+
+        StringBuffer pageText = new StringBuffer(wiki.getPureText( wikipage ));
+
+        log.debug("Page initial contents are "+pageText.length()+" chars");
 
         //
-        //  If this is a comment, then we just append it to the page.
-        //  If it is a full edit, then we will replace the previous contents.
+        //  Add a line on top only if we need to separate it from the content.
         //
-        if( comment != null )
+        if( pageText.length() > 0 )
         {
-            StringBuffer pageText = new StringBuffer(wiki.getText( pagereq ));
             pageText.append( "\n\n----\n\n" );
-            pageText.append( wiki.safeGetParameter( request, "text" ) );
+        }        
 
-            if( author != null )
-            {
-                Calendar cal = Calendar.getInstance();
-                SimpleDateFormat fmt = new SimpleDateFormat("dd-MMM-yyyy");
+        pageText.append( wiki.safeGetParameter( request, EditorAreaTag.AREA_NAME ) );
 
-                pageText.append("\n\n--"+author+", "+fmt.format(cal.getTime()));
-            }
-
-            wiki.saveText( wikiContext, pageText.toString() );
-        }
-        else
+        log.debug("Author name ="+author);
+        if( author != null && author.length() > 0 )
         {
-            wiki.saveText( wikiContext,
-                           wiki.safeGetParameter( request, "text" ) );
+            String signature = author;
+            
+            if( link != null )
+            {
+                link = HttpUtil.guessValidURI( link );
+                
+                signature = "["+author+"|"+link+"]";
+            }
+            
+            Calendar cal = Calendar.getInstance();
+            SimpleDateFormat fmt = new SimpleDateFormat("dd-MMM-yyyy");
+
+            pageText.append("\n\n--"+signature+", "+fmt.format(cal.getTime()));
+        }
+
+        wiki.saveText( wikiContext, pageText.toString() );
+
+        if( remember != null )
+        {
+            wiki.getUserManager().setUserCookie( response, author );            
+            if( link != null )
+            {
+                Cookie linkcookie = new Cookie("link", link);
+                linkcookie.setMaxAge(1001*24*60*60);
+                response.addCookie( linkcookie );
+            }
         }
 
         response.sendRedirect(wiki.getViewURL(pagereq));
@@ -141,7 +170,8 @@
     else if( preview != null )
     {
         log.debug("Previewing "+pagereq);
-        pageContext.forward( "Preview.jsp" );
+        if( author == null ) author = "";
+        pageContext.forward( "Preview.jsp?action=comment&author="+author );
     }
     else if( cancel != null )
     {
@@ -157,7 +187,7 @@
         return;
     }
 
-    log.info("Commenting page "+pagereq+". User="+request.getRemoteUser()+", host="+request.getRemoteHost() );
+    log.info("Commenting page "+pagereq+". User="+request.getRemoteUser()+", host="+request.getRemoteAddr() );
 
     //
     //  Determine and store the date the latest version was changed.  Since
@@ -173,6 +203,9 @@
                               Long.toString( lastchange ),
                               PageContext.REQUEST_SCOPE );
 
+	//  This is a hack to get the preview to work.
+	pageContext.setAttribute( "comment", Boolean.TRUE, PageContext.REQUEST_SCOPE );
+	
     //
     //  Attempt to lock the page.
     //
@@ -184,7 +217,10 @@
         session.setAttribute( "lock-"+pagereq, lock );
     }
 
-    String contentPage = "templates/"+wikiContext.getTemplate()+"/EditTemplate.jsp";
+    String contentPage = wiki.getTemplateManager().findJSP( pageContext,
+                                                            wikiContext.getTemplate(),
+                                                            "EditTemplate.jsp" );
+
 %>
 
 <wiki:Include page="<%=contentPage%>" />

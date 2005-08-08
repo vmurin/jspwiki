@@ -1,59 +1,45 @@
-<HTML>
+<%@ taglib uri="/WEB-INF/jspwiki.tld" prefix="wiki" %>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<HEAD>
-  <TITLE><wiki:ApplicationName /> Edit: <wiki:PageName /></TITLE>
-  <META NAME="ROBOTS" CONTENT="NOINDEX">
-  <%@ include file="cssinclude.js" %>
-</HEAD>
+<html>
 
-<BODY class="edit" BGCOLOR="#D9E8FF" onLoad="document.forms[1].text.focus()">
+<head>
+  <title><wiki:Variable var="ApplicationName" /> Edit: <wiki:PageName /></title>
+  <meta name="ROBOTS" content="NOINDEX" />
+  <wiki:Include page="commonheader.jsp"/>
+  <!-- <script type="text/javascript" src="scripts/fckeditor/fckeditor.js"></script> -->
+</head>
 
-<TABLE BORDER="0" CELLSPACING="8">
+<wiki:CheckRequestContext context="edit">
+  <body class="edit" bgcolor="#D9E8FF" onload="document.editForm.text.focus()">
+</wiki:CheckRequestContext>
 
-  <TR>
-    <TD CLASS="leftmenu" WIDTH="15%" VALIGN="top" NOWRAP="true">
+<wiki:CheckRequestContext context="comment">
+  <body class="comment" bgcolor="#EEEEEE" onload="document.commentForm.text.focus()">
+</wiki:CheckRequestContext>
+
+<table border="0" cellspacing="8">
+
+  <tr>
+    <td class="leftmenu" width="15%" valign="top" nowrap="nowrap">
        <%@ include file="LeftMenu.jsp" %>
-       <P>
+       <p>
        <wiki:LinkTo page="TextFormattingRules">Help on editing</wiki:LinkTo>
-       </P>
+       </p>
        <%@ include file="LeftMenuFooter.jsp" %>
-    </TD>
+    </td>
 
-    <TD CLASS="page" WIDTH="85%" VALIGN="top">
-      <%@ include file="PageHeader.jsp" %>
+    <td class="page" width="85%" valign="top">
 
-      <FORM action="<%=wiki.getBaseURL()%>Edit.jsp?page=<%=pageurl%>&action=save" method="POST" 
-            ACCEPT-CHARSET="ISO-8859-1,UTF-8">
+       <wiki:Content/>
 
-      <INPUT type="hidden" name="page"     value="<%=pagereq%>">
-      <INPUT type="hidden" name="action"   value="save">
-      <INPUT type="hidden" name="edittime" value="<%=lastchange%>">
+    </td>
+  </tr>
 
-      <TEXTAREA CLASS="editor" wrap="virtual" name="text" rows="25" cols="80" style="width:100%;"><wiki:InsertPage mode="plain" /></TEXTAREA>
+</table>
 
-      <P>
-      <input type="submit" name="ok" value="Save" />
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-      <input type="submit" name="preview" value="Preview" />
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-      <wiki:LinkTo>Cancel</wiki:LinkTo>
-      </FORM>
+</body>
 
-      </P>
-      <P>
-      <wiki:NoSuchPage page="EditPageHelp">
-         Ho hum, it seems that the <wiki:EditLink page="EditPageHelp">EditPageHelp</wiki:EditLink>
-         page is missing.  Someone must've done something to the installation...
-      </wiki:NoSuchPage>
-      </P>
-
-      <wiki:InsertPage page="EditPageHelp" />
-
-    </TD>
-  </TR>
-
-</TABLE>
-
-</BODY>
-
-</HTML>
+</html>

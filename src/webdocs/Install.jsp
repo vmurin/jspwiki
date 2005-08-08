@@ -11,43 +11,87 @@
     String message = null;
     String propertyResult = null;
     
-	public String setProperty( String propertyfile, String key, String value )
-	{
+    public String sanitizePath( String s )
+    {
+        s = TextUtil.replaceString(s, "\\", "\\\\" );
+        return s.trim();
+    }
+    
+    /**
+     *  Simply sanitizes any URL which contains backslashes (sometimes Windows users may have them)
+     */
+    public String sanitizeURL( String s )
+    {
+        s = TextUtil.replaceString(s, "\\", "/" );
+        return s.trim();
+    }
+    
+    public String setProperty( String propertyfile, String key, String value )
+    {
         int idx = 0;
         
-		while( (idx < propertyfile.length()) && ((idx = propertyfile.indexOf(key,idx)) != -1) )
-		{
+        value = TextUtil.native2Ascii( value );
+        
+        while( (idx < propertyfile.length()) && ((idx = propertyfile.indexOf(key,idx)) != -1) )
+        {
             int prevret = propertyfile.lastIndexOf("\n",idx);
             if( prevret != -1 )
             {
+                // Commented lines are skipped
                 if( propertyfile.charAt(prevret+1) == '#' ) 
                 {
                     idx += key.length();
                     continue;
                 }
             }
-			int eqsign = propertyfile.indexOf("=",idx);
+            int eqsign = propertyfile.indexOf("=",idx);
 			
-			if( eqsign != -1 )
-			{
-				int ret = propertyfile.indexOf("\n",eqsign);
+            if( eqsign != -1 )
+            {
+                int ret = propertyfile.indexOf("\n",eqsign);
 				
-				if( ret == -1 ) ret = propertyfile.length();
+                if( ret == -1 ) ret = propertyfile.length();
 				
-				propertyfile = TextUtil.replaceString( propertyfile, eqsign+1, ret, value );
+                propertyfile = TextUtil.replaceString( propertyfile, eqsign+1, ret, value );
                 
                 return propertyfile;
-			}
+            }
             // idx += key.length();
-		}
+        }
+
+        //
+        //  If it was not found, we'll add it here.
+        //
+        
+        propertyfile += "\n"+key+" = "+value+"\n";
 		
-		return propertyfile;
-	}
-	
+        return propertyfile;
+    }
+    
+    public static String safeGetParameter( ServletRequest request, String name )
+    {
+        try
+        {
+            String res = request.getParameter( name );
+            if( res != null ) 
+            {
+                res = new String(res.getBytes("ISO-8859-1"),
+                                 "UTF-8" );
+            }
+
+            return res;
+        }
+        catch( UnsupportedEncodingException e )
+        {
+            // Should never happen
+            return "";
+        }
+
+    }
     public void writeProperties( File propertyFile, String contents )
         throws IOException
     {
-        byte[] bytes = contents.getBytes("ISO-8859-1");
+        byte[] bytes = contents.getBytes();
         OutputStream out = null;
         
         try
@@ -72,35 +116,44 @@
         return f;
     }
     
-	public String readProperties( ServletContext context )
-		throws IOException
-	{
+    public String readProperties( ServletContext context )
+        throws IOException
+    {
         File f = findPropertyFile( context );
-		FileReader in = null;
-		String contents = null;
-		try
-		{
-			in = new FileReader( f );
+        FileReader in = null;
+        String contents = null;
+        try
+        {
+            in = new FileReader( f );
             contents = FileUtil.readContents( in );
-		}
-		finally
-		{
-			if( in != null ) in.close();
-		}
+        }
+        finally
+        {
+            if( in != null ) in.close();
+        }
 		
-		return contents;
-	}
+        return contents;
+    }
 %>
 
 <%
     String propertyString = readProperties( getServletContext() );
+    
+    Properties props = new Properties();
+    props.load( new ByteArrayInputStream(propertyString.getBytes()) );
+    
 
-    String appname = request.getParameter( "appname" );
-    String baseurl = request.getParameter( "baseurl" );
-    String dir = request.getParameter( "dir" );
-    String logdir = request.getParameter( "logdir" );
-    String workdir = request.getParameter( "workdir" );
+    String appname   = safeGetParameter( request, "appname" );
+    String baseurl   = safeGetParameter( request, "baseurl" );
+    String dir       = safeGetParameter( request, "dir" );
+    String logdir    = safeGetParameter( request, "logdir" );
+    String workdir   = safeGetParameter( request, "workdir" );
+    String password1 = safeGetParameter( request, "password1" );
+    String password2 = safeGetParameter( request, "password2" );
+    String password  = safeGetParameter( request, "password" );
 
+    String oldpassword = props.getProperty( "jspwiki.auth.masterPassword", null );
+    
     if( request.getParameter("submit") != null )
     {
         if( dir.length() == 0 )
@@ -119,14 +172,28 @@
         {
             message = "You must define a log directory";
         }
+        else if( password1 != null && !password1.equals(password2) )
+        {
+            message = "Password missing or password mismatch";
+        }
+        else if( oldpassword != null && !oldpassword.equals(password) )
+        {
+            message = "The password you gave does not match with the master password";
+        }
         else
         {
             propertyString = setProperty( propertyString, WikiEngine.PROP_APPNAME, appname );
-            propertyString = setProperty( propertyString, WikiEngine.PROP_BASEURL, baseurl );
-            propertyString = setProperty( propertyString, FileSystemProvider.PROP_PAGEDIR, dir );
-            propertyString = setProperty( propertyString, BasicAttachmentProvider.PROP_STORAGEDIR, dir );
-            propertyString = setProperty( propertyString, WikiEngine.PROP_WORKDIR, workdir );
-            propertyString = setProperty( propertyString, "log4j.appender.FileLog.File", logdir );
+            propertyString = setProperty( propertyString, WikiEngine.PROP_BASEURL, sanitizeURL(baseurl) );
+            propertyString = setProperty( propertyString, FileSystemProvider.PROP_PAGEDIR, sanitizePath(dir) );
+            propertyString = setProperty( propertyString, BasicAttachmentProvider.PROP_STORAGEDIR, sanitizePath(dir) );
+            propertyString = setProperty( propertyString, WikiEngine.PROP_WORKDIR, sanitizePath(workdir) );
+            propertyString = setProperty( propertyString, "log4j.appender.FileLog.File", sanitizePath( logdir ) );
+            
+            if( password1 != null )
+            {
+                propertyString = setProperty( propertyString, "jspwiki.auth.masterPassword", password1 );
+                oldpassword = password1;
+            }
 
             //
             //  Some default settings for the easy setup
@@ -137,7 +204,7 @@
             try
             {
                 writeProperties( findPropertyFile(getServletContext()), propertyString );
-                message = "Your new properties have been saved.  You can see what was written if you scroll down a bit.";
+                message = "Your new properties have been saved.  Please restart your container (unless this was your first install).  Scroll down a bit to see your new jspwiki.properties.";
             }
             catch( IOException e )
             {
@@ -151,10 +218,7 @@
 
 <%    
     File propertyFile = findPropertyFile( getServletContext() );
-    
-    Properties props = new Properties();
-    props.load( new ByteArrayInputStream(propertyString.getBytes("ISO-8859-1")) );
-    
+
 	if( appname == null ) appname = props.getProperty( WikiEngine.PROP_APPNAME, "MyWiki" );
     
 	if( baseurl == null ) 
@@ -170,8 +234,17 @@
 	if( logdir == null ) logdir = props.getProperty( "log4j.appender.FileLog.File", "/tmp/" );
 
 	if( workdir == null ) workdir = props.getProperty( WikiEngine.PROP_WORKDIR, "/tmp/" );
-	
+    
+    if( password1 == null ) password1 = "";
+    if( password2 == null ) password2 = "";
+    
+    
 	// FIXME: encoding as well.
+    
+    response.addHeader("Pragma", "no-cache");
+    response.setHeader( "Expires", "-1" );
+    response.setHeader("Cache-Control", "no-cache" );
+    response.setContentType("text/html; charset=UTF-8");
 %>
 
 <!DOCTYPE html 
@@ -246,7 +319,21 @@
 		<i>This is the place where all caches and other runtime stuff is stored.</i>
 	</div>
 
+
 	<h3>Other useful settings</h3>
+
+    <div class="configopt">
+        <table border="0">
+        <tr><td><b>Administrator password</b>:</td><td><input type="password" name="password1" size="30" value="<%=password1%>"/></td></tr>
+        <tr><td><b>Repeat password</b>:</td><td><input type="password" name="password2" size="30" value="<%=password2%>"/></td></tr>
+        </table>
+        <% if( oldpassword != null ) { %>
+        <i>If you want to change your current password, type it here.</i>
+        <% } else { %>
+        <i>Enter your new password here.  It's not mandatory, but anyone can access this setup page,
+           unless you set a password.  <b>HIGHLY RECOMMENDED</b></i>
+        <% } %>
+    </div>
 	
 <%--	
 	<div class="configopt">
@@ -268,6 +355,14 @@
 		<i>JSPWiki uses Jakarta Log4j for logging.  Please tell me where the log files should go to?</i>
 	</div>
 
+    <% if( oldpassword != null ) { %>
+        <hr />
+        <div class="configopt">
+        <b>Current administrator password</b>: <input type="password" name="password" size="30" value=""/><br />
+        <i>You must give the current administrator password for the change to take place.</i>
+        </div>
+    <% } %>
+    
 	<div style="width:100px; margin-left:auto;margin-right:auto;margin-top:2ex;">
 		<input type="submit" name="submit" value="Configure!" />
 	</div>

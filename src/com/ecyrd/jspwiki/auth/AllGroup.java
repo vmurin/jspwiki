@@ -8,7 +8,12 @@ import java.security.Principal;
 public class AllGroup
     extends WikiGroup
 {
-    public boolean AddMember( Principal user )
+    public AllGroup()
+    {
+        setName( UserManager.GROUP_GUEST );
+    }
+
+    public boolean addMember( Principal user )
     {
         return true;
     }

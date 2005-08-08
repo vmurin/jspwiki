@@ -19,8 +19,9 @@
  */
 package com.ecyrd.jspwiki.plugin;
 
-import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
 import com.ecyrd.jspwiki.*;
+import com.ecyrd.jspwiki.auth.*;
 import java.util.*;
 
 /**
@@ -33,14 +34,19 @@ import java.util.*;
 public class InsertPage
     implements WikiPlugin
 {
-    private static Category log = Category.getInstance( InsertPage.class );
+    private static Logger log = Logger.getLogger( InsertPage.class );
 
     public static final String PARAM_PAGENAME  = "page";
     public static final String PARAM_STYLE     = "style";
     public static final String PARAM_MAXLENGTH = "maxlength";
+    public static final String PARAM_CLASS     = "class";
+    public static final String PARAM_SECTION   = "section";
+    public static final String PARAM_DEFAULT   = "default";
 
     private static final String DEFAULT_STYLE = "";
 
+    public static final String ATTR_RECURSE    = "com.ecyrd.jspwiki.plugin.InsertPage.recurseCheck";
+    
     public String execute( WikiContext context, Map params )
         throws PluginException
     {
@@ -48,8 +54,12 @@ public class InsertPage
 
         StringBuffer res = new StringBuffer();
 
+        String clazz        = (String) params.get( PARAM_CLASS );
         String includedPage = (String) params.get( PARAM_PAGENAME );
         String style        = (String) params.get( PARAM_STYLE );
+        String defaultstr   = (String) params.get( PARAM_DEFAULT );
+        int    section      = TextUtil.parseIntParameter((String) params.get( PARAM_SECTION ), 
+                                                         -1 );
         int    maxlen       = TextUtil.parseIntParameter((String) params.get( PARAM_MAXLENGTH ),
                                                          -1 );
 
@@ -63,31 +73,93 @@ public class InsertPage
 
             if( page != null )
             {
+                AuthorizationManager mgr = engine.getAuthorizationManager();
+                UserProfile currentUser  = context.getCurrentUser();
+
+                /*
+                  // Disabled, because this seems to fail when used
+                  // to insert something from a weblog entry.
+                if( !mgr.checkPermission( page,
+                                          currentUser,
+                                          new ViewPermission() ) )
+                {
+                    res.append("<span class=\"error\">You do not have permission to view this included page.</span>");
+                    return res.toString();
+                }
+                */
+                
+                //
+                //  Check for recursivity
+                //
+                
+                List previousIncludes = (List)context.getVariable( ATTR_RECURSE );
+                
+                if( previousIncludes != null )
+                {
+                    if( previousIncludes.contains( page.getName() ) )
+                    {
+                        return "<span class=\"error\">Error: Circular reference - you can't include a page in itself!";
+                    }
+                }
+                else
+                {
+                    previousIncludes = new ArrayList();
+                }
+               
+                previousIncludes.add( page.getName() );
+                context.setVariable( ATTR_RECURSE, previousIncludes );
+                
                 /**
                  *  We want inclusion to occur within the context of
                  *  its own page, because we need the links to be correct.
                  */
+                
                 WikiContext includedContext = (WikiContext) context.clone();
                 includedContext.setPage( page );
 
                 String pageData = engine.getPureText( page );
                 String moreLink = "";
 
+                if( section != -1 )
+                {
+                    try
+                    {
+                        pageData = TextUtil.getSection( pageData, section );
+                    }
+                    catch( IllegalArgumentException e )
+                    {
+                        throw new PluginException( e.getMessage() );
+                    }
+                }
+
                 if( pageData.length() > maxlen ) 
                 {
                     pageData = pageData.substring( 0, maxlen )+" ...";
-                    moreLink = "<p><a href=\""+engine.getViewURL(includedPage)+"\">More...</a></p>";
+                    moreLink = "<p><a href=\""+context.getURL(WikiContext.VIEW,includedPage)+"\">More...</a></p>";
                 }
 
-                res.append("<div style=\""+style+"\">");
+                res.append("<div style=\""+style+"\""+(clazz != null ? " class=\""+clazz+"\"" : "")+">");
                 res.append( engine.textToHTML( includedContext, pageData ) );
                 res.append( moreLink );
                 res.append("</div>");
+                
+                //
+                //  Remove the name from the stack; we're now done with this.
+                //
+                previousIncludes.remove( page.getName() );
+                context.setVariable( ATTR_RECURSE, previousIncludes );
             }
             else
             {
-                res.append("There is no page called '"+includedPage+"'.  Would you like to ");
-                res.append("<a href=\""+engine.getEditURL( includedPage )+"\">create it?</a>");
+                if( defaultstr != null ) 
+                {
+                    res.append( defaultstr );
+                }
+                else
+                {
+                    res.append("There is no page called '"+includedPage+"'.  Would you like to ");
+                    res.append("<a href=\""+context.getURL( WikiContext.EDIT, includedPage )+"\">create it?</a>");
+                }
             }
         }
         else

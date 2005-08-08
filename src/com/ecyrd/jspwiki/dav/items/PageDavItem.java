@@ -4,11 +4,12 @@
  */
 package com.ecyrd.jspwiki.dav.items;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.TreeSet;
 
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.jdom.Element;
@@ -17,6 +18,9 @@ import org.jdom.Namespace;
 import com.ecyrd.jspwiki.WikiContext;
 import com.ecyrd.jspwiki.WikiEngine;
 import com.ecyrd.jspwiki.WikiPage;
+import com.ecyrd.jspwiki.dav.DavPath;
+import com.ecyrd.jspwiki.dav.DavProvider;
+import com.ecyrd.jspwiki.dav.WikiDavProvider;
 
 /**
  *  @author jalkanen
@@ -32,9 +36,9 @@ public class PageDavItem extends DavItem
     /**
      * 
      */
-    public PageDavItem( WikiEngine engine, WikiPage page )
+    public PageDavItem( DavProvider provider, WikiPage page )
     {
-        super( engine );
+        super( provider, new DavPath(page.getName()) );
         m_page = page;
     }
 
@@ -57,24 +61,49 @@ public class PageDavItem extends DavItem
     public Collection getPropertySet()
     {
         Collection set = getCommonProperties();
-
-        String txt = m_engine.getPureText(m_page);
         
-        try
-        {
-            byte[] txtBytes = txt.getBytes("UTF-8");
-            set.add( new Element("getcontentlength",m_davns).setText( Long.toString(txtBytes.length)) );
-            set.add( new Element("getcontenttype",m_davns).setText("text/plain; charset=\"UTF-8\""));
-        }
-        catch(UnsupportedEncodingException e) {} // Should never happen
+        set.add( new Element("getcontentlength",m_davns).setText( Long.toString(getLength())) );
+        set.add( new Element("getcontenttype",m_davns).setText("text/plain; charset=\"UTF-8\""));
+
         return set;
     }
 
     public String getHref()
     {
-        return m_engine.getURL( WikiContext.NONE,
-                                "dav/raw/"+m_page.getName()+".txt",
-                                null,
-                                true );
+        return m_provider.getURL( "dav/raw/"+m_page.getName()+".txt" );
+    }
+
+    /* (non-Javadoc)
+     * @see com.ecyrd.jspwiki.dav.items.DavItem#getContentType()
+     */
+    public String getContentType()
+    {
+        // TODO Auto-generated method stub
+        return "text/plain; charset=UTF-8";
+    }
+
+    /* (non-Javadoc)
+     * @see com.ecyrd.jspwiki.dav.items.DavItem#getInputStream()
+     */
+    public InputStream getInputStream()
+    {
+        String text = ((WikiDavProvider)m_provider).getEngine().getPureText( m_page );
+        
+        try
+        {
+            ByteArrayInputStream in = new ByteArrayInputStream( text.getBytes("UTF-8") );
+            
+            return in;
+        }
+        catch( UnsupportedEncodingException e ) {}
+        
+        return null;
+    }
+
+    public long getLength()
+    {
+        // FIXME: Use getBytes()
+        String text = ((WikiDavProvider)m_provider).getEngine().getPureText( m_page );
+        return (long)text.length();
     }
 }

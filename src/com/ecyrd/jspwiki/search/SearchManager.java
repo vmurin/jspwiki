@@ -22,17 +22,15 @@ package com.ecyrd.jspwiki.search;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Properties;
-import java.util.StringTokenizer;
-
 import org.apache.log4j.Logger;
 
 import com.ecyrd.jspwiki.NoRequiredPropertyException;
-import com.ecyrd.jspwiki.QueryItem;
 import com.ecyrd.jspwiki.TextUtil;
 import com.ecyrd.jspwiki.WikiEngine;
 import com.ecyrd.jspwiki.WikiException;
 import com.ecyrd.jspwiki.WikiPage;
 import com.ecyrd.jspwiki.util.ClassUtil;
+import com.ecyrd.jspwiki.providers.ProviderException;
 
 /**
  *  Manages searching the Wiki.
@@ -45,25 +43,29 @@ public class SearchManager
 {
     private static final Logger log = Logger.getLogger(SearchManager.class);
 
-    private static      String DEFAULT_SEARCHPROVIDER  = "com.ecyrd.jspwiki.BasicSearchProvider";
+    private static      String DEFAULT_SEARCHPROVIDER  = "com.ecyrd.jspwiki.search.LuceneSearchProvider";
     public static final String PROP_USE_LUCENE         = "jspwiki.useLucene";
     public static final String PROP_SEARCHPROVIDER     = "jspwiki.searchProvider";
 
-    private WikiEngine m_engine;
     private SearchProvider    m_searchProvider = null;
 
-    private String m_analyzerClass = "org.apache.lucene.analysis.standard.StandardAnalyzer";
-
-    public SearchManager(WikiEngine engine, Properties props)
+    public SearchManager( WikiEngine engine, Properties properties )
         throws WikiException
     {
-        initialize(engine, props);
+        initialize( engine, properties );
     }
 
+    /**
+     *  This particular method starts off indexing and all sorts of various activities,
+     *  so you need to run this last, after things are done.
+     *   
+     * @param engine
+     * @param properties
+     * @throws WikiException
+     */
     public void initialize(WikiEngine engine, Properties properties)
         throws WikiException
     {
-        m_engine = engine;
         loadSearchProvider(properties);
 
         try 
@@ -141,72 +143,31 @@ public class SearchManager
         return m_searchProvider;
     }
 
+    /**
+     *  Sends a search to the current search provider. The query is is whatever native format
+     *  the query engine wants to use.
+     *  
+     * @param query The query.  Null is safe, and is interpreted as an empty query.
+     * @return A collection of WikiPages that matched.
+     */
     public Collection findPages( String query )
+        throws ProviderException, IOException
     {
-        QueryItem[] items = parseQuery(query);
-        return m_engine.getPageManager().getProvider().findPages( items );
+        if( query == null ) query = "";
+        return m_searchProvider.findPages( query );
     }
 
-    //FIXME: parseQuery should move to the search engine
-    public  QueryItem[] parseQuery(String query)
+    /**
+     *  Removes the page from the search cache (if any).
+     *  @param page  The page to remove
+     */
+    public void pageRemoved(WikiPage page)
     {
-        StringTokenizer st = new StringTokenizer( query, " \t," );
-
-        QueryItem[] items = new QueryItem[st.countTokens()];
-        int word = 0;
-
-        log.debug("Expecting "+items.length+" items");
-
-        //
-        //  Parse incoming search string
-        //
-
-        while( st.hasMoreTokens() )
-        {
-            log.debug("Item "+word);
-            String token = st.nextToken().toLowerCase();
-
-            items[word] = new QueryItem();
-
-            switch( token.charAt(0) )
-            {
-              case '+':
-                items[word].type = QueryItem.REQUIRED;
-                token = token.substring(1);
-                log.debug("Required word: "+token);
-                break;
-
-              case '-':
-                items[word].type = QueryItem.FORBIDDEN;
-                token = token.substring(1);
-                log.debug("Forbidden word: "+token);
-                break;
-
-              default:
-                items[word].type = QueryItem.REQUESTED;
-                log.debug("Requested word: "+token);
-                break;
-            }
-
-            items[word++].word = token;
-        }
-
-        return items;
+        m_searchProvider.pageRemoved(page);
     }
-
-    public void deletePage(WikiPage page)
+    
+    public void reindexPage(WikiPage page)
     {
-        m_searchProvider.deletePage(page);
+        m_searchProvider.reindexPage(page);
     }
-
-    public void addToQueue(WikiPage page, String text)
-    {
-        m_searchProvider.addToQueue(page, text);
-    }
-
-    public Collection findPages( QueryItem[] query )
-    {
-        return m_searchProvider.findPages(query);
-    }
-
 }

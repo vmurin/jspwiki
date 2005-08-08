@@ -20,12 +20,9 @@
 package com.ecyrd.jspwiki;
 
 
-import java.io.InputStream;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.StringReader;
-
-import com.ecyrd.jspwiki.providers.FileSystemProvider;
 
 /**
  * SearchMatcher performs the task of matching a search query to a page's 
@@ -36,6 +33,7 @@ import com.ecyrd.jspwiki.providers.FileSystemProvider;
  * @since 2.1.5
  * @author ebu at ecyrd dot com
  */
+// FIXME: Move to the "search" -package
 public class SearchMatcher
 {
     private QueryItem[] m_queries;
