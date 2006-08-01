@@ -127,7 +127,8 @@ public class TableOfContents
     {
         WikiEngine engine = context.getEngine();
         WikiPage   page   = context.getPage();
-
+        ResourceBundle rb = context.getBundle("com.ecyrd.jspwiki.plugin.languagebundle");
+        
         if( context.getVariable( VAR_ALREADY_PROCESSING ) != null )
             return "Table of Contents";
         
@@ -143,7 +144,7 @@ public class TableOfContents
         }
         else
         {
-            sb.append("<h4>Table of Contents</h4>\n");
+            sb.append("<h4>"+rb.getString("tableofcontents.title")+"</h4>\n");
         }
 
         // should we use an ordered list?
