@@ -43,10 +43,11 @@ public class CurrentTimePlugin
         throws PluginException
     {
         String formatString = (String)params.get("format");
-
+        ResourceBundle rb = context.getBundle(CORE_PLUGIN_RESOURCES);
+        
         if( formatString == null )
         {
-            formatString = DEFAULT_FORMAT;
+            formatString = rb.getString("common.dateformat");
         }
 
         log.debug("Date format string is: "+formatString);
@@ -61,7 +62,7 @@ public class CurrentTimePlugin
         }
         catch( IllegalArgumentException e )
         {
-            throw new PluginException("You specified bad format: "+e.getMessage());
+            throw new PluginException(rb.getString("currenttimeplugin.badformat")+": "+e.getMessage());
         }
     }
 

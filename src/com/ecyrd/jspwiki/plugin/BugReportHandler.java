@@ -65,6 +65,7 @@ public class BugReportHandler
         String    submitter = null;
         SimpleDateFormat format = new SimpleDateFormat( DEFAULT_DATEFORMAT );
 
+        ResourceBundle rb = context.getBundle(CORE_PLUGIN_RESOURCES);
 
         title       = (String) params.get( TITLE );
         description = (String) params.get( DESCRIPTION );
@@ -77,7 +78,7 @@ public class BugReportHandler
             submitter = wup.getName();
         }
 
-        if( title == null ) throw new PluginException("Title is required");
+        if( title == null ) throw new PluginException(rb.getString("bugreporthandle.titlerequired"));
         if( title.length() == 0 ) return "";
 
         if( description == null ) description = "";
@@ -158,13 +159,13 @@ public class BugReportHandler
             context.getEngine().saveText( newContext,
                                           str.toString() );
 
-            return "A new bug report has been created: <a href=\""+context.getViewURL(pageName)+"\">"+pageName+"</a>";
+            return rb.getString("bugreporthandler.new")+": <a href=\""+context.getViewURL(pageName)+"\">"+pageName+"</a>";
         }
         catch( WikiException e )
         {
             log.error("Unable to save page!",e);
 
-            return "Unable to create bug report";
+            return rb.getString("bugreporthandler.unable");
         }
     }
     
