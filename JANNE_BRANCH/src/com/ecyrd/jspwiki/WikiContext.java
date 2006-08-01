@@ -23,7 +23,9 @@ import java.io.IOException;
 import java.security.Permission;
 import java.security.Principal;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.ResourceBundle;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -832,5 +834,14 @@ public class WikiContext
         {
             m_command = m_command.targetedCommand( m_page );
         }
+    }
+    
+    // FIXME: This method should really cache the ResourceBundles or something...
+    public ResourceBundle getBundle( String bundle )
+    {
+        Locale loc = m_request.getLocale();
+        ResourceBundle b = m_engine.getInternationalizationManager().getBundle(bundle, loc);
+        
+        return b;
     }
 }
