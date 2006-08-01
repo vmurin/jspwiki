@@ -26,7 +26,7 @@ import java.util.Date;
  * login name, full name, wiki name, and e-mail address.
  * @author Janne Jalkanen
  * @author Andrew Jaquith
- * @version $Revision: 1.6 $ $Date: 2005-12-12 05:51:43 $
+ * @version $Revision: 1.6.2.1 $ $Date: 2006-08-01 12:58:59 $
  * @since 2.3
  */
 
@@ -57,6 +57,15 @@ public class DefaultUserProfile implements UserProfile
         }
 
         return false;
+    }
+    
+    public int hashCode()
+    {
+        return (m_fullname  != null ? m_fullname.hashCode()  : 0) ^ 
+               (m_password  != null ? m_password.hashCode()  : 0) ^ 
+               (m_loginName != null ? m_loginName.hashCode() : 0) ^ 
+               (m_wikiname  != null ? m_wikiname.hashCode()  : 0) ^ 
+               (m_email     != null ? m_email.hashCode()     : 0);
     }
     
     /**

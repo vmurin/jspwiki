@@ -41,13 +41,13 @@ import com.ecyrd.jspwiki.auth.user.UserProfile;
  * the Subject's principal set.
  * </p>
  * @author Andrew Jaquith
- * @version $Revision: 1.4 $ $Date: 2005-11-08 18:27:51 $
+ * @version $Revision: 1.4.2.1 $ $Date: 2006-08-01 12:58:59 $
  * @since 2.3
  */
 public class UserDatabaseLoginModule extends AbstractLoginModule
 {
 
-    protected static Logger      log              = Logger.getLogger( UserDatabaseLoginModule.class );
+    protected static final Logger log = Logger.getLogger( UserDatabaseLoginModule.class );
     
     /**
      * @see javax.security.auth.spi.LoginModule#login()
