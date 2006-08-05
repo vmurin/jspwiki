@@ -49,7 +49,7 @@ import com.ecyrd.jspwiki.util.ClassUtil;
 /**
  * Provides a facade for obtaining user information.
  * @author Janne Jalkanen
- * @version $Revision: 1.46.2.1 $ $Date: 2006-08-01 12:58:59 $
+ * @version $Revision: 1.46.2.2 $ $Date: 2006-08-05 15:00:56 $
  * @since 2.3
  */
 public final class UserManager implements WikiEventSource

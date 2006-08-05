@@ -13,7 +13,7 @@ import java.security.Principal;
  * {@link java.security.UnresolvedPermission}.
  * 
  * @author Andrew Jaquith
- * @version $Revision: 1.3.2.1 $ $Date: 2006-08-01 12:58:59 $
+ * @version $Revision: 1.3.2.2 $ $Date: 2006-08-05 15:00:57 $
  * @since 2.3
  */
 public final class UnresolvedPrincipal implements Principal
