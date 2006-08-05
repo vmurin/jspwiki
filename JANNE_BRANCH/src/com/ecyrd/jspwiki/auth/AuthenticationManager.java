@@ -54,7 +54,7 @@ import com.ecyrd.jspwiki.event.WikiEventSource;
  * @author Andrew Jaquith
  * @author Janne Jalkanen
  * @author Erik Bunn
- * @version $Revision: 1.29.2.1 $ $Date: 2006-08-01 12:58:59 $
+ * @version $Revision: 1.29.2.2 $ $Date: 2006-08-05 15:00:57 $
  * @since 2.3
  */
 public final class AuthenticationManager implements WikiEventSource

@@ -64,7 +64,7 @@ import com.ecyrd.jspwiki.auth.user.UserProfile;
  * Helper class for verifying JSPWiki's security configuration. Invoked by
  * <code>admin/SecurityConfig.jsp</code>.
  * @author Andrew Jaquith
- * @version $Revision: 1.7.2.1 $ $Date: 2006-08-01 12:58:59 $
+ * @version $Revision: 1.7.2.2 $ $Date: 2006-08-05 15:00:56 $
  * @since 2.4
  */
 public final class SecurityVerifier
