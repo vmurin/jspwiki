@@ -12,7 +12,7 @@
 	<classpathentry kind="lib" path="lib/jrcs-diff.jar"/>
 	<classpathentry kind="lib" path="lib/xercesImpl-2.6.2.jar"/>
 	<classpathentry kind="lib" path="lib/sandler.jar"/>
-	<classpathentry sourcepath="/Users/jalkanen/Java/oscache-2.2/src/java" kind="lib" path="lib/oscache.jar"/>
+	<classpathentry kind="lib" path="lib/oscache.jar" sourcepath="/Users/jalkanen/Java/oscache-2.2/src/java"/>
 	<classpathentry kind="lib" path="lib/oro.jar"/>
 	<classpathentry kind="lib" path="lib/nekohtml.jar"/>
 	<classpathentry kind="lib" path="lib/multipartrequest.jar"/>
@@ -28,5 +28,6 @@
 	<classpathentry kind="lib" path="lib/freshcookies-security-0.31.jar"/>
 	<classpathentry kind="lib" path="lib/mail.jar"/>
 	<classpathentry kind="lib" path="lib/activation.jar"/>
+	<classpathentry kind="lib" path="lib/jstl.jar"/>
 	<classpathentry kind="output" path="classes"/>
 </classpath>

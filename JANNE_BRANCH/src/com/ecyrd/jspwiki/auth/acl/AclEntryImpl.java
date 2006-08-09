@@ -12,7 +12,7 @@ import com.ecyrd.jspwiki.auth.permissions.PagePermission;
  * Implementation of a JSPWiki AclEntry.
  * @author Janne Jalkanen
  * @author Andrew Jaquith
- * @version $Revision: 1.3.2.2 $ $Date: 2006-08-05 15:00:57 $
+ * @version $Revision: 1.3.2.3 $ $Date: 2006-08-09 21:20:43 $
  * @since 2.3
  */
 public class AclEntryImpl implements AclEntry

@@ -31,11 +31,6 @@ import java.util.Map;
 public interface WikiPlugin
 {
     /**
-     *  Standard name for core plugin resources.
-     */
-    public static final String CORE_PLUGIN_RESOURCES = "com.ecyrd.jspwiki.plugin.PluginResources";
-    
-    /**
      *  This is the main entry point for any plugin.  The parameters are parsed,
      *  and a special parameter called "_body" signifies the name of the plugin
      *  body, i.e. the part of the plugin that is not a parameter of

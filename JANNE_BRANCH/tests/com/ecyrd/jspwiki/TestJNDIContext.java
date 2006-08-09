@@ -32,7 +32,7 @@ import javax.naming.spi.InitialContextFactory;
  * </code></blockquote>
  * 
  * @author Andrew R. Jaquith
- * @version $Revision: 1.1.2.2 $ $Date: 2006-08-05 15:00:56 $
+ * @version $Revision: 1.1.2.3 $ $Date: 2006-08-09 21:20:44 $
  * @since 2.3
  */
 public class TestJNDIContext implements Context
@@ -46,7 +46,7 @@ public class TestJNDIContext implements Context
      * InitialContextFactory class that configures the JVM to
      * always return a particular TestJNDIContext.
      * @author Andrew R. Jaquith
-     * @version $Revision: 1.1.2.2 $ $Date: 2006-08-05 15:00:56 $
+     * @version $Revision: 1.1.2.3 $ $Date: 2006-08-09 21:20:44 $
      */
     public static class Factory implements InitialContextFactory
     {

@@ -62,12 +62,11 @@ public class WeblogEntryPlugin implements WikiPlugin
     {
         String weblogName = context.getPage().getName();
         WikiEngine engine = context.getEngine();
-        ResourceBundle rb = context.getBundle(CORE_PLUGIN_RESOURCES);
         
         StringBuffer sb = new StringBuffer();
 
         String entryText = (String) params.get(PARAM_ENTRYTEXT);
-        if( entryText == null ) entryText = rb.getString("weblogentryplugin.newentry");
+        if( entryText == null ) entryText = "New entry";
         
         String url = context.getURL( WikiContext.NONE, "NewBlogEntry.jsp", "page="+engine.encodeName(weblogName) );
             

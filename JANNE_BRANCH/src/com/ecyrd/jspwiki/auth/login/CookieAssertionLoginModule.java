@@ -38,7 +38,7 @@ import com.ecyrd.jspwiki.util.HttpUtil;
  * @see javax.security.auth.spi.LoginModule#commit()
  *      </p>
  * @author Andrew Jaquith
- * @version $Revision: 1.5.2.2 $ $Date: 2006-08-05 15:00:57 $
+ * @version $Revision: 1.5.2.3 $ $Date: 2006-08-09 21:20:43 $
  * @since 2.3
  */
 public class CookieAssertionLoginModule extends AbstractLoginModule

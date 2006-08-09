@@ -43,10 +43,13 @@ import com.ecyrd.jspwiki.auth.acl.AclManager;
 import com.ecyrd.jspwiki.auth.acl.DefaultAclManager;
 import com.ecyrd.jspwiki.auth.authorize.GroupManager;
 import com.ecyrd.jspwiki.diff.DifferenceManager;
-import com.ecyrd.jspwiki.event.*;
+import com.ecyrd.jspwiki.event.EventSourceDelegate;
+import com.ecyrd.jspwiki.event.WikiEngineEvent;
+import com.ecyrd.jspwiki.event.WikiEvent;
+import com.ecyrd.jspwiki.event.WikiEventListener;
+import com.ecyrd.jspwiki.event.WikiEventSource;
 import com.ecyrd.jspwiki.filters.FilterException;
 import com.ecyrd.jspwiki.filters.FilterManager;
-import com.ecyrd.jspwiki.i18n.InternationalizationManager;
 import com.ecyrd.jspwiki.parser.JSPWikiMarkupParser;
 import com.ecyrd.jspwiki.parser.MarkupParser;
 import com.ecyrd.jspwiki.plugin.PluginManager;
@@ -56,10 +59,10 @@ import com.ecyrd.jspwiki.render.RenderingManager;
 import com.ecyrd.jspwiki.rss.RSSGenerator;
 import com.ecyrd.jspwiki.rss.RSSThread;
 import com.ecyrd.jspwiki.search.SearchManager;
-import com.ecyrd.jspwiki.ui.Command;
 import com.ecyrd.jspwiki.ui.CommandResolver;
 import com.ecyrd.jspwiki.ui.EditorManager;
 import com.ecyrd.jspwiki.ui.TemplateManager;
+import com.ecyrd.jspwiki.ui.Command;
 import com.ecyrd.jspwiki.url.URLConstructor;
 import com.ecyrd.jspwiki.util.ClassUtil;
 
@@ -225,8 +228,6 @@ public class WikiEngine implements WikiEventSource
     private RenderingManager m_renderingManager;
     
     private EditorManager    m_editorManager;
-
-    private InternationalizationManager m_internationalizationManager;
     
 	/** Constructs URLs */
     private URLConstructor   m_urlConstructor;
@@ -553,8 +554,6 @@ public class WikiEngine implements WikiEventSource
             m_editorManager     = new EditorManager();
             m_editorManager.initialize( this, props );
 
-            m_internationalizationManager = new InternationalizationManager( this );
-            
             // Initialize the authentication, authorization, user and acl managers
             
             m_authenticationManager.initialize( this, props );
@@ -2073,11 +2072,6 @@ public class WikiEngine implements WikiEventSource
     public EditorManager getEditorManager()
     {
         return m_editorManager;
-    }
-    
-    public InternationalizationManager getInternationalizationManager()
-    {
-        return m_internationalizationManager;
     }
     
     /**
