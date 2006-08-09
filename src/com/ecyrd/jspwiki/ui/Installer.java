@@ -33,7 +33,7 @@ import com.ecyrd.jspwiki.util.CommentedProperties;
  * Manages JSPWiki installation on behalf of <code>admin/Install.jsp</code>.
  * The contents of this class were previously part of <code>Install.jsp</code>.
  * @author Janne Jalkanen
- * @version $Revision: 1.1.2.2 $ $Date: 2006-08-05 15:00:57 $
+ * @version $Revision: 1.1.2.3 $ $Date: 2006-08-09 21:20:44 $
  * @since 2.4.20
  */
 public class Installer

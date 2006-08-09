@@ -46,7 +46,7 @@
         |___com 
             |___[...and the rest of the test source code]
                   
-    $Id: build.xml,v 1.73 2006-07-29 19:55:45 arj Exp $
+    $Id: build.xml,v 1.73.2.1 2006-08-09 21:20:43 jalkanen Exp $
 -->    
        
 <!--   
@@ -276,6 +276,7 @@
       <jar jarfile="${jarfile}">
          <fileset dir="${code.build}" includes="**/*.class" />
          <fileset dir="${code.src}" includes="com/**/*.properties" />
+         <fileset dir="${code.src}" includes="templates/**/*.properties" />
          <fileset dir="etc" includes="ini/*.xml" />
       </jar>
       <sign-jar jar="${jarfile}" />

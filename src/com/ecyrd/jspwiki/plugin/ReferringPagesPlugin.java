@@ -19,11 +19,8 @@
  */
 package com.ecyrd.jspwiki.plugin;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import com.ecyrd.jspwiki.*;
-
-import java.text.MessageFormat;
 import java.util.*;
 
 /**
@@ -53,7 +50,6 @@ public class ReferringPagesPlugin
     {
         ReferenceManager refmgr = context.getEngine().getReferenceManager();
         String pageName = (String)params.get( PARAM_PAGE );
-        ResourceBundle rb = context.getBundle(CORE_PLUGIN_RESOURCES);
         
         if( pageName == null )
         {
@@ -73,7 +69,7 @@ public class ReferringPagesPlugin
             String extras = (String)params.get( PARAM_EXTRAS );
             if( extras == null )
             {
-                extras = rb.getString("referringpagesplugin.more");
+                extras = "...and %d more\\\\";
             }
             
             log.debug( "Fetching referring pages for "+page.getName()+
@@ -86,21 +82,9 @@ public class ReferringPagesPlugin
 
                 if( items < links.size() && items > 0 )
                 {
-                    //
-                    //  This complicated-looking thing below just creates a link to 
-                    //  the info page and correct tab.
-                    //
-                    WikiEngine engine = context.getEngine();
-                    Object[] extrasargs = { new Integer(links.size()-items),
-                                            StringUtils.replace( engine.getURL(WikiContext.INFO, 
-                                                                               context.getPage().getName(), 
-                                                                               "tab=referencedby",
-                                                                               true),
-                                                                 "&amp;",
-                                                                 "&" )
-                                          };
-                    MessageFormat mf = new MessageFormat(extras);
-                    wikitext += mf.format(extrasargs);
+                    extras = TextUtil.replaceString( extras, "%d", 
+                                                     ""+(links.size()-items) );
+                    wikitext += extras;
                 }
             }
 
@@ -109,7 +93,7 @@ public class ReferringPagesPlugin
             //
             if( links == null || links.size() == 0 )
             {
-                wikitext = rb.getString("referringpagesplugin.nobody");
+                wikitext = "...nobody";
             }
 
             return makeHTML( context, wikitext );
