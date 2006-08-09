@@ -8,7 +8,7 @@
 <html>
 
 <head>
-  <title><wiki:Variable var="ApplicationName" /><fmt:message key="edit.title.edit"><fmt:param><wiki:PageName /></fmt:param></title>
+  <title><wiki:Variable var="ApplicationName" /><fmt:message key="edit.title.edit"><fmt:param><wiki:PageName /></fmt:param></fmt:message></title>
   <meta name="ROBOTS" content="NOINDEX" />
   <wiki:Include page="commonheader.jsp"/>
 </head>
