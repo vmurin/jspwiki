@@ -19,7 +19,7 @@
   
 <wiki:TabbedSection>
   
-  <wiki:Tab id="editcontent" title="<%=LocaleSupport.getLocalizedMessage(pageContext,"edit.tab.edit") %>">
+  <wiki:Tab id="editcontent" title="<%=LocaleSupport.getLocalizedMessage(pageContext,"edit.tab.edit")%>">
   
     <wiki:CheckVersion mode="notlatest">
       <div class="warning"><fmt:message key="edit.restoring">
@@ -42,12 +42,12 @@
   </wiki:Tab>
   
   <wiki:HasAttachments>
-    <wiki:Tab id="attachments" title="<%=LocaleSupport.getLocalizedMessage(pageContext,"edit.tab.attachments") %>">
+    <wiki:Tab id="attachments" title="<%=LocaleSupport.getLocalizedMessage(pageContext,"edit.tab.attachments")%>">
       <wiki:Include page="AttachmentTab.jsp" />
     </wiki:Tab>
   </wiki:HasAttachments>
   
-  <wiki:Tab id="edithelp" title="<%=LocaleSupport.getLocalizedMessage(pageContext,"edit.tab.help") %>">
+  <wiki:Tab id="edithelp" title="<%=LocaleSupport.getLocalizedMessage(pageContext,"edit.tab.help")%>">
     <wiki:NoSuchPage page="EditPageHelp">
       <div class="error">
          <fmt:message key="comment.edithelpmissing">
@@ -59,7 +59,7 @@
     <wiki:InsertPage page="EditPageHelp" />
   </wiki:Tab>
   
-  <wiki:Tab id="searchbarhelp" title="<%=LocaleSupport.getLocalizedMessage(pageContext,"edit.tab.findreplacehelp) %>">
+  <wiki:Tab id="searchbarhelp" title="<%=LocaleSupport.getLocalizedMessage(pageContext,"edit.tab.findreplacehelp")%>">
     <wiki:InsertPage page="EditFindAndReplaceHelp" />
   </wiki:Tab>
   

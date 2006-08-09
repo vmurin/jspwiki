@@ -1,5 +1,6 @@
 <%@ taglib uri="/WEB-INF/jspwiki.tld" prefix="wiki" %>
 <%@ taglib uri="http://java.sun.com/jstl/fmt" prefix="fmt" %>
+<%@ page import="javax.servlet.jsp.jstl.fmt.*" %>
 <fmt:setBundle basename="templates.DefaultResources"/>
 <%@ page import="com.ecyrd.jspwiki.*" %>
 
@@ -66,6 +67,6 @@
   
   <div class="wikiversion"><%=Release.APPNAME%> v<%=Release.getVersionString()%></div>
   
-  <div class="rssfeed"><wiki:RSSImageLink title="<fmt:message key="fav.aggregatewiki.title"/>" /></div>
+  <div class="rssfeed"><wiki:RSSImageLink title="<%=LocaleSupport.getLocalizedMessage(pageContext,"fav.aggregatewiki.title")%>" /></div>
 
 </div>
