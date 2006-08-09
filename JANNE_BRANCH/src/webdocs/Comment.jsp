@@ -147,7 +147,7 @@
             }
             
             Calendar cal = Calendar.getInstance();
-            SimpleDateFormat fmt = new SimpleDateFormat("dd-MMM-yyyy");
+            SimpleDateFormat fmt = new SimpleDateFormat("dd-MMM-yyyy HH:mm");
 
             pageText.append("\n\n--"+signature+", "+fmt.format(cal.getTime()));
         }
