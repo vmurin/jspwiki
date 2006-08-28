@@ -51,7 +51,7 @@ import com.ecyrd.jspwiki.auth.user.UserDatabase;
  * if user profile exists, or a generic WikiPrincipal if not.</p>
  * 
  * @author Andrew Jaquith
- * @version $Revision: 1.9.2.3 $ $Date: 2006-08-09 21:20:43 $
+ * @version $Revision: 1.9.2.4 $ $Date: 2006-08-28 21:47:36 $
  * @since 2.3
  */
 public class WebContainerLoginModule extends AbstractLoginModule

@@ -19,8 +19,8 @@
   String name = request.getParameter( "group" );
   Group group = (Group)pageContext.getAttribute( "Group",PageContext.REQUEST_SCOPE );
   Principal[] members = null;
-  Date modified = null;
-  Date created = null;
+  String modified = "";
+  String created = "";
   String modifier = "";
   String creator = "";
   
@@ -32,12 +32,12 @@
     creator = group.getCreator();
     if ( group.getCreated() != null )
     {
-      created = group.getCreated();
+      created = group.getCreated().toString();
     }
     modifier = group.getModifier();
     if ( group.getLastModified() != null )
     {
-      modified = group.getLastModified();
+      modified = group.getLastModified().toString();
     }
   }
 %>

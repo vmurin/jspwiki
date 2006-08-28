@@ -43,8 +43,8 @@ public class InsertDiffTag
 {
     private static final long serialVersionUID = 0L;
     
-    public static final String ATTR_OLDVERSION = "insertdiffold";
-    public static final String ATTR_NEWVERSION = "insertdiffnew";
+    public static final String ATTR_OLDVERSION = "insertdiff.old";
+    public static final String ATTR_NEWVERSION = "insertdiff.new";
 
     protected String m_pageName;
 

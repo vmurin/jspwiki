@@ -25,15 +25,19 @@
     int endVal = startVal + 20;
     
     Collection list = (Collection)pageContext.getAttribute( "searchresults",
-                                                            PageContext.REQUEST_SCOPE );
-    if( endVal > list.size() ) endVal = list.size();
+                                                             PageContext.REQUEST_SCOPE );
+                                                             
+    int prevSize = 0, nextSize = 0;
     
-    int prevSize = Math.max( startVal, 20 );
-    
-    int nextSize = Math.min(list.size() - endVal, 20);
+    if( list != null )
+    {
+      if( endVal > list.size() ) endVal = list.size();
+      prevSize = Math.max( startVal, 20 );
+      nextSize = Math.min(list.size() - endVal, 20);
+    }
 %>
 
-      <h2><fmt:message key="find.heading.find"/></h2>
+      <h2>Find pages</h2>
 
       <wiki:SearchResults>
           <h4><fmt:message key="find.heading.results"><fmt:param><c:out var="${query}"/> }</fmt:param></fmt:message></h4>
