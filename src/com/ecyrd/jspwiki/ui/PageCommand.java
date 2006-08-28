@@ -12,7 +12,7 @@ import com.ecyrd.jspwiki.auth.permissions.PagePermission;
  * <p>This class is not <code>final</code>; it may be extended in
  * the future.</p>
  * @author Andrew Jaquith
- * @version $Revision: 1.3.2.1 $ $Date: 2006-08-09 21:20:44 $
+ * @version $Revision: 1.3.2.2 $ $Date: 2006-08-28 21:47:36 $
  * @since 2.4.22
  */
 public class PageCommand extends AbstractCommand

@@ -259,6 +259,7 @@ textarea.editor          { }
 #referencedby,
 #versionhistory          {  }
 #versionhistory td       { white-space: nowrap; }
+#infocontent .changenote { font-style: italic; }
 
 /* +++ 470 PageActions +++ */
 .pageInfo                { font-style: italic; padding: .5em 0; }
@@ -350,6 +351,11 @@ div.index .section a     { display: block; padding: 0 0.25em;
 .archiveyear             { font-weight: bold; text-decoration: none;
                            margin-left: 0px !important; }
 .archiveyear:after       { content: " AD" }
+
+/* +++ 640 RecentChangesPlugin +++ */
+
+.recentchanges           { }
+.recentchanges .changenote { font-style: italic; }
 
 /* ----------------------------------------------------
    800 JSPWiki JSP Taglibs

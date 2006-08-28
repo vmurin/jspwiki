@@ -394,7 +394,7 @@ public class WikiEventManager
      *  methods of the {@link WikiEventDelegate} API.
      *
      * @author Murray Altheim
-     * @version $Revision: 1.1 $ $Date: 2006-08-27 14:06:00 $
+     * @version $Revision: 1.1.2.1 $ $Date: 2006-08-28 21:47:36 $
      * @since 2.4.20
      */
     private static final class WikiEventDelegate
