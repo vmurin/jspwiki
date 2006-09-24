@@ -28,6 +28,7 @@ import java.util.Comparator;
  *
  *  @author Janne Jalkanen
  *  @author Andrew Jaquith
+ *  @version $Revision: 1.9.2.5 $ $Date: 2006-09-24 19:54:29 $
  *  @since  2.2
  */
 public final class WikiPrincipal implements Principal

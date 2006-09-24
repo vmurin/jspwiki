@@ -53,7 +53,7 @@ import com.ecyrd.jspwiki.event.WikiSecurityEvent;
  * @author Andrew Jaquith
  * @author Janne Jalkanen
  * @author Erik Bunn
- * @version $Revision: 1.29.2.4 $ $Date: 2006-08-28 21:47:36 $
+ * @version $Revision: 1.29.2.5 $ $Date: 2006-09-24 19:54:29 $
  * @since 2.3
  */
 public final class AuthenticationManager
@@ -90,7 +90,14 @@ public final class AuthenticationManager
     /** Value specifying that the user wants to use the container-managed security, just like
      *  in JSPWiki 2.2.
      */
-    public static final String                SECURITY_CONTAINER= "container";
+    public static final String                SECURITY_OFF      = "off";
+
+    /** Just to provide compatibility with the old versions.  The same
+     *  as SECURITY_OFF.
+     *   
+     *  @decprecated
+     */
+    protected static final String             SECURITY_CONTAINER = "container";
 
     /** Value specifying that the user wants to use the built-in JAAS-based system */
     public static final String                SECURITY_JAAS     = "jaas";
@@ -282,7 +289,7 @@ public final class AuthenticationManager
      */
     public final void logout( HttpServletRequest request )
     {
-        if ( request == null )
+        if( request == null )
         {
             log.error( "No HTTP reqest provided; cannot log out." );
             return;
@@ -290,12 +297,13 @@ public final class AuthenticationManager
         
         HttpSession session = request.getSession();
         String sid = ( session == null ) ? "(null)" : session.getId();
-        if ( log.isDebugEnabled() )
+        if( log.isDebugEnabled() )
         {
             log.debug( "Invalidating WikiSession for session ID=" + sid );
         }
         // Retrieve the associated WikiSession and clear the Principal set
         WikiSession wikiSession = WikiSession.getWikiSession( m_engine, request );
+        Principal originalPrincipal = wikiSession.getLoginPrincipal();
         wikiSession.invalidate();
         
         // Remove the wikiSession from the WikiSession cache
@@ -305,9 +313,9 @@ public final class AuthenticationManager
         session.invalidate();
         
         // Log the event
-        fireEvent( WikiSecurityEvent.LOGOUT, wikiSession.getLoginPrincipal(), null );
+        fireEvent( WikiSecurityEvent.LOGOUT, originalPrincipal, null );
     }
-
+    
     /**
      * Determines whether this WikiEngine allows users to assert identities using
      * cookies instead of passwords. This is determined by inspecting

@@ -20,7 +20,6 @@
 package com.ecyrd.jspwiki.filters;
 
 import java.io.*;
-import java.security.Principal;
 import java.util.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -211,10 +210,8 @@ public class SpamFilter
             if( counter >= m_limitSinglePageChanges )
             {
                 Host host = new Host( addr );
-                
-                Principal admin = context.getEngine().getGroupManager().findRole("Admin");
-                if( context.getEngine().getAuthorizationManager().isUserInRole(context.getWikiSession(), 
-                                                                               admin ) )
+
+                if( context.hasAdminPermissions() )
                 {
                     return;
                 }
@@ -352,6 +349,8 @@ public class SpamFilter
 
         refreshBlacklists(context);
         
+        String changeNote = (String)context.getPage().getAttribute( WikiPage.CHANGENOTE );
+        
         //
         //  If we have no spam patterns defined, or we're trying to save
         //  the page containing the patterns, just return.
@@ -375,6 +374,12 @@ public class SpamFilter
 
                 throw new RedirectException( "Content matches the spam filter '"+p.getPattern()+"'", 
                                              context.getURL(WikiContext.VIEW,m_errorPage) );
+            }
+            
+            if( changeNote != null && m_matcher.contains( changeNote, p ) )
+            {
+                throw new RedirectException( "Content matches the spam filter '"+p.getPattern()+"'", 
+                                             context.getURL(WikiContext.VIEW,m_errorPage) );                
             }
         }
 

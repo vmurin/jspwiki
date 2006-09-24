@@ -48,6 +48,7 @@ import com.ecyrd.jspwiki.util.ClassUtil;
 /**
  * Provides a facade for obtaining user information.
  * @author Janne Jalkanen
+ * @version $Revision: 1.46.2.5 $ $Date: 2006-09-24 19:54:29 $
  * @since 2.3
  */
 public final class UserManager
@@ -428,6 +429,45 @@ public final class UserManager
                 }
             }
         }
+        
+        UserProfile otherProfile;
+        String wikiName = profile.getWikiName();
+        String fullName = profile.getFullname();
+        String loginName = profile.getLoginName();
+        
+        // It's illegal to use as a full name someone else's login name or wiki name
+        try
+        {
+            otherProfile = m_database.find( fullName );
+            if ( otherProfile != null && !profile.equals( otherProfile ) && !fullName.equals( otherProfile.getFullname() ) )
+            {
+                session.addMessage( "profile", "Full name '" + fullName + "' is illegal" );
+            }
+        }
+        catch ( NoSuchPrincipalException e) { /* It's clean */ }
+            
+        // It's illegal to use as a login name someone else's wiki name or full name
+        try
+        {
+            otherProfile = m_database.find( loginName );
+            if ( otherProfile != null && !profile.equals( otherProfile ) && !loginName.equals( otherProfile.getLoginName() ) )
+            {
+                session.addMessage( "profile", "Login name '" + loginName + "' is illegal" );
+            }
+        }
+        catch ( NoSuchPrincipalException e) { /* It's clean */ }
+            
+        // It's illegal to use as a wikiname someone else's login name or full name
+        try
+        {
+            otherProfile = m_database.find( wikiName );
+            if ( otherProfile != null && !profile.equals( otherProfile ) && !wikiName.equals( otherProfile.getWikiName() ) )
+            {
+                session.addMessage( "profile", "Wiki name '" + wikiName + "' is illegal." );
+            }
+        }
+        catch ( NoSuchPrincipalException e) { /* It's clean */ }
+        
     }
 
     /**

@@ -38,7 +38,7 @@ import com.ecyrd.jspwiki.event.WikiEvent;
  *   <li>clear all members from group</li>
  * </ul>
  * @author Andrew Jaquith
- * @version $Revision: 1.1.2.1 $ $Date: 2006-08-28 21:47:36 $
+ * @version $Revision: 1.1.2.2 $ $Date: 2006-09-24 19:54:29 $
  * @since 2.3.79
  */
 public final class WikiSecurityEvent extends WikiEvent

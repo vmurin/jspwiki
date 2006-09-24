@@ -1,5 +1,6 @@
 <%@ page import="org.apache.log4j.*" %>
 <%@ page import="com.ecyrd.jspwiki.*" %>
+<%@ page import="com.ecyrd.jspwiki.filters.*" %>
 <%@ page import="java.util.*" %>
 <%@ page import="java.text.SimpleDateFormat" %>
 <%@ page import="com.ecyrd.jspwiki.ui.EditorManager" %>
@@ -147,7 +148,7 @@
             }
             
             Calendar cal = Calendar.getInstance();
-            SimpleDateFormat fmt = new SimpleDateFormat("dd-MMM-yyyy HH:mm");
+            SimpleDateFormat fmt = new SimpleDateFormat("dd-MMM-yyyy");
 
             pageText.append("\n\n--"+signature+", "+fmt.format(cal.getTime()));
         }
@@ -169,8 +170,16 @@
             session.removeAttribute("author");
         }
 
-        wiki.saveText( wikiContext, pageText.toString() );
-
+        try
+        {
+            wiki.saveText( wikiContext, pageText.toString() );
+        }
+        catch( RedirectException e )
+        {
+            session.setAttribute( VariableManager.VAR_MSG, e.getMessage() );
+            response.sendRedirect( e.getRedirect() );
+            return;
+        }
         response.sendRedirect(wiki.getViewURL(pagereq));
         return;
     }

@@ -42,6 +42,7 @@ public class AllTests extends TestCase
         TestSuite suite = new TestSuite("JSPWiki Unit Tests");
 
         suite.addTest( FileUtilTest.suite() );
+        suite.addTest( ReleaseTest.suite() );
         suite.addTest( PageManagerTest.suite() );
         suite.addTest( TextUtilTest.suite() );
         // suite.addTest( TranslatorReaderTest.suite() );
@@ -49,6 +50,7 @@ public class AllTests extends TestCase
         suite.addTest( WikiSessionTest.suite() );
         suite.addTest( WikiEngineTest.suite() );
         suite.addTest( ReferenceManagerTest.suite() );
+        suite.addTest( PageRenamerTest.suite() );
         suite.addTest( com.ecyrd.jspwiki.plugin.AllTests.suite() );
         suite.addTest( com.ecyrd.jspwiki.xmlrpc.AllTests.suite() );
         suite.addTest( com.ecyrd.jspwiki.providers.AllTests.suite() );
@@ -64,6 +66,7 @@ public class AllTests extends TestCase
         suite.addTest( com.ecyrd.jspwiki.parser.AllTests.suite() );
         suite.addTest( com.ecyrd.jspwiki.url.AllTests.suite() );
         suite.addTest( com.ecyrd.jspwiki.diff.AllTests.suite() );
+        suite.addTest( com.ecyrd.jspwiki.search.AllTests.suite() );
         
         return suite;
     }
