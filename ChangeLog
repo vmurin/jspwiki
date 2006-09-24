@@ -1,3 +1,259 @@
+2006-09-24  Janne Jalkanen <jalkanen@ecyrd.com>
+        
+        * 2.4.57
+        
+        * Added change notes also to attachments
+        
+        * Attachment names are now also beautified (though just the
+        page name part).  This should help the problem when RecentChanges
+        plugin overflows.
+        
+        * Cleaned away a few compiler warnings
+        
+        * Improved some PluginManager javadocs
+        
+        * BasicAttachmentProvider has now more sanity checks and should
+        no more throw wild NPEs at startup.
+        
+        * Fixed
+        BugLuceneSearchProviderNotReadJspwiki.lucene.analyzerFromConfiguration
+        Thanks to Ekkasit Takoungsakdakul for pointing this one out!
+        (And I am very sorry I did not notice that bug report earlier.)
+        
+2006-09-21  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 2.4.56
+        
+        * Added patch from Kalle Kivimaa to fire the event with the
+        proper principal at logout.  Thanks!
+
+2006-09-15  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 2.4.55
+        
+        * Added patch from Joseph Schmigel to recognize IP
+        addresses in sortable tables.  Thanks!
+        
+        * Added new icons from Murray Altheim so that we could
+        get rid of all Creative Commons-licensed icons.  This was
+        done so that JSPWiki 2.4 could be included on Debian.  Thanks
+        heaps for the good work!
+        
+        * Reverted to previous behaviour with respect to WikiWizard:
+        no longer closes applet and div with javascript, which should help
+        in IE.
+
+2006-09-12  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 2.4.54
+        
+        * Added patch from Murray Altheim to fix WikiEventManager
+        javadocs, as well as made it return booleans on a couple
+        of methods.  Thanks Murray!
+
+2006-09-10  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 2.4.53
+        
+        * Removed FCK.jsp from the distribution (since we don't distribute
+        FCK, it's sort of weird to have it there breaking things).
+        
+        * Bug fix: Comment.jsp now catches RedirectExceptions
+        
+        * Bug fix: BugReportHandler also catches RedirectExceptions and
+        now gives a proper error report.
+        
+        * Limited change note length to 80 characters.
+
+2006-09-09  Andrew Jaquith <andrew@freshcookies.org>
+
+        * 2.4.52
+        
+        * UserManager now checks to make sure that a user can't
+        specify as a wiki name somebody elses's full name or login
+        name. This check is peformed for all other combinations of
+        these three user profile fields also. This is a potentially
+        serious security flaw, so all users should upgrade.
+
+2006-09-08  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 2.4.51
+        
+        * Added patch from Malte Kiesel to fix a problem which caused
+        overwriting of user profile.
+        
+        * Fixed WikiJSPFilter writing the wrong content length to the
+        response (we're skipping setting the length for now).
+
+2006-09-07  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 2.4.50
+        
+        * Test release to check whether we can solve some WebLogic
+        issues.
+        
+        * Split WikiServletFilter to WikiServletFilter and WikiJSPFilter.
+        The latter takes care of JSP stuff, the former of all other types
+        of data.  WikiJSPFilter uses getWriter() extensively, while
+        WikiServletFilter is for those instances that use 
+        getOutputStream().  Thanks to Marc Patteet for the help.
+
+        * Renaming now also renames attachments (assuming that the
+        attachments exist - if they don't, then there's no way to know
+        which pages refer to them (bar going through all pages).
+        
+        * Changed web.xml to reflect the new filters.  Don't forget
+        to update!
+        
+        * Added "print" style for jspwiki.css in commonheader.jsp.  This
+        should fix problems with printing looking different from screen.
+        Reported by Steve Lihn, fix from Dirk Frederickx
+
+        * Fixed InfoContent.jsp for WebLogic.  By Marc Patteet.
+
+2006-09-06  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 2.4.49
+
+        * Witness the awesome p0w3r of unit testing.  Fixed the
+        unit tests added in the morning so that we now hopefully
+        are fixing BugStrangeRenameBehaviour.  Reported by Candid
+        Dauth.
+        
+        * Bug fix: ReferenceManager was not removing all references
+        to a page if it was renamed, resulting in "hanging" pages.
+
+        * Added a bunch of new unit tests to check for page
+        renaming problems.  At the moment most of them fail, suggesting
+        that there is something wrong in PageRenamer...
+
+2006-09-05  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 2.4.48
+        
+        * Bug fix: it was possible to gain user privileges simply
+        by faking the cookie.  This is a serious problem and all
+        people running 2.4.x are suggested to upgrade.  Thanks
+        to Andrew for the fix.
+        
+        * SecurityVerifier no longer gets confused, if you state
+        a property using "==" instead of "=".
+
+2006-09-05  Christoph Sauer <sauer@hs-heilbronn.de>
+
+        * 2.4.47
+        
+        * Added title and accesskey attribute to 
+          LinkTag, EditLinkTag and PageInfoTag. You can now set
+          accesskeys to edit pages in the PageActions.jsp
+          Use the title attribute to add a tooltip text to indicate 
+          the speedkey you used.
+
+2006-09-04  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 2.4.46
+        
+        * Bug fix: PageLock was using acquisition time for both
+        expiry and acquisition.  Fixes BugLockNotWorking.  Reported
+        by Terry Steichen.
+        
+        * Added WikiContext.hasAdminPermission() as a convenience
+        method.
+        
+        * Changed SpamFilter to check for AllPermission instead of
+        a group called Admin - this is better because of i18n.
+        
+        * SpamFilter now checks also the changenote before saving.
+        
+        * Added the possibility to escape }}} within a preformatted
+        section by using ~}}}.  Suggested by several people at
+        WikiCreole.org...
+
+2006-09-04  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 2.4.45
+        
+        * Bug fix: When SpamFilter rejected something, there would
+        be no message shown in RejectedMessage.  Reported by 
+        Terry Steichen.
+        
+        * Removed plenty of documentation from the default wikipages
+        package.  It was out of date, and better written up at
+        doc.jspwiki.org anyway.
+        
+        * Removed doc/Templates.txt, which was no longer accurate.
+
+2006-09-03  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 2.4.44
+
+        * Both XMLUserDatabase and XMLGroupDatabase will now check
+        if the database is up to date.  This allows propagation of
+        databases across wikis (though it's rather flaky; there are
+        concurrency issues).
+
+2006-09-03  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 2.4.43
+        
+        * Bug fix: If the front page did not exist, would die with
+        a NullPointerException, when accessed with the default URL
+        (e.g. /Wiki.jsp, or /wiki/ without the page).
+        Should fix BugBadDefaultConfig.
+
+2006-09-02  Christoph Sauer <sauer@hs-heilbronn.de>
+
+        * 2.4.42
+        
+        * Fixed Bug with WikiWizard.jsp and Weblogic reported by Marc Patteet
+
+2006-09-02  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 2.4.41
+        
+        * LinkTag should no longer crash if WikiContext does not have
+        a page attached.  Reported by Fabiano Bonin.
+
+2006-08-30  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 2.4.40
+        
+        * Christoph Sauer joins in as a contributor (if only I got
+        him to update the ChangeLog... ;)
+        
+        * WikiWizard is now included.  Hooray for WIKIWYG editing!
+        
+        * Small tweaks to the EditTemplate.
+        
+        * Changed "jspwiki.security=container" to "jspwiki.security=off".
+        This should make it more clear to people.  The old setting
+        will continue to work.
+        
+        * Added page info links back to attachments in RecentChanges.
+        Unfortunate side effect of the new renderer...
+
+2006-08-30  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 2.4.39 - The "Piko" release.  Rest in Peace.
+        
+        * Added SearchManagerTest to make sure that our search works.
+        
+        * Bug fix: LuceneSearchProvider was not indexing the WikiName 
+        of the page.
+        
+        * Bug fix: SearchManager now always indexes the latest version
+        of the page (thanks heaps to John Volkar for finding this).
+        
+        * Disabled ContextualDiffProviderTest.testKnownProblemCases(),
+        I have no idea how to fix those, and it was never running anyway.
+        
+        * Disabled JSPWikiMarkupParserTest.testSpanJavascript2() -
+        it would need a lot more care to make it really run.
+        
+        * Fixed failing XMLRPC tests.
+        
+        * Upgraded to Lucene 2.0.0.
+
 2006-08-27  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 2.4.38

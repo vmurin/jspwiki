@@ -42,7 +42,7 @@ import com.ecyrd.jspwiki.event.WikiSecurityEvent;
  * </p>
  * @author Janne Jalkanen
  * @author Andrew Jaquith
- * @version $Revision: 1.8.2.4 $ $Date: 2006-08-28 21:47:37 $
+ * @version $Revision: 1.8.2.5 $ $Date: 2006-09-24 19:54:31 $
  * @since 2.3
  */
 public class Group

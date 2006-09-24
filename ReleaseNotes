@@ -1,10 +1,10 @@
 
-This is a beta version of JSPWiki 2.4
+This is a stable release of JSPWiki 2.4
 
 NEW FEATURES
 ============
 
-* Authentication and authorization.
+* Authentication and authorization at page level using JAAS.
 
 * New default template, with pluggable editors.
 
@@ -14,6 +14,9 @@ NEW FEATURES
 * Loads and loads of under-the-hood changes.
 
 * Atom 1.0 support
+
+* WIKIWYG editing using the WikiWizard from University of Heilbronn.
+
 
 UPGRADE NOTES
 =============
@@ -29,7 +32,15 @@ Upgrading from 2.x:
 
 * Replace jspwiki.properties with your old configuration file.
   It should run unmodified, though you might want to go through
-  the new file to see new options.
+  the new file to see new options.  Most specifically:
+  
+  * jspwiki.baseURL is now mandatory
+  
+  * jspwiki.workDir is a good idea to set
+  
+  * Set jspwiki.security=off, if you don't want JSPWiki to
+  use its own security system.  If you do, head over
+  to doc.jspwiki.org/2.4 for further instructions.
 
 * You can copy your old filters.xml to WEB-INF/classes
 
@@ -38,14 +49,8 @@ Upgrading from earlier installations:
 * Please make a complete reinstall.  Your wiki pages will still be
   compatible, and the configuration for the most part.
 
-Please visit http://www.jspwiki.org/Wiki.jsp?page=Release2.2Discussion
-for further information.
+Please visit http://doc.jspwiki.org/2.4/ for further instructions.
 
-
-KNOWN MAJOR ISSUES
-==================
-
-* Documentation needs cleanup; parts of it are out of date, etc.
 
 
 EXPERIMENTAL FEATURES
@@ -54,14 +59,22 @@ EXPERIMENTAL FEATURES
 There are some features in this release which could mostly be considered
 experimental at best.  The following ones are known to work only 
 partially:
-  
-* WYSIWYG editing.  You need to install FCK by yourself.  It sort of
-  works, but not quite.
-  
-* Install.jsp.  It's still a bit experimental, though it should work...
 
 * WebDAV support.  This is known to be broken on pretty many levels...
 
 * XHTML -> WikiMarkup translation.  Spotty, but should work for the most
   part.
+
+
+KNOWN PROBLEMS
+==============
+
+* WebDav, static RSS generation and XML-RPC do not yet support the new 
+  authentication/permissions scheme.  Therefore, if you have very
+  sensitive data in your wiki, you might not want to enable these.
   
+* Not all old plugins work.  Specifically, plugins from 2.2, which
+  1) use com.ecyrd.jspwiki package, will fail because they are not
+     signed with the same key as jspwiki.jar, and
+  2) any plugin, which constructs new WikiPages will fail because
+     of the constructor has been changed.

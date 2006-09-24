@@ -10,7 +10,8 @@
 --%>
 <% WikiContext context = WikiContext.findContext( pageContext ); %>
 <% String usertext = EditorManager.getEditedText( pageContext ); 
-   TemplateManager.addResourceRequest( context, "script", "scripts/searchreplace.js" );
+   TemplateManager.addResourceRequest( context, "script", 
+                                       context.getURL(WikiContext.NONE,"scripts/searchreplace.js") );
    String changenote = (String)session.getAttribute("changenote");
    changenote = changenote != null ? TextUtil.replaceEntities(changenote) : ""; %>
 <wiki:CheckRequestContext context="edit"><%
@@ -37,7 +38,7 @@
 
    <wiki:CheckRequestContext context="edit">
        <label for="changenote">Change note</label>
-       <input type="text" id="changenote" name="changenote" size="40" maxlength="60" value="<%=changenote%>"/>
+       <input type="text" id="changenote" name="changenote" size="40" maxlength="80" value="<%=changenote%>"/>
    </wiki:CheckRequestContext>
    <wiki:CheckRequestContext context="comment">
         <table border="0" class="small">

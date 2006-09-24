@@ -285,6 +285,8 @@ function confirmDelete()
     --%>
     <input type="file" name="content" />
     <br />
+    Change note: <input type="text" name="changenote" maxlength="80" width="60" />
+    <br />
     <input type="submit" name="upload" value="<fmt:message key="info.uploadnew.submit"/>" />
     <input type="hidden" name="action" value="upload" />
     <input type="hidden" name="nextpage" value="<wiki:PageInfoLink format="url"/>" />
@@ -393,6 +395,12 @@ function confirmDelete()
       <td><wiki:Author /></td>
       <td><wiki:PageSize /></td>
     </tr>
+      <%
+        String changeNote = (String)currentPage.getAttribute(WikiPage.CHANGENOTE);
+        if( changeNote != null )
+        { %>
+          <tr><td>&nbsp;</td><td colspan="4" class="changenote"><%=changeNote%></td></tr>
+     <% } %>
     <% } %>
     </wiki:HistoryIterator>
   </table>

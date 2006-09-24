@@ -64,6 +64,7 @@ import com.ecyrd.jspwiki.auth.user.UserProfile;
  * Helper class for verifying JSPWiki's security configuration. Invoked by
  * <code>admin/SecurityConfig.jsp</code>.
  * @author Andrew Jaquith
+ * @version $Revision: 1.7.2.5 $ $Date: 2006-09-24 19:54:29 $
  * @since 2.4
  */
 public final class SecurityVerifier
@@ -686,6 +687,16 @@ public final class SecurityVerifier
                 m_session.addMessage( "Error." + property, "The system property '" + property + "' is null." );
                 return null;
             }
+            
+            //
+            //  It's also possible to use "==" to mark a property.  We remove that
+            //  here so that we can actually find the property file, then.
+            //
+            if( propertyValue.startsWith("=") )
+            {
+                propertyValue = propertyValue.substring(1);
+            }
+            
             try
             {
                 m_session.addMessage( "Info." + property, "The system property '" + property + "' is set to: "
