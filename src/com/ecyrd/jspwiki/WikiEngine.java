@@ -298,7 +298,7 @@ public class WikiEngine
     public static synchronized WikiEngine getInstance( ServletConfig config,
                                                        Properties props )
     {
-        return( getInstance( config.getServletContext(), null ) );
+        return( getInstance( config.getServletContext(), props ) );
     }
 
     /**
@@ -449,8 +449,6 @@ public class WikiEngine
         m_startTime  = new Date();
         m_properties = props;
 
-        fireEvent( WikiEngineEvent.INITIALIZING ); // begin initialization
-
         //
         //  Initialized log4j.  However, make sure that
         //  we don't initialize it multiple times.  Also, if
@@ -469,6 +467,8 @@ public class WikiEngine
 
         log.info("*******************************************");
         log.info("JSPWiki "+Release.VERSTR+" starting. Whee!");
+
+        fireEvent( WikiEngineEvent.INITIALIZING ); // begin initialization
 
         log.debug("Configuring WikiEngine...");
 
@@ -537,7 +537,7 @@ public class WikiEngine
             m_urlConstructor.initialize( this, props );
 
             m_pageManager       = new PageManager( this, props );
-            m_pluginManager     = new PluginManager( props );
+            m_pluginManager     = new PluginManager( this, props );
             m_differenceManager = new DifferenceManager( this, props );
             m_attachmentManager = new AttachmentManager( this, props );
             m_variableManager   = new VariableManager( props );
@@ -552,8 +552,8 @@ public class WikiEngine
             m_userManager           = new UserManager();
             m_groupManager          = new GroupManager();
 
-            m_editorManager     = new EditorManager();
-            m_editorManager.initialize( this, props );
+            m_editorManager     = new EditorManager( this );
+            m_editorManager.initialize( props );
 
             // Initialize the authentication, authorization, user and acl managers
             
@@ -575,8 +575,8 @@ public class WikiEngine
             //
             //  Hook the different manager routines into the system.
             //
-            getFilterManager().addPageFilter(m_referenceManager, -1000 );
-            getFilterManager().addPageFilter(m_searchManager, -1001 );
+            getFilterManager().addPageFilter(m_referenceManager, -1001 );
+            getFilterManager().addPageFilter(m_searchManager, -1002 );
 
         }
         
@@ -1563,9 +1563,9 @@ public class WikiEngine
         //  Refresh the context for post save filtering.
         //
         
-//        page = getPage( page.getName() );
-//        context.setPage( page );
-//        textToHTML( context, text );
+        page = getPage( page.getName() );
+        context.setPage( page );
+        textToHTML( context, text );
 
         m_filterManager.doPostSaveFiltering( context, text );
     }

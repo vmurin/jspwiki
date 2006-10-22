@@ -45,7 +45,7 @@ public class Release
 
     public static final int        VERSION       = 2;
     public static final int        REVISION      = 4;
-    public static final int        MINORREVISION = 57;
+    public static final int        MINORREVISION = 72;
 
     /**
      *  This is the generic version string you should use
@@ -75,6 +75,7 @@ public class Release
     public static boolean isNewerOrEqual( String version )
         throws IllegalArgumentException
     {
+        if( version == null ) return true;
         String[] versionComponents = StringUtils.split(version,".-");
         int reqVersion       = versionComponents.length > 0 ? Integer.parseInt(versionComponents[0]) : Release.VERSION;
         int reqRevision      = versionComponents.length > 1 ? Integer.parseInt(versionComponents[1]) : Release.REVISION;
@@ -91,15 +92,11 @@ public class Release
                 
                 return MINORREVISION > reqMinorRevision;
             }
-            else
-            {
-                return REVISION > reqVersion;
-            }
+
+            return REVISION > reqVersion;
         }
-        else
-        {
-            return VERSION > reqVersion;
-        }
+
+        return VERSION > reqVersion;
     }
 
     /**
@@ -111,6 +108,8 @@ public class Release
     public static boolean isOlderOrEqual( String version )
         throws IllegalArgumentException
     {
+        if( version == null ) return true;
+        
         String[] versionComponents = StringUtils.split(version,".-");
         int reqVersion       = versionComponents.length > 0 ? Integer.parseInt(versionComponents[0]) : Release.VERSION;
         int reqRevision      = versionComponents.length > 1 ? Integer.parseInt(versionComponents[1]) : Release.REVISION;
@@ -127,16 +126,13 @@ public class Release
                 
                 return MINORREVISION < reqMinorRevision;
             }
-            else
-            {
-                return REVISION < reqVersion;
-            }
+
+            return REVISION < reqVersion;
         }
-        else
-        {
-            return VERSION < reqVersion;
-        }
+
+        return VERSION < reqVersion;
     }
+    
     /**
      *  Executing this class directly from command line prints out
      *  the current version.  It is very useful for things like

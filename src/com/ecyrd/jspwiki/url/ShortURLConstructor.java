@@ -125,10 +125,43 @@ public class ShortURLConstructor
         {
             return doReplacement( viewurl+"?do=Login", name, absolute ); 
         }
+        else if( context.equals(WikiContext.DELETE) )
+        {
+            return doReplacement( viewurl+"?do=Delete", name, absolute ); 
+        }
+        else if( context.equals(WikiContext.CONFLICT) )
+        {
+            return doReplacement( viewurl+"?do=PageModified", name, absolute ); 
+        }
+        else if( context.equals(WikiContext.PREFS) )
+        {
+            return doReplacement( viewurl+"?do=UserPreferences", name, absolute ); 
+        }
+        else if( context.equals(WikiContext.FIND) )
+        {
+            return doReplacement( viewurl+"?do=Search", name, absolute ); 
+        }
         else if( context.equals(WikiContext.ERROR) )
         {
             return doReplacement( "%uError.jsp", name, absolute );
         }
+        else if( context.equals(WikiContext.CREATE_GROUP) )
+        {
+            return doReplacement( viewurl+"?do=NewGroup", name, absolute );
+        }
+        else if( context.equals(WikiContext.DELETE_GROUP) )
+        {
+            return doReplacement( viewurl+"?do=DeleteGroup", name, absolute );
+        }        
+        else if( context.equals(WikiContext.EDIT_GROUP) )
+        {
+            return doReplacement( viewurl+"?do=EditGroup", name, absolute );
+        }
+        else if( context.equals(WikiContext.VIEW_GROUP) )
+        {
+            return doReplacement( viewurl+"?do=Group&group=%n", name, absolute );
+        }
+        
         throw new InternalWikiException("Requested unsupported context "+context);
     }
 
