@@ -34,10 +34,7 @@ import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
 import org.jdom.xpath.XPath;
 
-import com.ecyrd.jspwiki.FileUtil;
-import com.ecyrd.jspwiki.InternalWikiException;
-import com.ecyrd.jspwiki.TextUtil;
-import com.ecyrd.jspwiki.WikiContext;
+import com.ecyrd.jspwiki.*;
 import com.ecyrd.jspwiki.modules.ModuleManager;
 import com.ecyrd.jspwiki.modules.WikiModuleInfo;
 import com.ecyrd.jspwiki.parser.PluginContent;
@@ -146,6 +143,13 @@ public class PluginManager extends ModuleManager
     public static final String PARAM_CMDLINE   = "_cmdline";
 
     /**
+     *  The name of the parameter containing the start and end positions in the
+     *  read stream of the plugin text (stored as a two-element int[], start
+     *  and end resp.).
+     */
+    public static final String PARAM_BOUNDS    = "_bounds";
+
+    /**
      *  A special name to be used in case you want to see debug output
      */
     public static final String PARAM_DEBUG     = "debug";
@@ -168,8 +172,9 @@ public class PluginManager extends ModuleManager
      *
      *  @param props Contents of a "jspwiki.properties" file.
      */
-    public PluginManager( Properties props )
+    public PluginManager( WikiEngine engine, Properties props )
     {
+        super(engine);
         String packageNames = props.getProperty( PROP_SEARCHPATH );
 
         if( packageNames != null )
@@ -331,6 +336,13 @@ public class PluginManager extends ModuleManager
                 registerPlugin(pluginInfo);
             }
 
+            if( !checkCompatibility(pluginInfo) )
+            {
+                String msg = "Plugin '"+pluginInfo.getName()+"' not compatible with this version of JSPWiki";
+                log.info(msg);
+                return msg;
+            }
+            
             //
             //   Create...
             //
@@ -400,23 +412,26 @@ public class PluginManager extends ModuleManager
         }
     }
 
-
     /**
-     *  Parses plugin arguments.  Handles quotes and all other kewl
-     *  stuff.
-     *  
-     *  @param argstring The argument string to the plugin.  This is
+     *  Parses plugin arguments.  Handles quotes and all other kewl stuff.
+     *
+     *  <h3>Special parameters</h3>
+     *  The plugin body is put into a special parameter defined by {@link #PARAM_BODY};
+     *  the plugin's command line into a parameter defined by {@link #PARAM_CMDLINE};
+     *  and the bounds of the plugin within the wiki page text by a parameter defined
+     *  by {@link #PARAM_BOUNDS}, whose value is stored as a two-element int[] array,
+     *  i.e., <tt>[start,end]</tt>.
+     *
+     * @param argstring The argument string to the plugin.  This is
      *  typically a list of key-value pairs, using "'" to escape
      *  spaces in strings, followed by an empty line and then the
      *  plugin body.  In case the parameter is null, will return an
      *  empty parameter list.
      *
-     *  @return A parsed list of parameters.  The plugin body is put
-     *  into a special parameter defined by PluginManager.PARAM_BODY.
+     * @return A parsed list of parameters.
      *
-     *  @throws IOException If the parsing fails.
+     * @throws IOException If the parsing fails.
      */
-
     public Map parseArgs( String argstring )
         throws IOException
     {
@@ -577,7 +592,7 @@ public class PluginManager extends ModuleManager
         return commandline;
     }
 
-   public Content parsePluginLine( WikiContext context, String commandline )
+   public Content parsePluginLine( WikiContext context, String commandline, int pos )
         throws PluginException
     {
         PatternMatcher  matcher  = new Perl5Matcher();
@@ -593,6 +608,14 @@ public class PluginManager extends ModuleManager
                                                         commandline.length() -
                                                         (commandline.charAt(commandline.length()-1) == '}' ? 1 : 0 ) );
                 Map arglist     = parseArgs( args );
+
+                // set wikitext bounds of plugin as '_bounds' parameter, e.g., [345,396]
+                if ( pos != -1 )
+                {
+                    int end = ( pos + commandline.length() + 2 );
+                    int[] bounds = new int[] { pos, end };
+                    arglist.put( PARAM_BOUNDS, bounds );
+                }
 
                 PluginContent result = new PluginContent( plugin, arglist );
                 
@@ -620,12 +643,13 @@ public class PluginManager extends ModuleManager
         return null;
     }
     
-    /** Register a plugin.
+    /** 
+     *  Register a plugin.
      */
     private void registerPlugin(WikiPluginInfo pluginClass)
     {
         String name;
-
+        
         // Registrar the plugin with the className without the package-part
         name = pluginClass.getName();
         if(name != null)
@@ -770,7 +794,7 @@ public class PluginManager extends ModuleManager
 
         /**
          *  Returns the full class name of this object.
-         *  @return
+         *  @return The full class name of the object.
          */
         public String getClassName()
         {
@@ -778,8 +802,8 @@ public class PluginManager extends ModuleManager
         }
 
         /**
-         *  Returns an alias name for this object.
-         *  @return
+         *  Returns the alias name for this object.
+         *  @return An alias name for the plugin.
          */
         public String getAlias()
         {

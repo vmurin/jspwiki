@@ -40,7 +40,8 @@
     String author  = request.getParameter("author");
     String link    = request.getParameter("link");
     String remember = request.getParameter("remember");
-
+    String changenote = request.getParameter( "changenote" );
+    
     WikiPage wikipage = wikiContext.getPage();
     WikiPage latestversion = wiki.getPage( pagereq );
     if( latestversion == null )
@@ -87,6 +88,10 @@
     {
         log.info("Saving page "+pagereq+". User="+storedUser+", host="+request.getRemoteAddr() );
 
+        //  Modifications are written here before actual saving
+        
+        WikiPage modifiedPage = (WikiPage)wikiContext.getPage().clone();
+
         //  FIXME: I am not entirely sure if the JSP page is the
         //  best place to check for concurrent changes.  It certainly
         //  is the best place to show errors, though.
@@ -116,11 +121,21 @@
         session.removeAttribute( "lock-"+pagereq );
 
         //
-        //  Set author information
+        //  Set author and changenote information
         //
 
-        wikipage.setAuthor( storedUser );
+        modifiedPage.setAuthor( storedUser );
 
+        if( changenote == null ) changenote = (String) session.getAttribute("changenote");
+        
+        session.removeAttribute("changenote");
+        
+        modifiedPage.setAttribute( WikiPage.CHANGENOTE, "Comment by "+storedUser );
+
+        //
+        //  Build comment part
+        //
+            
         StringBuffer pageText = new StringBuffer(wiki.getPureText( wikipage ));
 
         log.debug("Page initial contents are "+pageText.length()+" chars");
@@ -172,6 +187,7 @@
 
         try
         {
+            wikiContext.setPage( modifiedPage );
             wiki.saveText( wikiContext, pageText.toString() );
         }
         catch( RedirectException e )

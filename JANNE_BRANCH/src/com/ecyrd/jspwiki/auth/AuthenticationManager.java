@@ -53,7 +53,7 @@ import com.ecyrd.jspwiki.event.WikiSecurityEvent;
  * @author Andrew Jaquith
  * @author Janne Jalkanen
  * @author Erik Bunn
- * @version $Revision: 1.29.2.5 $ $Date: 2006-09-24 19:54:29 $
+ * @version $Revision: 1.29.2.6 $ $Date: 2006-10-22 10:05:15 $
  * @since 2.3
  */
 public final class AuthenticationManager
@@ -95,7 +95,7 @@ public final class AuthenticationManager
     /** Just to provide compatibility with the old versions.  The same
      *  as SECURITY_OFF.
      *   
-     *  @decprecated
+     *  @deprecated
      */
     protected static final String             SECURITY_CONTAINER = "container";
 
@@ -241,10 +241,8 @@ public final class AuthenticationManager
         if( m_useJAAS )
         {
             AuthorizationManager authMgr = m_engine.getAuthorizationManager();
-            UserManager userMgr = m_engine.getUserManager();
             CallbackHandler handler = new WebContainerCallbackHandler( 
                     request, 
-                    userMgr.getUserDatabase(), 
                     authMgr.getAuthorizer() );
             login = doLogin( wikiSession, handler, LOGIN_CONTAINER );
         }
@@ -415,6 +413,7 @@ public final class AuthenticationManager
             if( loginContext != null )
             {
                 loginContext.login();
+                fireEvent( WikiSecurityEvent.LOGIN_INITIATED, null, wikiSession );
             }
             else
             {
@@ -422,11 +421,20 @@ public final class AuthenticationManager
                 return false;
             }
             
-            // If the user authenticated, fire an event and log it
-            if ( wikiSession.isAuthenticated() )
+            // Fire event for the correct authentication event
+            if ( wikiSession.isAnonymous() )
+            {
+                fireEvent( WikiSecurityEvent.LOGIN_ANONYMOUS, wikiSession.getLoginPrincipal(), wikiSession );
+            }
+            else if ( wikiSession.isAsserted() )
+            {
+                fireEvent( WikiSecurityEvent.LOGIN_ASSERTED, wikiSession.getLoginPrincipal(), wikiSession );
+            }
+            else if ( wikiSession.isAuthenticated() )
             {
                 fireEvent( WikiSecurityEvent.LOGIN_AUTHENTICATED, wikiSession.getLoginPrincipal(), wikiSession );
             }
+            
             return true;
         }
         catch( FailedLoginException e )

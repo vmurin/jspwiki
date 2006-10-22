@@ -17,7 +17,7 @@ import com.ecyrd.jspwiki.event.WikiEventListener;
  * passes the WikiEngine and sleep interval. This class is
  * thread-safe.
  * @author Andrew Jaquith
- * @version $Revision: 1.4.2.1 $ $Date: 2006-09-24 19:54:31 $
+ * @version $Revision: 1.4.2.2 $ $Date: 2006-10-22 10:05:15 $
  */
 public abstract class WikiBackgroundThread extends Thread implements WikiEventListener
 {

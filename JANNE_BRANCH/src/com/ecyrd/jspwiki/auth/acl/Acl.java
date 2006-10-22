@@ -53,7 +53,7 @@ import java.util.Enumeration;
  * </p>
  * @author Janne Jalkanen
  * @author Andrew Jaquith
- * @version $Revision: 1.2 $ $Date: 2005-06-29 22:43:17 $
+ * @version $Revision: 1.2.2.1 $ $Date: 2006-10-22 10:05:15 $
  * @since 2.3
  */
 public interface Acl
@@ -77,6 +77,13 @@ public interface Acl
      */
     public Enumeration entries();
 
+    /**
+     * Returns true, if this Acl is empty.
+     * @since 2.4.68
+     */
+    
+    public boolean isEmpty();
+    
     /**
      * Returns all Principal objects assigned a given Permission in the access
      * control list. The Princiapls returned are those that have been granted

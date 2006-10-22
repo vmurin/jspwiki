@@ -77,7 +77,7 @@ import com.ecyrd.jspwiki.util.ClassUtil;
  * {@link #hasRoleOrPrincipal(WikiSession, Principal)} methods for more information
  * on the authorization logic.</p>
  * @author Andrew Jaquith
- * @version $Revision: 1.39.2.5 $ $Date: 2006-09-24 19:54:29 $
+ * @version $Revision: 1.39.2.6 $ $Date: 2006-10-22 10:05:15 $
  * @since 2.3
  * @see AuthenticationManager
  */
@@ -172,6 +172,7 @@ public final class AuthorizationManager
             fireEvent( WikiSecurityEvent.ACCESS_DENIED, null, permission );
             return false;
         }
+        
         Principal user = session.getLoginPrincipal();
         
         // Always allow the action if user has AllPermission
@@ -201,10 +202,11 @@ public final class AuthorizationManager
 
         //
         // If the page or ACL is null, it's allowed.
+        //
         String pageName = ((PagePermission)permission).getPage();
         WikiPage page = m_engine.getPage( pageName );
         Acl acl = ( page == null) ? null : m_engine.getAclManager().getPermissions( page );
-        if ( page == null ||  acl == null )
+        if ( page == null ||  acl == null || acl.isEmpty() )
         {
             fireEvent( WikiSecurityEvent.ACCESS_ALLOWED, user, permission );
             return true;
@@ -322,6 +324,9 @@ public final class AuthorizationManager
      * so iterate through the Principal set and see if
      * any share the same name as the one we are looking for.</li>
      * </ol>
+     * <p><em>Note: if the Principal parameter is a user principal, the session
+     * must be authenticated in order for the user to "possess it". Anonymous
+     * or asserted sessions will never posseess a named user principal.</em></p>
      * @param session the current wiki session, which must be non-null. If null,
      *            the result of this method always returns <code>false</code>
      * @param principal the Principal (role, group, or user principal) to look

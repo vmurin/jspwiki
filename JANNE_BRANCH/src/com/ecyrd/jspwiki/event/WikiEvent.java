@@ -27,7 +27,7 @@ import java.util.EventObject;
  *
  * @author  Murray Altheim
  * @author  Andrew Jaquith
- * @version $Revision: 1.2.2.2 $ $Date: 2006-09-24 19:54:29 $
+ * @version $Revision: 1.2.2.3 $ $Date: 2006-10-22 10:05:15 $
  * @since 2.3.79
  */
 public abstract class WikiEvent extends EventObject

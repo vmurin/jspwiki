@@ -23,7 +23,7 @@ import com.ecyrd.jspwiki.auth.user.XMLUserDatabase;
 
 /**
  * @author Andrew R. Jaquith
- * @version $Revision: 1.4 $ $Date: 2006-05-28 23:27:57 $
+ * @version $Revision: 1.4.2.1 $ $Date: 2006-10-22 10:05:15 $
  */
 public class AnonymousLoginModuleTest extends TestCase
 {
@@ -40,7 +40,7 @@ public class AnonymousLoginModuleTest extends TestCase
         try
         {
             // Test using IP address (AnonymousLoginModule succeeds)
-            CallbackHandler handler = new WebContainerCallbackHandler( request, db, authorizer );
+            CallbackHandler handler = new WebContainerCallbackHandler( request, authorizer );
             LoginContext context = new LoginContext( "JSPWiki-container", subject, handler );
             context.login();
             Set principals = subject.getPrincipals();
@@ -62,7 +62,7 @@ public class AnonymousLoginModuleTest extends TestCase
         request.setRemoteAddr( "53.33.128.9" );
         try
         {
-            CallbackHandler handler = new WebContainerCallbackHandler( request, db, authorizer );
+            CallbackHandler handler = new WebContainerCallbackHandler( request, authorizer );
             LoginContext context = new LoginContext( "JSPWiki-container", subject, handler );
             context.login();
             Set principals = subject.getPrincipals();

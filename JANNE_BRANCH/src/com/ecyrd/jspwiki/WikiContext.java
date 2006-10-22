@@ -57,6 +57,8 @@ import com.ecyrd.jspwiki.ui.*;
  *  WikiSession contains information about the user's authentication
  *  status, and is consulted by {@link #getCurrentUser()}.
  *  object</p>
+ *  <p>Do not cache the page object that you get from the WikiContext; always
+ *  use getPage()!</p>
  *
  *  @see com.ecyrd.jspwiki.plugin.Counter
  *  
@@ -217,6 +219,12 @@ public class WikiContext
         }
         
         m_realPage = m_page;
+        
+        // Special case: retarget any empty 'view' PageCommands to the front page
+        if ( PageCommand.VIEW.equals( command ) && command.getTarget() == null )
+        {
+            m_command = command.targetedCommand( m_page );
+        }
         
         // Log in the user if new session or the container status changed
         boolean doLogin = ( (request != null) && m_session.isNew() );
@@ -738,14 +746,14 @@ public class WikiContext
                 log.info("User "+currentUser.getName()+" has no access - forbidden (permission=" + requiredPermission() + ")" );
                 String pageurl = m_engine.encodeName( m_page.getName() );
                 m_session.addMessage("You don't have access to '" + getName() + "'. Do you want to log in as another user?.");
-                response.sendRedirect( m_engine.getURL(WikiContext.NONE,"Login.jsp","page="+pageurl, false ) );
+                response.sendRedirect( m_engine.getURL(WikiContext.LOGIN, pageurl, null, false ) );
             }
             else
             {
                 log.info("User "+currentUser.getName()+" has no access - redirecting (permission=" + requiredPermission() + ")");
                 String pageurl = m_engine.encodeName( m_page.getName() );
                 m_session.addMessage("You don't have access to '" + getName() + "'. Please log in first.");
-                response.sendRedirect( m_engine.getURL(WikiContext.NONE, "Login.jsp", "page="+pageurl, false ) );
+                response.sendRedirect( m_engine.getURL(WikiContext.LOGIN, pageurl, null, false ) );
             }
         }
         return allowed;

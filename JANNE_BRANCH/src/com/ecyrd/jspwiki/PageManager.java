@@ -24,12 +24,13 @@ import java.util.*;
 
 import org.apache.log4j.Logger;
 
+import com.ecyrd.jspwiki.event.WikiEventManager;
+import com.ecyrd.jspwiki.event.WikiPageEvent;
+import com.ecyrd.jspwiki.modules.ModuleManager;
 import com.ecyrd.jspwiki.providers.ProviderException;
 import com.ecyrd.jspwiki.providers.RepositoryModifiedException;
 import com.ecyrd.jspwiki.providers.VersioningProvider;
 import com.ecyrd.jspwiki.providers.WikiPageProvider;
-import com.ecyrd.jspwiki.event.WikiPageEvent;
-import com.ecyrd.jspwiki.event.WikiEventManager;
 import com.ecyrd.jspwiki.util.ClassUtil;
 import com.ecyrd.jspwiki.util.WikiBackgroundThread;
 
@@ -44,7 +45,7 @@ import com.ecyrd.jspwiki.util.WikiBackgroundThread;
 // FIXME: This class currently only functions just as an extra layer over providers,
 //        complicating things.  We need to move more provider-specific functionality
 //        from WikiEngine (which is too big now) into this class.
-public class PageManager
+public class PageManager extends ModuleManager
 {
     private static final long serialVersionUID = 1L;
     
@@ -71,6 +72,8 @@ public class PageManager
     public PageManager( WikiEngine engine, Properties props )
         throws WikiException
     {
+        super( engine );
+        
         String classname;
 
         m_engine = engine;
@@ -186,6 +189,9 @@ public class PageManager
             }
             else
             {
+                //
+                //  Make sure that it no longer exists in internal data structures either.
+                //
                 WikiPage dummy = new WikiPage(m_engine,pageName);
                 m_engine.getSearchManager().pageRemoved(dummy);
                 m_engine.getReferenceManager().pageRemoved(dummy);
@@ -449,11 +455,11 @@ public class PageManager
     public void deletePage( WikiPage page )
         throws ProviderException
     {
-        m_provider.deletePage( page.getName() );
+        fireEvent( WikiPageEvent.PAGE_DELETE_REQUEST, page.getName() );
 
-        m_engine.getSearchManager().pageRemoved( page );
+        m_provider.deletePage( page.getName() );      
 
-        m_engine.getReferenceManager().pageRemoved( page );        
+        fireEvent( WikiPageEvent.PAGE_DELETED, page.getName() );
     }
 
     /**
