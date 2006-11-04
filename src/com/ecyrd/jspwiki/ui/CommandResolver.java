@@ -49,7 +49,6 @@ import com.ecyrd.jspwiki.url.URLConstructor;
  * containing the page parameter value <code>UserPrefs</code>, 
  * will instead return {@link WikiCommand#PREFS}.</p>
  * @author Andrew Jaquith
- * @version $Revision: 1.3.2.1 $ $Date: 2006-10-22 10:05:15 $
  * @since 2.4.22
  */
 public final class CommandResolver

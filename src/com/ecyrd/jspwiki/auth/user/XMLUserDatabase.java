@@ -57,7 +57,6 @@ import com.ecyrd.jspwiki.auth.WikiSecurityException;
  * </code></blockquote> 
  * <p>In this example, the un-hashed password is <code>myP@5sw0rd</code>. Passwords are hashed without salt.</p>
  * @author Andrew Jaquith
- * @version $Revision: 1.15.2.2 $ $Date: 2006-10-22 10:05:16 $
  * @since 2.3
  */
 

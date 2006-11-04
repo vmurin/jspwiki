@@ -17,7 +17,6 @@ import com.ecyrd.jspwiki.auth.permissions.PagePermission;
 /**
  * Default implementation that parses Acls from wiki page markup.
  * @author Andrew Jaquith
- * @version $Revision: 1.6.2.1 $ $Date: 2006-10-22 10:05:15 $
  * @since 2.3
  */
 public class DefaultAclManager implements AclManager

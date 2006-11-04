@@ -53,7 +53,6 @@ import com.ecyrd.jspwiki.event.WikiSecurityEvent;
  * @author Andrew Jaquith
  * @author Janne Jalkanen
  * @author Erik Bunn
- * @version $Revision: 1.29.2.6 $ $Date: 2006-10-22 10:05:15 $
  * @since 2.3
  */
 public final class AuthenticationManager

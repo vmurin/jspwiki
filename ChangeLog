@@ -1,3 +1,48 @@
+2006-11-04  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 2.4.75
+        
+        * Added patch from Tomasz Szymko to fix previews when adding
+        comments.  Thanks!
+        
+        * Added patch from Murray Altheim to provide timestamps in 
+        WikiEvents, and added a new SESSION_EXPIRED event as well.
+
+        * Session monitor now fires SESSION_EXPIRED events.
+
+2006-10-29  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 2.4.74
+        
+        * Improved startup a bit; now the log files should be better in
+        case you have a problem in your jspwiki.properties.  It's still
+        not perfect, but it's better.  The unfortunate side effect is
+        that you'll start getting 404 errors instead of error messages
+        when you are trying to access the site.
+        
+        * Got rid of jspInit() in all top-level JSP files.  This is a
+        bit nicer and simpler all around.
+
+2006-10-28  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 2.4.73
+        
+        * Patch from Neil Miller to fix PageManager which was not using
+        proper getProperty().
+        
+        * AttachmentManager.listAttachments() now sorts the attachments.
+        Suggested by Fabio Bonin.
+        
+        * If jspwiki.useCache was set to false, finding pages would
+        not work with VersioningFileProvider, thanks to some really old
+        optimization code that never got updated.  Removed optimization,
+        hey presto!  It works!
+        
+        * Spam filter now includes change notes in its checks as well.
+        
+        * WikiEventSource is now gone, since it was not used for anything.
+        Thanks to Murray for the heads-up!
+
 2006-10-21  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 2.4.72
