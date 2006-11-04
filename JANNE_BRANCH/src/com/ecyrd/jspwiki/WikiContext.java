@@ -871,4 +871,16 @@ public class WikiContext
         
         return b;
     }
+    
+    /**
+     *  Returns the locale of the HTTP request if available,
+     *  otherwise returns the default Locale of the server.
+     */
+    public static Locale getLocale( WikiContext context )
+    {
+        HttpServletRequest request = context.getHttpRequest();
+        return ( request != null )
+                ? request.getLocale() : Locale.getDefault();
+    }
+
 }
