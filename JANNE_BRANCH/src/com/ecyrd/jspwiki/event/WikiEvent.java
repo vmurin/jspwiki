@@ -27,7 +27,6 @@ import java.util.EventObject;
  *
  * @author  Murray Altheim
  * @author  Andrew Jaquith
- * @version $Revision: 1.2.2.3 $ $Date: 2006-10-22 10:05:15 $
  * @since 2.3.79
  */
 public abstract class WikiEvent extends EventObject
@@ -42,6 +41,8 @@ public abstract class WikiEvent extends EventObject
 
     private int m_type = UNDEFINED;
 
+    private final long m_when;
+
     // ............
 
 
@@ -53,7 +54,20 @@ public abstract class WikiEvent extends EventObject
     public WikiEvent( Object source, int type )
     {
         super( source );
+        m_when = System.currentTimeMillis();
         setType( type );
+    }
+
+
+    /**
+     *  Returns the timestamp of when this WikiEvent occurred.
+     *
+     * @return this event's timestamp
+     * @since 2.4.74
+     */
+    public long getWhen()
+    {
+        return m_when;
     }
 
 

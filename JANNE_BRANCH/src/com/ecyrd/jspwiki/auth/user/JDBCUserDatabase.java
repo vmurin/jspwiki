@@ -129,7 +129,6 @@ import com.ecyrd.jspwiki.auth.WikiSecurityException;
  * method), and the {@linkplain #commit()} method no-ops. Thus, callers should always call the
  * {@linkplain #commit()} method after saving a profile to guarantee that changes are applied.</p>
  * @author Andrew R. Jaquith
- * @version $Revision: 1.7.2.6 $ $Date: 2006-10-22 10:05:16 $
  * @since 2.3
  */public class JDBCUserDatabase extends AbstractUserDatabase
 {

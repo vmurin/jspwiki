@@ -13,7 +13,6 @@ import com.ecyrd.jspwiki.auth.Authorizer;
  * Handles logins made from within JSPWiki.
  * @link AuthenticationManager#getWikiSession(HttpServletRequest).
  * @author Andrew Jaquith
- * @version $Revision: 1.4.2.1 $ $Date: 2006-10-22 10:05:15 $
  * @since 2.3
  */
 public final class WebContainerCallbackHandler implements CallbackHandler

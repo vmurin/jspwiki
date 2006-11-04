@@ -60,7 +60,6 @@ import com.ecyrd.jspwiki.auth.user.UserProfile;
  * exist in the user database
  * </ul>
  * @author Andrew Jaquith
- * @version $Revision: 1.8.2.3 $ $Date: 2006-10-22 10:05:16 $
  * @since 2.3
  */
 public class UserProfileTag extends WikiTagBase

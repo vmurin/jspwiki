@@ -20,7 +20,6 @@ import com.ecyrd.jspwiki.auth.user.XMLUserDatabase;
 
 /**
  * @author Andrew R. Jaquith
- * @version $Revision: 1.3.2.1 $ $Date: 2006-10-22 10:05:15 $
  */
 public class UserDatabaseLoginModuleTest extends TestCase
 {

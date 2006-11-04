@@ -83,7 +83,6 @@ package com.ecyrd.jspwiki.event;
   * </p>
   *
   * @author  Murray Altheim
-  * @version $Id: WikiPageEvent.java,v 1.1.2.3 2006-10-22 10:05:15 jalkanen Exp $
   * @see     com.ecyrd.jspwiki.event.WikiEvent
   * @since   2.4.20
   */

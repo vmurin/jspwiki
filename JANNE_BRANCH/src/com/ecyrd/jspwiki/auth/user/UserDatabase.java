@@ -31,7 +31,6 @@ import com.ecyrd.jspwiki.auth.WikiSecurityException;
  * Defines an interface for loading, persisting and storing users.
  * @author Janne Jalkanen
  * @author Andrew Jaquith
- * @version $Revision: 1.7.2.1 $ $Date: 2006-10-22 10:05:16 $
  * @since 2.3
  */
 public interface UserDatabase

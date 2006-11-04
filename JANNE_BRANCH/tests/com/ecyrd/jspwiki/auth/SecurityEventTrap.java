@@ -10,7 +10,6 @@ import com.ecyrd.jspwiki.event.WikiSecurityEvent;
 /**
  * Traps the most recent WikiEvent so that it can be used in assertions.
  * @author Andrew Jaquith
- * @version $Revision: 1.2.2.3 $ $Date: 2006-10-22 10:05:15 $
  * @since 2.3.79
  */
 public class SecurityEventTrap implements WikiEventListener

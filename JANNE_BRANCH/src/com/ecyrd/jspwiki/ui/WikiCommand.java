@@ -13,7 +13,6 @@ import com.ecyrd.jspwiki.auth.permissions.WikiPermission;
  * the future.</p>
  * @see com.ecyrd.jspwiki.WikiEngine#getApplicationName().
  * @author Andrew Jaquith
- * @version $Revision: 1.3.2.1 $ $Date: 2006-10-22 10:05:15 $
  * @since 2.4.22
  */
 public class WikiCommand extends AbstractCommand
