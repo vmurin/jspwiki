@@ -48,7 +48,7 @@
         |___com 
             |___[...and the rest of the test source code]
                   
-    $Id: build.xml,v 1.73.2.4 2006-11-04 17:47:24 jalkanen Exp $
+    $Id: build.xml,v 1.73.2.5 2006-11-09 18:49:15 jalkanen Exp $
 -->    
        
 <!--   
