@@ -1,3 +1,41 @@
+2006-11-07  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 2.4.78
+        
+        * A bunch of minor refactorings suggested by Aron Gombas, 
+        including:
+        
+        * Visibility of member variables in WikiContext have been checked -
+        things were made more private, except m_request is now protected to
+        help in subclassing.
+        
+        * JSPWikiMarkupParser also has visibility checked a bit to help
+        in subclassing - the different link types are now protected,
+        and a new factory method createAnchor() was added.
+        
+        * JSPWikiMarkupParser now checks WikiContext for overrides for
+        most variables.
+
+2006-11-06  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 2.4.77
+        
+        * Hopefully fixed login redirection issues when using 
+        container authentication.  If the user did not have permissions
+        even after login, this would result in a constant series of
+        redirections.
+        
+        * Added run_webtests.sh
+
+2006-11-06  Christoph Sauer <sauer@hs-heilbronn.de>
+
+        * 2.4.76
+        
+        * added fix from Chuck Smith so that WikiWizard.jsp now is valid XHTML:
+          document.write() function in JavaScript is deprecated, instead 
+          document.addEventListener("DOMContentLoaded", changeWidth, null)
+          is used now to modify the the DOM Tree after it is loaded.
+
 2006-11-04  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 2.4.75
