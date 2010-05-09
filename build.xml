@@ -95,7 +95,7 @@
 
   <!-- Define a temporary directory, based on the system temporary directory,
        the user name, and the project name (defined above) -->
-  <property name="tmpdir" value="${java.io.tmpdir}/${user.name}/${ant.project.name}" />
+  <property name="tmpdir" value="${basedir}/tmp" />
 
   <!-- The following three properties define the location of the
        test sources, the location of the test .class files and the
@@ -129,7 +129,7 @@
        source distribution.  Normally, you shouldn't have to care about these.
    -->
   <property name="svn.repository" value="http://svn.apache.org/repos/asf/incubator/jspwiki" />
-  <property name="svn.tag" value="branches/JSPWIKI_2_8_BRANCH" />
+  <property name="svn.tag" value="tags/jspwiki_2_8_4" />
 
   <!-- And finally, the directory where the final .zip-file is put -->
   <property name="release.dir" value="releases" />
@@ -201,6 +201,7 @@
     <delete dir="${tests.build}" />
     <delete dir="${code.build}" />
     <delete dir="${tests.reports}" />
+    <delete dir="${tmpdir}" />
     <delete file="etc/jspwiki.properties" />
     <delete file="tests/etc/jspwiki.properties" />
     <delete file="tests/etc/jspwiki_rcs.properties" />
@@ -568,6 +569,7 @@
      <copy file="ChangeLog" todir="${install.fulldir}" />
      <copy file="ReleaseNotes" todir="${install.fulldir}" />
      <copy file="LICENSE" todir="${install.fulldir}" />
+  	 <copy file="${warfile}" todir="${install.fulldir}" />
 
      <zip zipfile="${release.dir}/${ant.project.name}-bin.zip">
         <zipfileset dir="${install.fulldir}" prefix="${ant.project.name}" />
