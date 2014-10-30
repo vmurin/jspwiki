@@ -1,0 +1,26 @@
+.metadata
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+
+.settings/
+.loadpath
+.classpath
+.project
+
+.externalToolBuilders/
+
+# Locally stored "Eclipse launch configurations"
+*.launch
+
+.buildpath
+.target
+
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
