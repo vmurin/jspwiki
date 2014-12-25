@@ -18,21 +18,29 @@
  */
 package org.apache.wiki.ui;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 
-import javax.servlet.*;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 
 import org.apache.log4j.NDC;
-
 import org.apache.wiki.WikiContext;
 import org.apache.wiki.WikiEngine;
 import org.apache.wiki.event.WikiEventManager;
 import org.apache.wiki.event.WikiPageEvent;
 import org.apache.wiki.url.DefaultURLConstructor;
-import org.apache.wiki.util.UtilJ2eeCompat;
 import org.apache.wiki.util.TextUtil;
 import org.apache.wiki.util.WatchDog;
 
@@ -67,7 +75,6 @@ import org.apache.wiki.util.WatchDog;
  */
 public class WikiJSPFilter extends WikiServletFilter
 {
-    private Boolean m_useOutputStream;
     private String m_wiki_encoding;
 
     /** {@inheritDoc} */
@@ -75,8 +82,6 @@ public class WikiJSPFilter extends WikiServletFilter
     {
         super.init( config );
         m_wiki_encoding = m_engine.getWikiProperties().getProperty(WikiEngine.PROP_ENCODING);
-        ServletContext context = config.getServletContext();
-        m_useOutputStream = UtilJ2eeCompat.useOutputStream( context.getServerInfo() );
     }
 
     public void doFilter( ServletRequest  request, ServletResponse response, FilterChain chain )
@@ -90,16 +95,7 @@ public class WikiJSPFilter extends WikiServletFilter
             w.enterState("Filtering for URL "+((HttpServletRequest)request).getRequestURI(), 90 );
             HttpServletResponseWrapper responseWrapper;
          
-            if( m_useOutputStream )
-            {
-                log.debug( "Using ByteArrayResponseWrapper" );
-                responseWrapper = new ByteArrayResponseWrapper( (HttpServletResponse)response, m_wiki_encoding );
-            }
-            else
-            {
-                log.debug( "Using MyServletResponseWrapper" );
-                responseWrapper = new MyServletResponseWrapper( (HttpServletResponse)response, m_wiki_encoding );
-            }
+            responseWrapper = new ByteArrayResponseWrapper( (HttpServletResponse)response, m_wiki_encoding );
         
             // fire PAGE_REQUESTED event
             String pagename = DefaultURLConstructor.parsePageFromURL(
@@ -119,18 +115,11 @@ public class WikiJSPFilter extends WikiServletFilter
                 WikiContext wikiContext = getWikiContext( request );
                 String r = filter( wikiContext, responseWrapper );
                 
-                if (m_useOutputStream) 
-                {
-                    OutputStreamWriter out = new OutputStreamWriter(response.getOutputStream(), 
-                                                                    response.getCharacterEncoding());
-                    out.write(r);
-                    out.flush();
-                    out.close();
-                }
-                else 
-                {
-                    response.getWriter().write(r);
-                }
+                OutputStreamWriter out = new OutputStreamWriter(response.getOutputStream(),
+                                                                response.getCharacterEncoding());
+                out.write(r);
+                out.flush();
+                out.close();
             
                 // Clean up the UI messages and loggers
                 if( wikiContext != null )
@@ -244,87 +233,6 @@ public class WikiJSPFilter extends WikiServletFilter
         return string;
     }
     
-    /**
-     *  Simple response wrapper that just allows us to gobble through the entire
-     *  response before it's output.
-     */
-    private static class MyServletResponseWrapper
-        extends HttpServletResponseWrapper
-    {
-        private CharArrayWriter m_output;
-        private MyServletOutputStream m_servletOut;
-        private PrintWriter m_writer;
-      
-        /** 
-         *  How large the initial buffer should be.  This should be tuned to achieve
-         *  a balance in speed and memory consumption.
-         */
-        private static final int INIT_BUFFER_SIZE = 4096;
-        
-        public MyServletResponseWrapper( HttpServletResponse r, final String wiki_encoding )
-                throws UnsupportedEncodingException {
-            super(r);
-            m_output = new CharArrayWriter( INIT_BUFFER_SIZE );
-            m_servletOut = new MyServletOutputStream(m_output);
-            m_writer = new PrintWriter(new OutputStreamWriter(m_servletOut, wiki_encoding), true);
-        }
-
-        /**
-         *  Returns a writer for output; this wraps the internal buffer
-         *  into a PrintWriter.
-         */
-        public PrintWriter getWriter()
-        {
-            return m_writer;
-        }
-
-        public ServletOutputStream getOutputStream()
-        {
-            return m_servletOut;
-        }
-        
-        public void flushBuffer() throws IOException
-        {
-            m_writer.flush();
-            super.flushBuffer();
-        }
-
-        class MyServletOutputStream extends ServletOutputStream
-        {
-            CharArrayWriter m_buffer;
-
-            public MyServletOutputStream(CharArrayWriter aCharArrayWriter)
-            {
-                super();
-                m_buffer = aCharArrayWriter;
-            }
-
-            @Override
-            public void write(int aInt) throws IOException
-            {
-                m_buffer.write( aInt );
-            }
-        }
-        
-        /**
-         *  Returns whatever was written so far into the Writer.
-         */
-        public String toString()
-        {
-            try
-            {
-                flushBuffer();
-            }
-            catch( IOException e )
-            {
-                log.error( MyServletResponseWrapper.class + " toString() flushBuffer() Failed", e );
-                return null;
-            }
-            
-            return m_output.toString();
-        }
-    }
-
     /**
      *  Response wrapper for application servers which do not work with CharArrayWriter
      *  Currently only OC4J
