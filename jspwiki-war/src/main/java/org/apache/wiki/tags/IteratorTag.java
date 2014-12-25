@@ -104,12 +104,21 @@ public abstract class IteratorTag
     }
     
     /**
+     * Overrides TagSupport method to make wiki context available in attribute setters
+     *
+     * @see javax.servlet.jsp.tagext.TagSupport#setPageContext(javax.servlet.jsp.PageContext)
+     */
+    @Override
+    public void setPageContext(PageContext pageContext) {
+	super.setPageContext(pageContext);
+	m_wikiContext = WikiContext.findContext(pageContext);
+    }
+
+    /**
      *  {@inheritDoc}
      */
     public int doStartTag()
     {
-        m_wikiContext = WikiContext.findContext(pageContext);
-        
         resetIterator();
         
         if( m_iterator == null ) return SKIP_BODY;
