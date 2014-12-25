@@ -101,7 +101,7 @@
   </wiki:Translate>
   </wiki:UserCheck>
 
-  <wiki:Permission permission="view">
+  <wiki:Permission permission="view" pageName="LeftMenu">
 
   <%-- LeftMenu is automatically generated from a Wiki page called "LeftMenu" --%>
   <div class="leftmenu">

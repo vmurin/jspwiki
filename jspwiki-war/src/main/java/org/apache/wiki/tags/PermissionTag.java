@@ -78,6 +78,7 @@ public class PermissionTag
     private static final long serialVersionUID = 3761412993048982325L;
     
     private String[] m_permissionList;
+    private String m_pageName;
 
     /**
      * Initializes the tag.
@@ -90,7 +91,7 @@ public class PermissionTag
     }
 
     /**
-     * Sets the permissions to look for (case sensitive).  See above for the format.
+     * Sets the permissions to look for (case sensitive) attribute.  See above for the format.
      * 
      * @param permission A list of permissions
      */
@@ -99,7 +100,17 @@ public class PermissionTag
         m_permissionList = StringUtils.split(permission,'|');
     }
 
+
     /**
+     * Set page name attribute
+     *
+     * @param pageName - the page to check permission
+     */
+    public void setPageName(String pageName) {
+		this.m_pageName = pageName;
+	}
+
+	/**
      *  Checks a single permission.
      *  
      *  @param permission
@@ -108,7 +119,13 @@ public class PermissionTag
     private boolean checkPermission( String permission )
     {
         WikiSession session        = m_wikiContext.getWikiSession();
-        WikiPage    page           = m_wikiContext.getPage();
+        WikiPage page = null;
+        if (m_pageName != null && !"".equals(m_pageName)) {
+		page           = m_wikiContext.getEngine().getPage(m_pageName) ;
+        } else {
+		page           = m_wikiContext.getPage();
+        }
+
         AuthorizationManager mgr   = m_wikiContext.getEngine().getAuthorizationManager();
         boolean gotPermission     = false;
         
