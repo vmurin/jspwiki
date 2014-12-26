@@ -18,7 +18,7 @@
 --%>
 
 <?xml version="1.0" encoding="UTF-8"?>
-<%@ taglib uri="http://incubator.apache.org/jspwiki/tags" prefix="wiki" %>
+<%@ taglib uri="http://jspwiki.apache.org/tags" prefix="wiki" %>
 <%@ page import="org.apache.wiki.*" %>
 <%@ page import="org.apache.wiki.auth.AuthenticationManager" %>
 <%@ page import="org.apache.wiki.preferences.Preferences" %>
@@ -113,19 +113,19 @@ if ( !installer.adminExists() )
   <div class="block">
   
     <label><fmt:message key="install.jsp.basics.appname.label" /></label>
-    <input type="text" name="<%=Installer.APP_NAME%>" size="20" value="<%=installer.getProperty( Installer.APP_NAME )%>"/><br />
+    <input type="text" name="<%=Installer.APP_NAME%>" size="20" value="<%=installer.getProperty( Installer.APP_NAME )%>"/>
     <div class="description">
-      <fmt:message key="install.jsp.basics.appname.desc" />
-    </div>
+      <fmt:message key="install.jsp.basics.appname.desc"/>
+    </div> 
     
-    <label><fmt:message key="install.jsp.basics.baseurl.label" /></label>
-    <input type="text" name="<%=Installer.BASE_URL%>" size="40" value="<%=installer.getProperty( Installer.BASE_URL )%>"/><br />
+    <br/> <label><fmt:message key="install.jsp.basics.baseurl.label" /></label>
+    <input type="text" name="<%=Installer.BASE_URL%>" size="40" value="<%=installer.getProperty( Installer.BASE_URL )%>"/>
     <div class="description">
       <fmt:message key="install.jsp.basics.baseurl.desc" />
-    </div>
+    </div> 
     
-    <label><fmt:message key="install.jsp.basics.page.storage.label" /></label>
-    <input type="text" name="<%=Installer.PAGE_DIR%>" size="40" value="<%=installer.getProperty( Installer.PAGE_DIR )%>"/><br />
+    <br/><label><fmt:message key="install.jsp.basics.page.storage.label" /></label>
+    <input type="text" name="<%=Installer.PAGE_DIR%>" size="40" value="<%=installer.getProperty( Installer.PAGE_DIR )%>"/>
     <div class="description">
       <fmt:message key="install.jsp.basics.page.storage.desc" />
     </div>
@@ -134,15 +134,6 @@ if ( !installer.adminExists() )
   
   <h3><fmt:message key="install.jsp.security.title" /></h3>
   <div class="block">
-  
-    <label><fmt:message key="install.jsp.security.sec.conf.label" /></label><br/>
-    <input type="radio" name="<%=AuthenticationManager.PROP_SECURITY%>" value="<%=AuthenticationManager.SECURITY_JAAS%>" checked="checked"/>
-      <fmt:message key="install.jsp.security.sec.conf.opt1" /><br/>
-    <input type="radio" name="<%=AuthenticationManager.PROP_SECURITY%>" value="<%=AuthenticationManager.SECURITY_OFF%>"/>
-      <fmt:message key="install.jsp.security.sec.conf.opt2" />
-   <div class="description">
-     <fmt:message key="install.jsp.security.sec.conf.desc" />
-   </div>
   
     <% 
       if( validated )
@@ -174,19 +165,19 @@ if ( !installer.adminExists() )
   <h3><fmt:message key="install.jsp.adv.settings.title" /></h3>
   <div class="block">
     <label><fmt:message key="install.jsp.adv.settings.logfile.label" /></label>
-    <input type="text" name="<%=Installer.LOG_DIR%>" value="<%=installer.getProperty( Installer.LOG_DIR )%>" size="40"/><br />
+    <input type="text" name="<%=Installer.LOG_FILE%>" value="<%=installer.getProperty( Installer.LOG_FILE )%>" size="40"/>
     <div class="description">
       <fmt:message key="install.jsp.adv.settings.logfile.desc" />
-    </div>
+    </div> <br/>
 
     <label><fmt:message key="install.jsp.adv.settings.workdir.label" /></label>
-    <input type="text" name="<%=Installer.WORK_DIR%>" size="40" value="<%=installer.getProperty( Installer.WORK_DIR )%>"/><br />
+    <input type="text" name="<%=Installer.WORK_DIR%>" size="40" value="<%=installer.getProperty( Installer.WORK_DIR )%>"/>
     <div class="description">
       <fmt:message key="install.jsp.adv.settings.workdir.desc" />
     </div>
   </div>
   
-  <br /><br />
+  <br/>
   <div class="block">
     <div class="instructions">
       <fmt:message key="install.jsp.instr.desc" >
@@ -206,7 +197,7 @@ if ( !installer.adminExists() )
       {
     %>
        <h3><fmt:message key="install.jsp.validated.new.props" /></h3>
-       <pre><%=installer.getProperties()%></pre>
+       <pre><%=installer.getPropertiesList()%></pre>
    <%
      }
    %>

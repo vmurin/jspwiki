@@ -29,7 +29,7 @@
 <%@ page import="org.apache.wiki.preferences.Preferences" %>
 <%@ page import="org.apache.wiki.util.TextUtil" %>
 <%@ page errorPage="/Error.jsp"%>
-<%@ taglib uri="http://incubator.apache.org/jspwiki/tags" prefix="wiki" %>
+<%@ taglib uri="http://jspwiki.apache.org/tags" prefix="wiki" %>
 <%@ page import="org.apache.wiki.tags.WikiTagBase"%>
 <%@ page import="javax.servlet.jsp.jstl.fmt.*"%>
 <%!Logger log = Logger.getLogger( "JSPWiki" );
@@ -75,7 +75,9 @@
             String mailMessage = MessageFormat.format( rb.getString( "lostpwd.newpassword.email" ), args );
 
             Object[] args2 = { wiki.getApplicationName() };
-            MailUtil.sendMessage( wiki, email, MessageFormat.format( rb.getString( "lostpwd.newpassword.subject" ), args2 ),
+            MailUtil.sendMessage( wiki.getWikiProperties(), 
+            		              email, 
+            		              MessageFormat.format( rb.getString( "lostpwd.newpassword.subject" ), args2 ),
                                   mailMessage );
 
             log.info( "User " + email + " requested and received a new password." );

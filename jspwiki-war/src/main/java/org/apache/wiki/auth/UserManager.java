@@ -21,18 +21,24 @@ package org.apache.wiki.auth;
 import java.security.Permission;
 import java.security.Principal;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.ResourceBundle;
+import java.util.WeakHashMap;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.AddressException;
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.wiki.NoRequiredPropertyException;
 import org.apache.wiki.WikiContext;
 import org.apache.wiki.WikiEngine;
 import org.apache.wiki.WikiSession;
 import org.apache.wiki.api.engine.FilterManager;
+import org.apache.wiki.api.exceptions.NoRequiredPropertyException;
 import org.apache.wiki.api.exceptions.WikiException;
 import org.apache.wiki.api.filters.PageFilter;
 import org.apache.wiki.auth.permissions.AllPermission;
@@ -53,14 +59,21 @@ import org.apache.wiki.ui.InputValidator;
 import org.apache.wiki.util.ClassUtil;
 import org.apache.wiki.util.MailUtil;
 import org.apache.wiki.util.TextUtil;
-import org.apache.wiki.workflow.*;
+import org.apache.wiki.workflow.Decision;
+import org.apache.wiki.workflow.DecisionRequiredException;
+import org.apache.wiki.workflow.Fact;
+import org.apache.wiki.workflow.Outcome;
+import org.apache.wiki.workflow.Task;
+import org.apache.wiki.workflow.Workflow;
+import org.apache.wiki.workflow.WorkflowBuilder;
+
 
 /**
  * Provides a facade for obtaining user information.
  * @since 2.3
  */
-public final class UserManager
-{
+public class UserManager {
+
     private static final String USERDATABASE_PACKAGE = "org.apache.wiki.auth.user";
     private static final String SESSION_MESSAGES = "profile";
     private static final String PARAM_EMAIL = "email";
@@ -92,8 +105,6 @@ public final class UserManager
     /** The user database loads, manages and persists user identities */
     private UserDatabase     m_database;
 
-    private boolean          m_useJAAS      = true;
-
     /**
      * Constructs a new UserManager instance.
      */
@@ -106,12 +117,9 @@ public final class UserManager
      * @param engine the current wiki engine
      * @param props the wiki engine initialization properties
      */
-    @SuppressWarnings("deprecation")
     public void initialize( WikiEngine engine, Properties props )
     {
         m_engine = engine;
-
-        m_useJAAS = AuthenticationManager.SECURITY_JAAS.equals( props.getProperty(AuthenticationManager.PROP_SECURITY, AuthenticationManager.SECURITY_JAAS ) );
 
         // Attach the PageManager as a listener
         // TODO: it would be better if we did this in PageManager directly
@@ -133,12 +141,6 @@ public final class UserManager
         // FIXME: Must not throw RuntimeException, but something else.
         if( m_database != null )
         {
-            return m_database;
-        }
-
-        if( !m_useJAAS )
-        {
-            m_database = new DummyUserDatabase();
             return m_database;
         }
 
@@ -170,6 +172,10 @@ public final class UserManager
         catch( IllegalAccessException e )
         {
             log.error( "You are not allowed to access this user database class", e );
+        }
+        catch( WikiSecurityException e )
+        {
+            log.error( "Exception initializing user database: " + e.getMessage() );
         }
         finally
         {
@@ -533,6 +539,7 @@ public final class UserManager
         UserProfile otherProfile;
         String fullName = profile.getFullname();
         String loginName = profile.getLoginName();
+        String email = profile.getEmail();
 
         // It's illegal to use as a full name someone else's login name
         try
@@ -556,7 +563,20 @@ public final class UserManager
             {
                 Object[] args = { loginName };
                 session.addMessage( SESSION_MESSAGES, MessageFormat.format( rb.getString("security.error.illegalloginname"),
-                                                                            args ) );
+                        args ) );
+            }
+        }
+        catch ( NoSuchPrincipalException e)
+        { /* It's clean */ }
+
+        // It's illegal to use multiple accounts with the same email
+        try
+        {
+            otherProfile = getUserDatabase().findByEmail( email );
+            if ( otherProfile != null && !profile.equals( otherProfile ) && StringUtils.lowerCase( email ).equals( StringUtils.lowerCase(otherProfile.getEmail() ) ) )
+            {
+                Object[] args = { email };
+                session.addMessage( SESSION_MESSAGES, MessageFormat.format( rb.getString("security.error.email.taken"), args ) );
             }
         }
         catch ( NoSuchPrincipalException e)
@@ -587,7 +607,6 @@ public final class UserManager
          * No-op.
          * @throws WikiSecurityException never...
          */
-        @SuppressWarnings("deprecation")
         public void commit() throws WikiSecurityException
         {
             // No operation
@@ -669,6 +688,7 @@ public final class UserManager
 
         /**
          * No-op.
+         *
          * @param engine the wiki engine
          * @param props the properties used to initialize the wiki engine
          * @throws NoRequiredPropertyException never...
@@ -720,7 +740,7 @@ public final class UserManager
          * Constructs a new Task for saving a user profile.
          * @param engine the wiki engine
          * @deprecated will be removed in 2.10 scope. Consider using 
-         * {@link UserManager.SaveUserProfileTask#UserManager.SaveUserProfileTask(WikiEngine, Locale)} instead
+         * {@link #SaveUserProfileTask(WikiEngine, Locale)} instead
          */
         @Deprecated
         public SaveUserProfileTask( WikiEngine engine )
@@ -770,7 +790,7 @@ public final class UserManager
                                                profile.getFullname(),
                                                profile.getEmail(),
                                                m_engine.getURL( WikiContext.LOGIN, null, null, true ) );
-                    MailUtil.sendMessage( m_engine, to, subject, content);
+                    MailUtil.sendMessage( m_engine.getWikiProperties(), to, subject, content);
                 }
                 catch ( AddressException e)
                 {

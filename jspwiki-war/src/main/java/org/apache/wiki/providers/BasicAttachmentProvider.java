@@ -18,16 +18,36 @@
  */
 package org.apache.wiki.providers;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
-import org.apache.wiki.*;
+import org.apache.wiki.WikiEngine;
+import org.apache.wiki.WikiPage;
+import org.apache.wiki.WikiProvider;
+import org.apache.wiki.api.exceptions.NoRequiredPropertyException;
+import org.apache.wiki.api.exceptions.ProviderException;
 import org.apache.wiki.attachment.Attachment;
+import org.apache.wiki.search.QueryItem;
 import org.apache.wiki.util.FileUtil;
 import org.apache.wiki.util.TextUtil;
+import org.apache.wiki.util.comparators.PageTimeComparator;
 
 /**
  *  Provides basic, versioning attachments.
@@ -96,9 +116,9 @@ public class BasicAttachmentProvider
                IOException
     {
         m_engine = engine;
-        m_storageDir = TextUtil.getStringProperty( properties, PROP_STORAGEDIR, 
-                                                   System.getProperty( "user.home" ) + File.separator + "jspwiki-files" );
-        
+        m_storageDir = TextUtil.getCanonicalFilePathProperty(properties, PROP_STORAGEDIR,
+                System.getProperty("user.home") + File.separator + "jspwiki-files");
+
         String patternString = engine.getWikiProperties().getProperty( PROP_DISABLECACHE );
         if ( patternString != null )
         {
@@ -267,41 +287,42 @@ public class BasicAttachmentProvider
      *  Writes the page properties back to the file system.
      *  Note that it WILL overwrite any previous properties.
      */
-    private void putPageProperties( Attachment att, Properties properties )
-        throws IOException,
-               ProviderException
-    {
+    private void putPageProperties( Attachment att, Properties properties ) throws IOException, ProviderException {
         File attDir = findAttachmentDir( att );
         File propertyFile = new File( attDir, PROPERTY_FILE );
 
-        OutputStream out = new FileOutputStream( propertyFile );
-
-        properties.store( out, 
-                          " JSPWiki page properties for "+
-                          att.getName()+
-                          ". DO NOT MODIFY!" );
-
-        out.close();
+        OutputStream out = null;
+        
+        try {
+        	out = new FileOutputStream( propertyFile );
+            properties.store( out, " JSPWiki page properties for " + att.getName() + ". DO NOT MODIFY!" );
+        } catch ( IOException ioe ) {
+        	IOUtils.closeQuietly( out );
+        	throw ioe;
+        } finally {
+        	IOUtils.closeQuietly( out );
+        }
     }
 
     /**
      *  Reads page properties from the file system.
      */
-    private Properties getPageProperties( Attachment att )
-        throws IOException,
-               ProviderException
-    {
+    private Properties getPageProperties( Attachment att ) throws IOException, ProviderException {
         Properties props = new Properties();
 
         File propertyFile = new File( findAttachmentDir(att), PROPERTY_FILE );
 
-        if( propertyFile.exists() )
-        {
-            InputStream in = new FileInputStream( propertyFile );
-
-            props.load(in);
-
-            in.close();
+        if( propertyFile.exists() ) {
+            InputStream in = null;
+            try {
+            	in = new FileInputStream( propertyFile );
+                props.load( in );
+            } catch ( IOException ioe ) {
+            	IOUtils.closeQuietly( in );
+            	throw ioe;
+            } finally {
+            	IOUtils.closeQuietly( in );
+            }
         }
         
         return props;
@@ -310,10 +331,7 @@ public class BasicAttachmentProvider
     /**
      *  {@inheritDoc}
      */
-    public void putAttachmentData( Attachment att, InputStream data )
-        throws ProviderException,
-               IOException
-    {
+    public void putAttachmentData( Attachment att, InputStream data ) throws ProviderException, IOException {
         OutputStream out = null;
         File attDir = findAttachmentDir( att );
 
@@ -339,8 +357,6 @@ public class BasicAttachmentProvider
 
             FileUtil.copyContents( data, out );
 
-            out.close();
-
             Properties props = getPageProperties( att );
 
             String author = att.getAuthor();
@@ -363,11 +379,12 @@ public class BasicAttachmentProvider
         catch( IOException e )
         {
             log.error( "Could not save attachment data: ", e );
+            IOUtils.closeQuietly( out );
             throw (IOException) e.fillInStackTrace();
         }
         finally
         {
-            if( out != null ) out.close();
+            IOUtils.closeQuietly( out );
         }
     }
 

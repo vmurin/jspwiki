@@ -26,10 +26,9 @@ import javax.servlet.jsp.JspWriter;
 import javax.servlet.jsp.PageContext;
 
 import org.apache.log4j.Logger;
-
-import org.apache.wiki.SearchResult;
 import org.apache.wiki.WikiContext;
 import org.apache.wiki.WikiEngine;
+import org.apache.wiki.search.SearchResult;
 import org.apache.wiki.ui.Command;
 import org.apache.wiki.ui.PageCommand;
 
@@ -54,7 +53,7 @@ public class SearchResultIteratorTag
     private   int         m_count = 0;
     private   int         m_start = 0;
     
-    static Logger log = Logger.getLogger(SearchResultIteratorTag.class);
+    private static final Logger log = Logger.getLogger(SearchResultIteratorTag.class);
     
     public void release()
     {

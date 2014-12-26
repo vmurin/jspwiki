@@ -20,8 +20,6 @@
 package org.apache.wiki;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.io.StringReader;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Properties;
@@ -29,6 +27,7 @@ import java.util.Properties;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import net.sf.ehcache.CacheManager;
 
 import org.apache.wiki.attachment.Attachment;
 import org.apache.wiki.attachment.AttachmentManager;
@@ -36,7 +35,6 @@ import org.apache.wiki.providers.BasicAttachmentProvider;
 import org.apache.wiki.providers.CachingProvider;
 import org.apache.wiki.providers.FileSystemProvider;
 import org.apache.wiki.providers.VerySimpleProvider;
-import org.apache.wiki.util.FileUtil;
 import org.apache.wiki.util.TextUtil;
 
 public class WikiEngineTest extends TestCase
@@ -44,7 +42,7 @@ public class WikiEngineTest extends TestCase
     public static final String NAME1 = "Test1";
     public static final long PAGEPROVIDER_RESCAN_PERIOD = 2;
 
-    Properties props = new Properties();
+    Properties props = TestEngine.getTestProperties();
 
     TestEngine m_engine;
 
@@ -67,14 +65,9 @@ public class WikiEngineTest extends TestCase
     public void setUp()
         throws Exception
     {
-        props.load( TestEngine.findTestProperties() );
-
         props.setProperty( WikiEngine.PROP_MATCHPLURALS, "true" );
-        // We'll need a shorter-than-default consistency check for
-        // the page-changed checks. This will cause additional load
-        // to the file system, though.
-        props.setProperty( CachingProvider.PROP_CACHECHECKINTERVAL, 
-                           Long.toString(PAGEPROVIDER_RESCAN_PERIOD) );
+
+        CacheManager.getInstance().removeAllCaches();
 
         TestEngine.emptyWorkDir();
         m_engine = new TestEngine(props);        
@@ -94,21 +87,17 @@ public class WikiEngineTest extends TestCase
         TestEngine.emptyWorkDir();
     }
     
-    public void testNonExistantDirectory()
+    public void testNonExistentDirectory()
         throws Exception
     {
         String tmpdir = System.getProperties().getProperty("java.io.tmpdir");
-        String dirname = "non-existant-directory";
-
+        String dirname = "non-existent-directory";
         String newdir = tmpdir + File.separator + dirname;
 
-        props.setProperty( FileSystemProvider.PROP_PAGEDIR, 
-                           newdir );
-
+        props.setProperty( FileSystemProvider.PROP_PAGEDIR, newdir );
         new TestEngine( props );
 
-        File f = new File( newdir );
-
+        File f = new File( props.getProperty( FileSystemProvider.PROP_PAGEDIR ) );
         assertTrue( "didn't create it", f.exists() );
         assertTrue( "isn't a dir", f.isDirectory() );
 
@@ -118,7 +107,7 @@ public class WikiEngineTest extends TestCase
     /**
      *  Check that calling pageExists( String ) works.
      */
-    public void testNonExistantPage()
+    public void testNonExistentPage()
         throws Exception
     {
         String pagename = "Test1";
@@ -131,7 +120,7 @@ public class WikiEngineTest extends TestCase
     /**
      *  Check that calling pageExists( WikiPage ) works.
      */
-    public void testNonExistantPage2()
+    public void testNonExistentPage2()
         throws Exception
     {
         WikiPage page = new WikiPage(m_engine, "Test1");
@@ -436,9 +425,9 @@ public class WikiEngineTest extends TestCase
     
             c = refMgr.findUnreferenced();
             assertEquals( "unreferenced count", 2, c.size() );
-            Iterator i = c.iterator();
-            String first = (String) i.next();
-            String second = (String) i.next();
+            Iterator< String > i = c.iterator();
+            String first = i.next();
+            String second = i.next();
             assertTrue( "unreferenced",            
                         (first.equals( NAME1 ) && second.equals( NAME1+"/TestAtt.txt"))
                         || (first.equals( NAME1+"/TestAtt.txt" ) && second.equals( NAME1 )) );
@@ -727,118 +716,7 @@ public class WikiEngineTest extends TestCase
         
         assertEquals( "content1", "", engine.getText(NAME1, 1).trim() );
     }
-    
-    /**
-     *  Assumes that CachingProvider is in use.
-     */
-    public void testExternalModificationRefs()
-        throws Exception
-    {
-        ReferenceManager refMgr = m_engine.getReferenceManager();
 
-        m_engine.saveText( NAME1, "[Foobar]" );
-        m_engine.getText( NAME1 ); // Ensure that page is cached.
-
-        Collection c = refMgr.findUncreated();
-        assertTrue( "Non-existent reference not detected by ReferenceManager",
-            Util.collectionContains( c, "Foobar" ));
-
-        Thread.sleep( 2000L ); // Wait two seconds for filesystem granularity
-
-        String files = props.getProperty( FileSystemProvider.PROP_PAGEDIR );
-
-        File saved = new File( files, NAME1+FileSystemProvider.FILE_EXT );
-
-        assertTrue( "No file!", saved.exists() );
-
-        FileWriter out = new FileWriter( saved );
-        FileUtil.copyContents( new StringReader("[Puppaa]"), out );
-        out.close();
-
-        Thread.sleep( 2000L*PAGEPROVIDER_RESCAN_PERIOD ); // Wait five seconds for CachingProvider to wake up.
-
-        String text = m_engine.getText( NAME1 );
-
-        assertEquals( "wrong contents", "[Puppaa]", text );
-
-        c = refMgr.findUncreated();
-
-        assertTrue( "Non-existent reference after external page change " +
-                    "not detected by ReferenceManager",
-                    Util.collectionContains( c, "Puppaa" ));
-    }
-
-
-    /**
-     *  Assumes that CachingProvider is in use.
-     */
-    public void testExternalModificationRefsDeleted()
-        throws Exception
-    {
-        ReferenceManager refMgr = m_engine.getReferenceManager();
-
-        m_engine.saveText( NAME1, "[Foobar]" );
-        m_engine.getText( NAME1 ); // Ensure that page is cached.
-
-        Collection c = refMgr.findUncreated();
-        assertEquals( "uncreated count", 1, c.size() );
-        assertEquals( "wrong referenced page", "Foobar", (String)c.iterator().next() );
-
-        Thread.sleep( 2000L ); // Wait two seconds for filesystem granularity
-
-        String files = props.getProperty( FileSystemProvider.PROP_PAGEDIR );
-
-        File saved = new File( files, NAME1+FileSystemProvider.FILE_EXT );
-
-        assertTrue( "No file!", saved.exists() );
-
-        saved.delete();
-
-        assertFalse( "File not deleted!", saved.exists() );
-
-        Thread.sleep( 2000L*PAGEPROVIDER_RESCAN_PERIOD ); // Wait five seconds for CachingProvider to catch up.
-
-        WikiPage p = m_engine.getPage( NAME1 );
-
-        assertNull( "Got page!", p );
-
-        String text = m_engine.getText( NAME1 );
-
-        assertEquals( "wrong contents", "", text );
-
-        c = refMgr.findUncreated();
-        assertEquals( "NEW: uncreated count", 0, c.size() );
-    }
-
-    /**
-     *  Assumes that CachingProvider is in use.
-     */
-    public void testExternalModification()
-        throws Exception
-    {
-        m_engine.saveText( NAME1, "Foobar" );
-
-        m_engine.getText( NAME1 ); // Ensure that page is cached.
-
-        Thread.sleep( 2000L ); // Wait two seconds for filesystem granularity
-
-        String files = props.getProperty( FileSystemProvider.PROP_PAGEDIR );
-
-        File saved = new File( files, NAME1+FileSystemProvider.FILE_EXT );
-
-        assertTrue( "No file!", saved.exists() );
-
-        FileWriter out = new FileWriter( saved );
-        FileUtil.copyContents( new StringReader("Puppaa"), out );
-        out.close();
-
-        // Wait for the caching provider to notice a refresh.
-        Thread.sleep( 2000L*PAGEPROVIDER_RESCAN_PERIOD );
-
-        // Trim - engine.saveText() may append a newline.
-        String text = m_engine.getText( NAME1 ).trim();
-        assertEquals( "wrong contents", "Puppaa", text );
-    }
 
     /**
      *  Tests BugReadingOfVariableNotWorkingForOlderVersions
@@ -847,12 +725,11 @@ public class WikiEngineTest extends TestCase
     public void testOldVersionVars()
         throws Exception
     {   
-        Properties pr = new Properties();
-        pr.load( TestEngine.findTestProperties("/jspwiki_vers.properties"));
+        Properties props = TestEngine.getTestProperties("/jspwiki-vers-custom.properties");
+
+        props.setProperty( PageManager.PROP_USECACHE, "true" );
         
-        pr.setProperty( PageManager.PROP_USECACHE, "true" );
-        
-        TestEngine engine = new TestEngine( pr );
+        TestEngine engine = new TestEngine( props );
         
         engine.saveText( NAME1, "[{SET foo=bar}]" );
     

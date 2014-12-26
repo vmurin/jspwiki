@@ -22,9 +22,16 @@ package org.apache.wiki.auth;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.security.*;
+import java.security.AccessControlException;
+import java.security.AccessController;
+import java.security.CodeSource;
+import java.security.Permission;
+import java.security.Principal;
+import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 import java.security.cert.Certificate;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
 import java.util.ResourceBundle;
@@ -33,7 +40,11 @@ import java.util.WeakHashMap;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
-import org.apache.wiki.*;
+import org.apache.wiki.WikiContext;
+import org.apache.wiki.WikiEngine;
+import org.apache.wiki.WikiPage;
+import org.apache.wiki.WikiSession;
+import org.apache.wiki.api.exceptions.NoRequiredPropertyException;
 import org.apache.wiki.api.exceptions.WikiException;
 import org.apache.wiki.auth.acl.Acl;
 import org.apache.wiki.auth.acl.AclEntry;
@@ -85,8 +96,8 @@ import org.freshcookies.security.policy.PolicyException;
  * @since 2.3
  * @see AuthenticationManager
  */
-public final class AuthorizationManager
-{
+public class AuthorizationManager {
+
     private static final Logger log = Logger.getLogger( AuthorizationManager.class );
     /**
      * The default external Authorizer is the {@link org.apache.wiki.auth.authorize.WebContainerAuthorizer}
@@ -112,8 +123,6 @@ public final class AuthorizationManager
     private WikiEngine                        m_engine          = null;
 
     private LocalPolicy                       m_localPolicy     = null;
-
-    private boolean                           m_useJAAS         = true;
 
     /**
      * Constructs a new AuthorizationManager instance.
@@ -167,18 +176,6 @@ public final class AuthorizationManager
      */
     public boolean checkPermission( WikiSession session, Permission permission )
     {
-        if( !m_useJAAS )
-        {
-            //
-            //  Nobody can login, if JAAS is turned off.
-            //
-
-            if( permission == null || "login".equals( permission.getActions() ) )
-                return false;
-
-            return true;
-        }
-
         //
         //  A slight sanity check.
         //
@@ -236,7 +233,7 @@ public final class AuthorizationManager
 
         log.debug( "Checking ACL entries..." );
         log.debug( "Acl for this page is: " + acl );
-        log.debug( "Checking for principal: " + aclPrincipals );
+        log.debug( "Checking for principal: " + Arrays.toString( aclPrincipals ) );
         log.debug( "Permission: " + permission );
 
         for( Principal aclPrincipal : aclPrincipals )
@@ -462,14 +459,9 @@ public final class AuthorizationManager
      * @param properties the set of properties used to initialize the wiki engine
      * @throws WikiException if the AuthorizationManager cannot be initialized
      */
-    @SuppressWarnings("deprecation")
     public void initialize( WikiEngine engine, Properties properties ) throws WikiException
     {
         m_engine = engine;
-
-        m_useJAAS = AuthenticationManager.SECURITY_JAAS.equals( properties.getProperty(AuthenticationManager.PROP_SECURITY, AuthenticationManager.SECURITY_JAAS ) );
-
-        if( !m_useJAAS ) return;
 
         //
         //  JAAS authorization continues
@@ -485,7 +477,7 @@ public final class AuthorizationManager
             
             if (policyURL != null) 
             {
-                File policyFile = new File( policyURL.getPath() );
+                File policyFile = new File( policyURL.toURI().getPath() );
                 log.info("We found security policy URL: " + policyURL + " and transformed it to file " + policyFile.getAbsolutePath());
                 m_localPolicy = new LocalPolicy( policyFile, engine.getContentEncoding() );
                 m_localPolicy.refresh();
@@ -503,7 +495,7 @@ public final class AuthorizationManager
                 throw wse;
             }
         }
-        catch ( PolicyException e )
+        catch ( Exception e)
         {
             log.error("Could not initialize local security policy: " + e.getMessage() );
             throw new WikiException( "Could not initialize local security policy: " + e.getMessage(), e );
@@ -514,10 +506,12 @@ public final class AuthorizationManager
      * Returns <code>true</code> if JSPWiki's JAAS authorization system
      * is used for authorization in addition to container controls.
      * @return the result
+     * @deprecated functionality deprecated - returns true always. To be removed on 2.11.0
      */
+    @Deprecated
     protected boolean isJAASAuthorized()
     {
-        return m_useJAAS;
+        return true;
     }
 
     /**
@@ -617,8 +611,6 @@ public final class AuthorizationManager
      */
     protected boolean checkStaticPermission( final WikiSession session, final Permission permission )
     {
-        if( !m_useJAAS ) return true;
-
         Boolean allowed = (Boolean) WikiSession.doPrivileged( session, new PrivilegedAction<Boolean>()
         {
             public Boolean run()
@@ -670,11 +662,6 @@ public final class AuthorizationManager
      */
     public Principal resolvePrincipal( String name )
     {
-        if( !m_useJAAS )
-        {
-            return new UnresolvedPrincipal(name);
-        }
-
         // Check built-in Roles first
         Role role = new Role(name);
         if ( Role.isBuiltInRole( role ) )

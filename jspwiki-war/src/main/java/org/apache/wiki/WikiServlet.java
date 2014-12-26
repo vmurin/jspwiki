@@ -22,33 +22,31 @@ import javax.servlet.*;
 import javax.servlet.http.*;
 import java.io.*;
 
+import net.sf.ehcache.CacheManager;
 import org.apache.log4j.Logger;
 
 import org.apache.wiki.url.DefaultURLConstructor;
 
 /**
- *  This provides a master servlet for dealing with short urls.  It mostly does
- *  redirects to the proper JSP pages. It also intercepts the servlet
- *  shutdown events and uses it to signal wiki shutdown.
- *  
- *  @since 2.2
+ * This provides a master servlet for dealing with short urls.  It mostly does
+ * redirects to the proper JSP pages. It also intercepts the servlet
+ * shutdown events and uses it to signal wiki shutdown.
+ *
+ * @since 2.2
  */
-public class WikiServlet
-    extends HttpServlet
-{
+public class WikiServlet extends HttpServlet {
     private static final long serialVersionUID = 3258410651167633973L;
     private WikiEngine m_engine;
     static final Logger log = Logger.getLogger(WikiServlet.class.getName());
 
     /**
-     *  {@inheritDoc}
+     * {@inheritDoc}
      */
-    public void init( ServletConfig config )
-        throws ServletException 
-    {
-        super.init( config );
+    public void init(ServletConfig config)
+            throws ServletException {
+        super.init(config);
 
-        m_engine         = WikiEngine.getInstance( config );
+        m_engine = WikiEngine.getInstance(config);
 
         log.info("WikiServlet initialized.");
     }
@@ -59,43 +57,43 @@ public class WikiServlet
      * protected method {@link WikiEngine#shutdown()}, which
      * sends {@link org.apache.wiki.event.WikiEngineEvent#SHUTDOWN}
      * events to registered listeners.
+     *
      * @see javax.servlet.GenericServlet#destroy()
      */
-    public void destroy()
-    {
+    public void destroy() {
         log.info("WikiServlet shutdown.");
+        CacheManager.getInstance().shutdown();
         m_engine.shutdown();
         super.destroy();
     }
 
     /**
-     *  {@inheritDoc}
+     * {@inheritDoc}
      */
-    public void doPost( HttpServletRequest req, HttpServletResponse res )
-        throws IOException, ServletException
-    {
-        doGet( req, res );
+    public void doPost(HttpServletRequest req, HttpServletResponse res)
+            throws IOException, ServletException {
+        doGet(req, res);
     }
-    
+
     /**
-     *  {@inheritDoc}
+     * {@inheritDoc}
      */
-    public void doGet( HttpServletRequest req, HttpServletResponse res ) 
-        throws IOException, ServletException 
-    {
-        String pageName = DefaultURLConstructor.parsePageFromURL( req,
-                                                                  m_engine.getContentEncoding() );
+    public void doGet(HttpServletRequest req, HttpServletResponse res)
+            throws IOException, ServletException {
+        String pageName = DefaultURLConstructor.parsePageFromURL(req,
+                m_engine.getContentEncoding());
 
-        log.info("Request for page: "+pageName);
+        log.info("Request for page: " + pageName);
 
-        if( pageName == null ) pageName = m_engine.getFrontPage(); // FIXME: Add special pages as well
-        
-        String jspPage = m_engine.getURLConstructor().getForwardPage( req );
-        
-        RequestDispatcher dispatcher = req.getRequestDispatcher("/"+jspPage+"?page="+m_engine.encodeName(pageName)+"&"+req.getQueryString() );
+        if (pageName == null) {
+            pageName = m_engine.getFrontPage(); // FIXME: Add special pages as well
+        }
 
-        dispatcher.forward( req, res );
+        String jspPage = m_engine.getURLConstructor().getForwardPage(req);
+
+        RequestDispatcher dispatcher = req.getRequestDispatcher("/" + jspPage + "?page="
+                + m_engine.encodeName(pageName) + "&" + req.getQueryString());
+
+        dispatcher.forward(req, res);
     }
 }
-
-

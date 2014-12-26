@@ -23,9 +23,9 @@ import java.util.Properties;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import net.sf.ehcache.CacheManager;
 
 import org.apache.commons.lang.time.StopWatch;
-
 import org.apache.wiki.TestEngine;
 import org.apache.wiki.WikiContext;
 import org.apache.wiki.WikiPage;
@@ -39,9 +39,8 @@ public class RenderingManagerTest extends TestCase
     
     protected void setUp() throws Exception
     {
-        Properties props = new Properties();
-        props.load( TestEngine.findTestProperties() );
-        
+        CacheManager.getInstance().removeAllCaches();
+        Properties props = TestEngine.getTestProperties();
         m_engine = new TestEngine( props );
         
         m_manager = new RenderingManager();
@@ -65,10 +64,10 @@ public class RenderingManagerTest extends TestCase
         
         StopWatch sw = new StopWatch();
         
-        System.out.println("DOM cache speed test:");
+        // System.out.println("DOM cache speed test:");
         sw.start();
         
-        for( int i = 0; i < 100; i++ )
+        for( int i = 0; i < 300; i++ )
         {
             WikiPage page = m_engine.getPage( "TestPage" );
             String pagedata = m_engine.getPureText( page );
@@ -84,14 +83,14 @@ public class RenderingManagerTest extends TestCase
         }
         
         sw.stop();
-        System.out.println("  Nocache took "+sw);
+        // System.out.println("  Nocache took "+sw);
 
         long nocachetime = sw.getTime();
         
         sw.reset();
         sw.start();
         
-        for( int i = 0; i < 100; i++ )
+        for( int i = 0; i < 300; i++ )
         {
             WikiPage page = m_engine.getPage( "TestPage" );
             String pagedata = m_engine.getPureText( page );
@@ -104,10 +103,10 @@ public class RenderingManagerTest extends TestCase
         }
         
         sw.stop();
-        System.out.println("  Cache took "+sw);
+        // System.out.println("  Cache took "+sw);
         
         long speedup = nocachetime / sw.getTime();
-        System.out.println("  Approx speedup: "+speedup+"x");
+        //System.out.println("  Approx speedup: "+speedup+"x");
     }
 
     public static Test suite()

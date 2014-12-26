@@ -22,12 +22,19 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.apache.wiki.WikiContext;
 import org.apache.wiki.WikiEngine;
+import org.apache.wiki.api.engine.FilterManager;
 import org.apache.wiki.api.exceptions.FilterException;
 import org.apache.wiki.api.exceptions.WikiException;
 import org.apache.wiki.api.filters.PageFilter;
@@ -37,11 +44,8 @@ import org.apache.wiki.modules.ModuleManager;
 import org.apache.wiki.modules.WikiModuleInfo;
 import org.apache.wiki.util.ClassUtil;
 import org.apache.wiki.util.PriorityList;
-import org.jdom2.Document;
+import org.apache.wiki.util.XmlUtil;
 import org.jdom2.Element;
-import org.jdom2.JDOMException;
-import org.jdom2.input.SAXBuilder;
-import org.jdom2.xpath.XPath;
 
 
 /**
@@ -89,11 +93,11 @@ import org.jdom2.xpath.XPath;
  *  The &lt;filter> -sections define the filters.  For more information, please see
  *  the PageFilterConfiguration page in the JSPWiki distribution.
  */
-public final class DefaultFilterManager extends ModuleManager implements org.apache.wiki.api.engine.FilterManager
-{
-    private PriorityList<PageFilter> m_pageFilters = new PriorityList<PageFilter>();
+public class DefaultFilterManager extends ModuleManager implements FilterManager {
+	
+    private PriorityList< PageFilter > m_pageFilters = new PriorityList< PageFilter >();
 
-    private Map<String, PageFilterInfo> m_filterClassMap = new HashMap<String,PageFilterInfo>();
+    private Map< String, PageFilterInfo > m_filterClassMap = new HashMap< String, PageFilterInfo >();
 
     private static final Logger log = Logger.getLogger(DefaultFilterManager.class);
 
@@ -149,8 +153,7 @@ public final class DefaultFilterManager extends ModuleManager implements org.apa
             
             int priority = 0; // FIXME: Currently fixed.
 
-            Class cl = ClassUtil.findClass( "org.apache.wiki.filters",
-                                            className );
+            Class< ? > cl = ClassUtil.findClass( "org.apache.wiki.filters", className );
 
             PageFilter filter = (PageFilter)cl.newInstance();
 
@@ -188,105 +191,73 @@ public final class DefaultFilterManager extends ModuleManager implements org.apa
      *  @param props The list of properties.  Typically jspwiki.properties
      *  @throws WikiException If something goes wrong.
      */
-    protected void initialize( Properties props )
-        throws WikiException
-    {
+    protected void initialize( Properties props ) throws WikiException {
         InputStream xmlStream = null;
         String      xmlFile   = props.getProperty( PROP_FILTERXML );
 
-        try
-        {
+        try {
             registerFilters();
             
-            if( m_engine.getServletContext() != null )
-            {
+            if( m_engine.getServletContext() != null ) {
                 log.debug( "Attempting to locate " + DEFAULT_XMLFILE + " from servlet context." );
-                if( xmlFile == null )
-                {
+                if( xmlFile == null ) {
                     xmlStream = m_engine.getServletContext().getResourceAsStream( DEFAULT_XMLFILE );
-                }
-                else
-                {
+                } else {
                     xmlStream = m_engine.getServletContext().getResourceAsStream( xmlFile );
                 }
             }
 
-            if( xmlStream == null )
-            {
+            if( xmlStream == null ) {
                 // just a fallback element to the old behaviour prior to 2.5.8
                 log.debug( "Attempting to locate filters.xml from class path." );
 
-                if( xmlFile == null )
-                {
+                if( xmlFile == null ) {
                     xmlStream = getClass().getResourceAsStream( "/filters.xml" );
-                }
-                else
-                {
+                } else {
                     xmlStream = getClass().getResourceAsStream( xmlFile );
                 }
             }
 
-            if( (xmlStream == null) && (xmlFile != null) )
-            {
+            if( (xmlStream == null) && (xmlFile != null) ) {
                 log.debug("Attempting to load property file "+xmlFile);
                 xmlStream = new FileInputStream( new File(xmlFile) );
             }
 
-            if( xmlStream == null )
-            {
-                log.info("Cannot find property file for filters (this is okay, expected to find it as: '"+ (xmlFile == null ? DEFAULT_XMLFILE : xmlFile ) +"')");
+            if( xmlStream == null ) {
+                log.info( "Cannot find property file for filters (this is okay, expected to find it as: '" + 
+                           ( xmlFile == null ? DEFAULT_XMLFILE : xmlFile ) + 
+                          "')" );
                 return;
             }
             
             parseConfigFile( xmlStream );
-        }
-        catch( IOException e )
-        {
+        } catch( IOException e ) {
             log.error("Unable to read property file", e);
-        }
-        catch( JDOMException e )
-        {
-            log.error("Problem in the XML file",e);
+        } finally {
+        	IOUtils.closeQuietly( xmlStream );
         }
     }
 
     /**
      *  Parses the XML filters configuration file.
      *  
-     * @param xmlStream
-     * @throws JDOMException
-     * @throws IOException
+     * @param xmlStream stream to parse
      */
-    private void parseConfigFile( InputStream xmlStream )
-        throws JDOMException,
-               IOException
-    {
-        Document doc = new SAXBuilder().build( xmlStream );
-        
-        XPath xpath = XPath.newInstance("/pagefilters/filter");
-    
-        List nodes = xpath.selectNodes( doc );
-        
-        for( Iterator i = nodes.iterator(); i.hasNext(); )
-        {
-            Element f = (Element) i.next();
-            
-            String filterClass = f.getChildText("class");
-
+    private void parseConfigFile( InputStream xmlStream ) {
+    	List< Element > pageFilters = XmlUtil.parse( xmlStream, "/pagefilters/filter" );
+        for( Iterator< Element > i = pageFilters.iterator(); i.hasNext(); ) {
+            Element f = i.next();
+            String filterClass = f.getChildText( "class" );
             Properties props = new Properties();
             
-            List params = f.getChildren("param");
-            
-            for( Iterator par = params.iterator(); par.hasNext(); )
-            {
-                Element p = (Element) par.next();
-                
-                props.setProperty( p.getChildText("name"), p.getChildText("value") );
+            List< Element > params = f.getChildren( "param" );
+            for( Iterator< Element > par = params.iterator(); par.hasNext(); ) {
+                Element p = par.next();
+                props.setProperty( p.getChildText( "name" ), p.getChildText( "value" ) );
             }
 
             initPageFilter( filterClass, props );
         }
-        
     }
     
  
@@ -432,76 +403,35 @@ public final class DefaultFilterManager extends ModuleManager implements org.apa
     /**
      *  {@inheritDoc}
      */
-    @SuppressWarnings("unchecked")
     public Collection modules()
     {
-        ArrayList modules = new ArrayList();
+        ArrayList< PageFilter > modules = new ArrayList< PageFilter >();
         
         modules.addAll( m_pageFilters );
         
         return modules;
     }
 
-    private void registerFilters()
-    {
+    private void registerFilters() {
         log.info( "Registering filters" );
+        List< Element > filters = XmlUtil.parse( PLUGIN_RESOURCE_LOCATION, "/modules/filter" );
 
-        SAXBuilder builder = new SAXBuilder();
-
-        try
-        {
-            //
-            // Register all filters which have created a resource containing its properties.
-            //
-            // Get all resources of all plugins.
-            //
-
-            Enumeration resources = getClass().getClassLoader().getResources( PLUGIN_RESOURCE_LOCATION );
-
-            while( resources.hasMoreElements() )
-            {
-                URL resource = (URL) resources.nextElement();
-
-                try
-                {
-                    log.debug( "Processing XML: " + resource );
-
-                    Document doc = builder.build( resource );
-
-                    List plugins = XPath.selectNodes( doc, "/modules/filter");
-
-                    for( Iterator i = plugins.iterator(); i.hasNext(); )
-                    {
-                        Element pluginEl = (Element) i.next();
-
-                        String className = pluginEl.getAttributeValue("class");
-
-                        PageFilterInfo pluginInfo = PageFilterInfo.newInstance( className, pluginEl );
-
-                        if( pluginInfo != null )
-                        {
-                            registerPlugin( pluginInfo );
-                        }
-                    }
-                }
-                catch( java.io.IOException e )
-                {
-                    log.error( "Couldn't load " + PLUGIN_RESOURCE_LOCATION + " resources: " + resource, e );
-                }
-                catch( JDOMException e )
-                {
-                    log.error( "Error parsing XML for filter: "+PLUGIN_RESOURCE_LOCATION );
-                }
+        //
+        // Register all filters which have created a resource containing its properties.
+        //
+        // Get all resources of all plugins.
+        //
+        for( Iterator< Element > i = filters.iterator(); i.hasNext(); ) {
+            Element pluginEl = i.next();
+            String className = pluginEl.getAttributeValue( "class" );
+            PageFilterInfo filterInfo = PageFilterInfo.newInstance( className, pluginEl );
+            if( filterInfo != null ) {
+                registerFilter( filterInfo );
             }
-        }
-        catch( java.io.IOException e )
-        {
-            log.error( "Couldn't load all " + PLUGIN_RESOURCE_LOCATION + " resources", e );
         }
     }
 
-    private void registerPlugin(PageFilterInfo pluginInfo)
-    {
+    private void registerFilter(PageFilterInfo pluginInfo) {
         m_filterClassMap.put( pluginInfo.getName(), pluginInfo );
     }
 

@@ -19,18 +19,28 @@
 package org.apache.wiki.auth.authorize;
 
 import java.security.Principal;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
-import org.apache.wiki.NoRequiredPropertyException;
 import org.apache.wiki.WikiContext;
 import org.apache.wiki.WikiEngine;
 import org.apache.wiki.WikiSession;
+import org.apache.wiki.api.exceptions.NoRequiredPropertyException;
 import org.apache.wiki.api.exceptions.WikiException;
-import org.apache.wiki.auth.*;
+import org.apache.wiki.auth.AuthenticationManager;
+import org.apache.wiki.auth.Authorizer;
+import org.apache.wiki.auth.GroupPrincipal;
+import org.apache.wiki.auth.NoSuchPrincipalException;
+import org.apache.wiki.auth.WikiPrincipal;
+import org.apache.wiki.auth.WikiSecurityException;
 import org.apache.wiki.auth.user.UserProfile;
 import org.apache.wiki.event.WikiEvent;
 import org.apache.wiki.event.WikiEventListener;
@@ -38,6 +48,7 @@ import org.apache.wiki.event.WikiEventManager;
 import org.apache.wiki.event.WikiSecurityEvent;
 import org.apache.wiki.ui.InputValidator;
 import org.apache.wiki.util.ClassUtil;
+
 
 /**
  * <p>
@@ -54,8 +65,8 @@ import org.apache.wiki.util.ClassUtil;
  * </p>
  * @since 2.4.19
  */
-public final class GroupManager implements Authorizer, WikiEventListener
-{
+public class GroupManager implements Authorizer, WikiEventListener {
+
     /** Key used for adding UI messages to a user's WikiSession. */
     public static final String  MESSAGES_KEY       = "group";
 

@@ -32,6 +32,7 @@ import org.apache.wiki.TestEngine;
 import org.apache.wiki.WikiPage;
 import org.apache.wiki.WikiSession;
 import org.apache.wiki.WikiSessionTest;
+import org.apache.wiki.api.exceptions.ProviderException;
 import org.apache.wiki.api.exceptions.WikiException;
 import org.apache.wiki.attachment.Attachment;
 import org.apache.wiki.auth.acl.UnresolvedPrincipal;
@@ -43,7 +44,6 @@ import org.apache.wiki.auth.permissions.PagePermission;
 import org.apache.wiki.auth.permissions.PermissionFactory;
 import org.apache.wiki.auth.permissions.WikiPermission;
 import org.apache.wiki.auth.user.UserProfile;
-import org.apache.wiki.providers.ProviderException;
 
 /**
  * Tests the AuthorizationManager class.
@@ -87,8 +87,7 @@ public class AuthorizationManagerTest extends TestCase
 
     public void setUp() throws Exception
     {
-        Properties props = new Properties();
-        props.load( TestEngine.findTestProperties() );
+        Properties props = TestEngine.getTestProperties();
         
         // Make sure we are using the default security policy file jspwiki.policy
         props.put( AuthorizationManager.POLICY, AuthorizationManager.DEFAULT_POLICY );
@@ -687,8 +686,7 @@ public class AuthorizationManagerTest extends TestCase
     
     public void testUserPolicy() throws Exception
     {
-        Properties props = new Properties();
-        props.load( TestEngine.findTestProperties() );
+        Properties props = TestEngine.getTestProperties();
         
         // Make sure we are using the default security policy file jspwiki.policy
         props.put( AuthorizationManager.POLICY, "jspwiki-testUserPolicy.policy" );

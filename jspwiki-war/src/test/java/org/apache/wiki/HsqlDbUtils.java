@@ -39,7 +39,7 @@ import org.hsqldb.cmdline.SqlFile;
  *   <li>hsqldbu.start()</li>
  *   <li>hsqldbu.exec( "target/etc/db/hsql/hsql-userdb-setup.ddl" )</li>
  *   <li>hsqldbu.exec( "target/etc/db/hsql/hsql-userdb-teardown.ddl" )</li>
- *   <li>hsqldbu.stop()</li>
+ *   <li>hsqldbu.shutdown()</li>
  * </ol>
  * </code>
  * There are also a couple of convenience methods for unit testing:
@@ -79,7 +79,7 @@ public class HsqlDbUtils
     public void tearDown() 
     {
         exec( "src/test/config/hsql-userdb-teardown.ddl" );
-        stop();
+        shutdown();
     }
     
     /**
@@ -89,7 +89,7 @@ public class HsqlDbUtils
     {
         
         // start Hypersonic server
-        Properties hProps = loadPropertiesFrom( "target/test-classes/jdbc.properties" );
+        Properties hProps = loadPropertiesFrom( "target/test-classes/jspwiki-custom.properties" );
         
         hsqlServer = new Server();
         hsqlServer.setSilent(true);   // be quiet during junit tests
@@ -103,7 +103,7 @@ public class HsqlDbUtils
         hsqlServer.setDatabasePath( 0, hProps.getProperty( "server.database.0" ) );
         hsqlServer.start();
         
-        Class.forName( "org.hsqldb.jdbcDriver" );
+        Class.forName( "org.hsqldb.jdbc.JDBCDriver" );
         hsqlServer.checkRunning( true ); // throws RuntimeException if not running
     }
     
@@ -133,9 +133,9 @@ public class HsqlDbUtils
     }
 
     /**
-     * Stops the Hypersonic server.
+     * Shutdown the Hypersonic server.
      */
-    public void stop() 
+    public void shutdown()
     {
         LOG.info( "Shutting down Hypersonic JDBC server on localhost." );
         if( hsqlServer != null ) 
@@ -155,8 +155,8 @@ public class HsqlDbUtils
             {
                 close( conn );
             }
-            
-            hsqlServer.stop();
+
+            hsqlServer.shutdown();
         }
     }
     
@@ -170,7 +170,7 @@ public class HsqlDbUtils
     Connection getConnection() throws IOException, SQLException
     {
         Connection conn;
-        Properties jProps = loadPropertiesFrom( "target/test-classes/jdbc.properties" );
+        Properties jProps = loadPropertiesFrom( "target/test-classes/jspwiki-custom.properties" );
         conn = DriverManager.getConnection( jProps.getProperty( "jdbc.driver.url" ), 
                                             jProps.getProperty( "jdbc.admin.id" ),
                                             jProps.getProperty( "jdbc.admin.password" ) );

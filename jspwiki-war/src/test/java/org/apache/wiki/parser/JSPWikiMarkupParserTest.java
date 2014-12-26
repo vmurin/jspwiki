@@ -32,8 +32,14 @@ import javax.servlet.ServletException;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import net.sf.ehcache.CacheManager;
 
-import org.apache.wiki.*;
+import org.apache.wiki.LinkCollector;
+import org.apache.wiki.TestEngine;
+import org.apache.wiki.WikiContext;
+import org.apache.wiki.WikiEngine;
+import org.apache.wiki.WikiPage;
+import org.apache.wiki.api.exceptions.NoRequiredPropertyException;
 import org.apache.wiki.api.exceptions.WikiException;
 import org.apache.wiki.attachment.Attachment;
 import org.apache.wiki.providers.BasicAttachmentProvider;
@@ -43,7 +49,7 @@ import org.apache.wiki.util.TextUtil;
 
 public class JSPWikiMarkupParserTest extends TestCase
 {
-    Properties props = new Properties();
+    Properties props = TestEngine.getTestProperties();
     Vector<String>     created = new Vector<String>();
 
     static final String PAGE_NAME = "testpage";
@@ -59,7 +65,7 @@ public class JSPWikiMarkupParserTest extends TestCase
     public void setUp()
     throws Exception
     {
-        props.load( TestEngine.findTestProperties() );
+        CacheManager.getInstance().removeAllCaches();
 
         props.setProperty( "jspwiki.translatorReader.matchEnglishPlurals", "true" );
         testEngine = new TestEngine( props );
@@ -136,7 +142,7 @@ public class JSPWikiMarkupParserTest extends TestCase
                ServletException,
                WikiException
     {
-        props.load( TestEngine.findTestProperties() );
+        props = TestEngine.getTestProperties();
 
         props.setProperty( "jspwiki.translatorReader.useRelNofollow", "true" );
         TestEngine testEngine2 = new TestEngine( props );
@@ -227,7 +233,19 @@ public class JSPWikiMarkupParserTest extends TestCase
         assertEquals( "<h4 id=\"section-testpage-HeadingToo\">Heading Too<a class=\"hashlink\" href=\"#section-testpage-HeadingToo\">#</a></h4>\nThis should be a <a class=\"wikipage\" href=\"/Wiki.jsp?page=HyperLink#section-HyperLink-HeadingToo\">HyperLink#heading too</a>",
                       translate(src) );
     }
-    
+
+    // test hyperlink to a section with non-ASCII character in it
+    public void testHyperlinksNamed4()
+            throws Exception
+    {
+        newPage("HyperLink");
+
+        String src = "This should be a [HyperLink#headingwithnonASCIIZoltán]";
+
+        assertEquals( "This should be a <a class=\"wikipage\" href=\"/Wiki.jsp?page=HyperLink#section-HyperLink-HeadingwithnonASCIIZolt_E1n\">HyperLink#headingwithnonASCIIZoltán</a>",
+                translate(src) );
+    }
+
     //
     //  Testing CamelCase hyperlinks
     //
@@ -652,7 +670,7 @@ public class JSPWikiMarkupParserTest extends TestCase
     {
         String src = "This should be a [link|JSPWiki:HyperLink]";
 
-        assertEquals( "This should be a <a class=\"interwiki\" href=\"http://www.ecyrd.com/JSPWiki/Wiki.jsp?page=HyperLink\">link</a>",
+        assertEquals( "This should be a <a class=\"interwiki\" href=\"http://jspwiki-wiki.apache.org/Wiki.jsp?page=HyperLink\">link</a>",
                       translate(src) );
     }
 
@@ -661,7 +679,7 @@ public class JSPWikiMarkupParserTest extends TestCase
     {
         String src = "This should be a [JSPWiki:HyperLink]";
 
-        assertEquals( "This should be a <a class=\"interwiki\" href=\"http://www.ecyrd.com/JSPWiki/Wiki.jsp?page=HyperLink\">JSPWiki:HyperLink</a>",
+        assertEquals( "This should be a <a class=\"interwiki\" href=\"http://jspwiki-wiki.apache.org/Wiki.jsp?page=HyperLink\">JSPWiki:HyperLink</a>",
                       translate(src) );
     }
 
@@ -2330,7 +2348,7 @@ public class JSPWikiMarkupParserTest extends TestCase
 
         p.parse();
 
-        Collection links = coll.getLinks();
+        Collection< String > links = coll.getLinks();
 
         assertEquals( "no links found", 1, links.size() );
         assertEquals( "wrong link", "Test", links.iterator().next() );
@@ -2353,7 +2371,7 @@ public class JSPWikiMarkupParserTest extends TestCase
 
         p.parse();
 
-        Collection links = coll.getLinks();
+        Collection< String > links = coll.getLinks();
 
         assertEquals( "no links found", 1, links.size() );
         assertEquals( "wrong link", PAGE_NAME+"/Test.txt",
@@ -2387,7 +2405,7 @@ public class JSPWikiMarkupParserTest extends TestCase
 
             p.parse();
 
-            Collection links = coll.getLinks();
+            Collection< String > links = coll.getLinks();
 
             assertEquals( "no links found", 1, links.size() );
             assertEquals( "wrong link", PAGE_NAME+"/TestAtt.txt",

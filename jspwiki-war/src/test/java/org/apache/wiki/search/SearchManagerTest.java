@@ -19,47 +19,46 @@
 package org.apache.wiki.search;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Properties;
-
-import net.sourceforge.stripes.mock.MockHttpServletRequest;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.apache.wiki.SearchResult;
+import net.sf.ehcache.CacheManager;
+import net.sourceforge.stripes.mock.MockHttpServletRequest;
+
 import org.apache.wiki.TestEngine;
 import org.apache.wiki.WikiContext;
 
-public class SearchManagerTest extends TestCase
-{
-    private static final long SLEEP_TIME = 200L;
+public class SearchManagerTest extends TestCase {
+	
+    private static final long SLEEP_TIME = 2000L;
+    private static final int SLEEP_COUNT = 50;
     TestEngine m_engine;
     SearchManager m_mgr;
+    Properties props;
     
-    protected void setUp() throws Exception
-    {
-        super.setUp();
-        
-        Properties props = new Properties();
-        props.load( TestEngine.findTestProperties() );
+    protected void setUp() throws Exception {
+        Properties props = TestEngine.getTestProperties();
+        String workDir = props.getProperty( "jspwiki.workDir" );
+        String workRepo = props.getProperty( "jspwiki.fileSystemProvider.pageDir" );
         
         props.setProperty( SearchManager.PROP_SEARCHPROVIDER, "LuceneSearchProvider" );
         props.setProperty( "jspwiki.lucene.initialdelay", "1" );
-        props.setProperty( "jspwiki.workDir", System.getProperty( "java.io.tmpdir" ) );
-        
-        TestEngine.emptyWorkDir();
-        
+        props.setProperty( "jspwiki.workDir", workDir + System.currentTimeMillis() );
+        props.setProperty( "jspwiki.fileSystemProvider.pageDir", workRepo + System.currentTimeMillis() );
+
+        CacheManager.getInstance().removeAllCaches();
         m_engine = new TestEngine( props );
         m_mgr = m_engine.getSearchManager();
     }
 
-    protected void tearDown() throws Exception
-    {
-        super.tearDown();
+    protected void tearDown() throws Exception {
+    	TestEngine.emptyWorkDir( props );
     }
 
-    public void testDefaultProvider()
-    {
+    public void testDefaultProvider() {
         assertEquals( "org.apache.wiki.search.LuceneSearchProvider", 
                       m_mgr.getSearchEngine().getClass().getName() );    
     }
@@ -67,33 +66,39 @@ public class SearchManagerTest extends TestCase
     /**
      * Should cover for both index and initial delay
      */
-    Collection waitForIndex( String text ) throws Exception
-    {
+    Collection waitForIndex( String text, String testName ) throws Exception {
         Collection res = null;
-        for( long l = 0; l < 50; l++ ) 
-        {
-            if( res == null || res.isEmpty() ) 
-            {
+        for( long l = 0; l < SLEEP_COUNT; l++ ) {
+            if( res == null || res.isEmpty() ) {
                 Thread.sleep( SLEEP_TIME );
-            }
-            else 
-            {
+            } else {
                 break;
             }
             res = m_mgr.findPages( text );
+            
+//            debugSearchResults( res );
         }
         return res;
     }
+
+	void debugSearchResults( Collection< SearchResult > res ) {
+		Iterator< SearchResult > iterator = res.iterator();
+		while( iterator.hasNext() ) {
+			SearchResult next = iterator.next();
+			System.out.println( "page: " + next.getPage() );
+			for( String s : next.getContexts() ) {
+				System.out.println( "snippet: " + s );
+			}
+		}
+	}
     
-    public void testSimpleSearch()
-        throws Exception
-    {
+    public void testSimpleSearch() throws Exception {
         String txt = "It was the dawn of the third age of mankind, ten years after the Earth-Minbari War.";
         
         m_engine.saveText("TestPage", txt);
 
         Thread.yield();
-        Collection res = waitForIndex( "mankind" );
+        Collection res = waitForIndex( "mankind" , "testSimpleSearch" );
      
         assertNotNull( "null result", res );
         assertEquals( "no pages", 1, res.size() );
@@ -102,9 +107,7 @@ public class SearchManagerTest extends TestCase
         m_engine.deleteTestPage("TestPage");
     }
 
-    public void testSimpleSearch2()
-       throws Exception
-    {
+    public void testSimpleSearch2() throws Exception {
         String txt = "It was the dawn of the third age of mankind, ten years after the Earth-Minbari War.";
     
         m_engine.saveText("TestPage", txt);
@@ -112,7 +115,7 @@ public class SearchManagerTest extends TestCase
         m_engine.saveText("TestPage", txt + " 2");
         
         Thread.yield();
-        Collection res = waitForIndex( "mankind" );
+        Collection res = waitForIndex( "mankind" , "testSimpleSearch2" );
  
         assertNotNull( "null result", res );
         assertEquals( "no pages", 1, res.size() );
@@ -121,9 +124,7 @@ public class SearchManagerTest extends TestCase
         m_engine.deleteTestPage("TestPage");
     }
 
-    public void testSimpleSearch3()
-        throws Exception
-    {
+    public void testSimpleSearch3() throws Exception {
         String txt = "It was the dawn of the third age of mankind, ten years after the Earth-Minbari War.";
  
         MockHttpServletRequest request = m_engine.newHttpRequest();
@@ -136,7 +137,7 @@ public class SearchManagerTest extends TestCase
         m_engine.saveText( ctx, "The Babylon Project was a dream given form. Its goal: to prevent another war by creating a place where humans and aliens could work out their differences peacefully." );
      
         Thread.yield();
-        Collection res = waitForIndex( "Babylon" ); // wait until 2nd m_engine.saveText() takes effect
+        Collection res = waitForIndex( "Babylon" , "testSimpleSearch3" ); // wait until 2nd m_engine.saveText() takes effect
 
         res = m_mgr.findPages( "mankind" ); // check for text present in 1st m_engine.saveText() but not in 2nd
 
@@ -151,15 +152,13 @@ public class SearchManagerTest extends TestCase
         m_engine.deleteTestPage("TestPage");
     }
 
-    public void testTitleSearch()
-        throws Exception
-    {
+    public void testTitleSearch() throws Exception {
         String txt = "Nonsensical content that should not match";
  
         m_engine.saveText("TestPage", txt);
      
         Thread.yield();
-        Collection res = waitForIndex( "Test" );
+        Collection res = waitForIndex( "Test" , "testTitleSearch" );
 
         assertNotNull( "null result", res );
         assertEquals( "no pages", 1, res.size() );
@@ -168,15 +167,13 @@ public class SearchManagerTest extends TestCase
         m_engine.deleteTestPage("TestPage");
     }
 
-    public void testTitleSearch2()
-        throws Exception
-    { 
+    public void testTitleSearch2() throws Exception { 
         String txt = "Nonsensical content that should not match";
 
         m_engine.saveText("TestPage", txt);
  
         Thread.yield();
-        Collection res = waitForIndex( "TestPage" );
+        Collection res = waitForIndex( "TestPage" , "testTitleSearch2" );
 
         assertNotNull( "null result", res );
         assertEquals( "no pages", 1, res.size() );
@@ -185,8 +182,8 @@ public class SearchManagerTest extends TestCase
         m_engine.deleteTestPage("TestPage");
     }
 
-    public static Test suite()
-    {
+    public static Test suite() {
         return new TestSuite( SearchManagerTest.class );
     }
+
 }

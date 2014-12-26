@@ -18,13 +18,32 @@
  */
 package org.apache.wiki;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.ConcurrentModificationException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.log4j.Logger;
+import org.apache.wiki.api.exceptions.ProviderException;
 import org.apache.wiki.api.filters.BasicPageFilter;
 import org.apache.wiki.attachment.Attachment;
 import org.apache.wiki.event.WikiEvent;
@@ -32,7 +51,6 @@ import org.apache.wiki.event.WikiEventListener;
 import org.apache.wiki.event.WikiEventUtils;
 import org.apache.wiki.event.WikiPageEvent;
 import org.apache.wiki.modules.InternalModule;
-import org.apache.wiki.providers.ProviderException;
 import org.apache.wiki.providers.WikiPageProvider;
 import org.apache.wiki.util.TextUtil;
 
@@ -166,9 +184,7 @@ public class ReferenceManager
     /**
      *  Does a full reference update.  Does not sync; assumes that you do it afterwards.
      */
-    @SuppressWarnings("unchecked")
-    private void updatePageReferences( WikiPage page )
-        throws ProviderException
+    private void updatePageReferences( WikiPage page ) throws ProviderException
     {
         String content = m_engine.getPageManager().getPageText( page.getName(),
                                                                 WikiPageProvider.LATEST_VERSION );
@@ -661,7 +677,7 @@ public class ReferenceManager
      *  @param page Name of the page to update.
      *  @param references A Collection of Strings, each one pointing to a page this page references.
      */
-    public synchronized void updateReferences( String page, Collection references )
+    public synchronized void updateReferences( String page, Collection< String > references )
     {
         internalUpdateReferences(page, references);
 
@@ -679,7 +695,7 @@ public class ReferenceManager
      *  @param references A Collection of Strings, each one pointing to a page this page references.
      */
 
-    private void internalUpdateReferences(String page, Collection references)
+    private void internalUpdateReferences(String page, Collection< String > references)
     {
         page = getFinalPageName( page );
 
@@ -690,9 +706,9 @@ public class ReferenceManager
         m_refersTo.remove( page );
 
         TreeSet<String> cleanedRefs = new TreeSet<String>();
-        for( Iterator i = references.iterator(); i.hasNext(); )
+        for( Iterator< String > i = references.iterator(); i.hasNext(); )
         {
-            String ref = (String)i.next();
+            String ref = i.next();
 
             ref = getFinalPageName( ref );
 

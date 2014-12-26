@@ -18,8 +18,16 @@
  */
 package org.apache.wiki.providers;
 
-import java.util.*;
-import org.apache.wiki.*;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Properties;
+import java.util.Vector;
+
+import org.apache.wiki.WikiEngine;
+import org.apache.wiki.WikiPage;
+import org.apache.wiki.api.exceptions.ProviderException;
+import org.apache.wiki.search.QueryItem;
 
 /**
  *  This is a simple provider that is used by some of the tests.  It has some
@@ -64,6 +72,14 @@ public class VerySimpleProvider implements WikiPageProvider
      *  Always returns true.
      */
     public boolean pageExists( String page )
+    {
+        return true;
+    }
+
+    /**
+     *  Always returns true.
+     */
+    public boolean pageExists( String page, int version )
     {
         return true;
     }

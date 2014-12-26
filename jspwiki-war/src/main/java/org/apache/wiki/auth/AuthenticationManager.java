@@ -18,11 +18,21 @@
  */
 package org.apache.wiki.auth;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.Principal;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 import javax.security.auth.Subject;
 import javax.security.auth.callback.CallbackHandler;
@@ -31,6 +41,7 @@ import javax.security.auth.spi.LoginModule;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.apache.wiki.WikiEngine;
 import org.apache.wiki.WikiSession;
@@ -38,7 +49,13 @@ import org.apache.wiki.api.exceptions.WikiException;
 import org.apache.wiki.auth.authorize.Role;
 import org.apache.wiki.auth.authorize.WebAuthorizer;
 import org.apache.wiki.auth.authorize.WebContainerAuthorizer;
-import org.apache.wiki.auth.login.*;
+import org.apache.wiki.auth.login.AnonymousLoginModule;
+import org.apache.wiki.auth.login.CookieAssertionLoginModule;
+import org.apache.wiki.auth.login.CookieAuthenticationLoginModule;
+import org.apache.wiki.auth.login.UserDatabaseLoginModule;
+import org.apache.wiki.auth.login.WebContainerCallbackHandler;
+import org.apache.wiki.auth.login.WebContainerLoginModule;
+import org.apache.wiki.auth.login.WikiCallbackHandler;
 import org.apache.wiki.event.WikiEventListener;
 import org.apache.wiki.event.WikiEventManager;
 import org.apache.wiki.event.WikiSecurityEvent;
@@ -58,8 +75,8 @@ import org.apache.wiki.util.TimedCounterList;
  * 
  * @since 2.3
  */
-public final class AuthenticationManager
-{
+public class AuthenticationManager {
+
     /** How many milliseconds the logins are stored before they're cleaned away. */
     private static final long LASTLOGINS_CLEANUP_TIME = 10*60*1000L; // Ten minutes
 
@@ -83,14 +100,21 @@ public final class AuthenticationManager
      *  <p>
      *  Setting this is now deprecated - we do not guarantee that it works.
      *  
-     *  @deprecated
+     * @deprecated - to be removed on 2.11.0
      */
+    @Deprecated
     public  static final String                PROP_SECURITY       = "jspwiki.security";
 
-    /** Value specifying that the user wants to use the container-managed security, just like in JSPWiki 2.2. */
+    /** Value specifying that the user wants to use the container-managed security, just like in JSPWiki 2.2.
+     * @deprecated - to be removed on 2.11.0
+      */
+    @Deprecated
     public static final String                SECURITY_OFF      = "off";
 
-    /** Value specifying that the user wants to use the built-in JAAS-based system */
+    /** Value specifying that the user wants to use the built-in JAAS-based system.
+     * @deprecated - to be removed on 2.11.0
+     */
+    @Deprecated
     public static final String                SECURITY_JAAS     = "jaas";
 
     /** Whether logins should be throttled to limit brute-forcing attempts. Defaults to true. */
@@ -120,8 +144,9 @@ public final class AuthenticationManager
     /** Just to provide compatibility with the old versions.  The same
      *  as SECURITY_OFF.
      *
-     *  @deprecated use {@link #SECURITY_OFF} instead
+     *  @deprecated use {@link #SECURITY_OFF} instead - to be removed on 2.11.0
      */
+    @Deprecated
     protected static final String             SECURITY_CONTAINER = "container";
 
     /** The default {@link javax.security.auth.spi.LoginModule} class name to use for custom authentication. */
@@ -143,10 +168,7 @@ public final class AuthenticationManager
     /** If true, logs the IP address of the editor */
     private boolean                            m_storeIPAddress    = true;
 
-    private boolean               m_useJAAS = true;
-
     /** Keeps a list of the usernames who have attempted a login recently. */
-    
     private TimedCounterList<String> m_lastLoginAttempts = new TimedCounterList<String>();
     
     /**
@@ -163,9 +185,6 @@ public final class AuthenticationManager
         m_engine = engine;
         m_storeIPAddress = TextUtil.getBooleanProperty( props, PROP_STOREIPADDRESS, m_storeIPAddress );
 
-        // Should J2SE policies be used for authorization?
-        m_useJAAS = SECURITY_JAAS.equals(props.getProperty( PROP_SECURITY, SECURITY_JAAS ));
-        
         // Should we allow cookies for assertions? (default: yes)
         m_allowsCookieAssertions = TextUtil.getBooleanProperty( props,
                                                               PROP_ALLOW_COOKIE_ASSERTIONS,
@@ -208,8 +227,6 @@ public final class AuthenticationManager
      */
     public boolean isContainerAuthenticated()
     {
-        if( !m_useJAAS ) return true;
-
         try
         {
             Authorizer authorizer = m_engine.getAuthorizationManager().getAuthorizer();
@@ -590,6 +607,7 @@ public final class AuthenticationManager
      */
     protected static URL findConfigFile( WikiEngine engine, String name )
     {
+        log.info( "looking for " + name + " inside WEB-INF " );
         // Try creating an absolute path first
         File defaultFile = null;
         if( engine.getRootPath() != null )
@@ -616,36 +634,43 @@ public final class AuthenticationManager
         
         if( engine.getServletContext() != null )
         {
+        	OutputStream os = null;
+        	InputStream is = null;
             try
             {
+                log.info( "looking for /" + name + " on classpath" );
                 //  create a tmp file of the policy loaded as an InputStream and return the URL to it
                 //  
-                InputStream is = engine.getServletContext().getResourceAsStream( name );
+                is = AuthenticationManager.class.getResourceAsStream( "/" + name );
+                if( is == null ) {
+                    throw new FileNotFoundException( name + " not found" );
+                }
                 File tmpFile = File.createTempFile( "temp." + name, "" );
                 tmpFile.deleteOnExit();
 
-                OutputStream os = new FileOutputStream(tmpFile);
+                os = new FileOutputStream(tmpFile);
 
                 byte[] buff = new byte[1024];
-
-                while (is.read(buff) != -1)
-                {
-                    os.write(buff);
+                int bytes = 0;
+                while ((bytes = is.read(buff)) != -1) {
+                    os.write(buff, 0, bytes);
                 }
 
-                os.close();
-
                 path = tmpFile.toURI().toURL();
-
             }
             catch( MalformedURLException e )
             {
                 // This should never happen unless I screw up
-                log.fatal("Your code is b0rked.  You are a bad person.");
+                log.fatal( "Your code is b0rked.  You are a bad person.", e );
             }
             catch (IOException e)
             {
-               log.error("failed to load security policy from " + name + ",stacktrace follows", e);
+               log.error( "failed to load security policy from file " + name + ",stacktrace follows", e );
+            }
+            finally 
+            {
+            	IOUtils.closeQuietly( is );
+            	IOUtils.closeQuietly( os );
             }
         }
         return path;

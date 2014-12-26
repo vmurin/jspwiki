@@ -20,14 +20,18 @@ package org.apache.wiki;
 
 import java.lang.reflect.Method;
 import java.security.Principal;
-import java.util.*;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
+import java.util.ResourceBundle;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import org.apache.log4j.Logger;
-
 import org.apache.wiki.api.engine.FilterManager;
+import org.apache.wiki.api.exceptions.NoSuchVariableException;
 import org.apache.wiki.api.filters.PageFilter;
 import org.apache.wiki.i18n.InternationalizationManager;
 import org.apache.wiki.modules.InternalModule;
@@ -424,10 +428,10 @@ public class VariableManager
         {
             StringBuffer res = new StringBuffer();
 
-            for( Iterator i = m_context.getEngine().getAllInterWikiLinks().iterator(); i.hasNext(); )
+            for( Iterator< String > i = m_context.getEngine().getAllInterWikiLinks().iterator(); i.hasNext(); )
             {
                 if( res.length() > 0 ) res.append(", ");
-                String link = (String) i.next();
+                String link = i.next();
                 res.append( link );
                 res.append( " --> " );
                 res.append( m_context.getEngine().getInterWikiURL(link) );    
@@ -439,7 +443,7 @@ public class VariableManager
         {
             StringBuffer res = new StringBuffer();
 
-            for( Iterator<String> i = m_context.getEngine().getAllInlinedImagePatterns().iterator(); i.hasNext(); )
+            for( Iterator< String > i = m_context.getEngine().getAllInlinedImagePatterns().iterator(); i.hasNext(); )
             {
                 if( res.length() > 0 ) res.append(", ");
 
@@ -450,10 +454,9 @@ public class VariableManager
             return res.toString();
         }
 
-        @SuppressWarnings("deprecation")
         public String getPluginpath()
         {
-            String s = m_context.getEngine().getPluginSearchPath();
+            String s = m_context.getEngine().getPluginManager().getPluginSearchPath();
 
             return (s == null) ? "-" : s;
         }

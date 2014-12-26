@@ -21,7 +21,12 @@ package org.apache.wiki.util;
 import java.util.Date;
 import java.util.Properties;
 
-import javax.mail.*;
+import javax.mail.Authenticator;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.PasswordAuthentication;
+import javax.mail.Session;
+import javax.mail.Transport;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
@@ -30,7 +35,7 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 import org.apache.log4j.Logger;
-import org.apache.wiki.WikiEngine;
+
 
 /**
  * <p>Contains static methods for sending e-mails to recipients using JNDI-supplied
@@ -184,8 +189,8 @@ import org.apache.wiki.WikiEngine;
  * <a href="http://issues.apache.org/bugzilla/show_bug.cgi?id=40668">here</a>.
  *
  */
-public final class MailUtil
-{
+public final class MailUtil {
+
     private static final String JAVA_COMP_ENV = "java:comp/env";
 
     private static final String FALSE = "false";
@@ -255,18 +260,17 @@ public final class MailUtil
      * <p>Note that the first form allows a "friendly" user name to be supplied
      * in addition to the actual e-mail address.</p>
      *
-     * @param engine the WikiEngine for the current wiki
+     * @param props the properties that contain mail session properties
      * @param to the receiver
      * @param subject the subject line of the message
      * @param content the contents of the mail message, as plain text
      * @throws AddressException If the address is invalid
      * @throws MessagingException If the message cannot be sent.
      */
-    public static void sendMessage(WikiEngine engine, String to, String subject, String content)
+    public static void sendMessage( Properties props, String to, String subject, String content)
         throws AddressException, MessagingException
     {
-        Properties props = engine.getWikiProperties();
-        Session session = getMailSession(engine);
+        Session session = getMailSession( props );
         getSenderEmailAddress(session, props);
 
         try
@@ -334,13 +338,12 @@ public final class MailUtil
 
     /**
      * Returns the Mail Session from either JNDI or creates a stand-alone.
-     * @param engine a <code>WikiEngine</code>
+     * @param props a the properties that contain mail session properties
      * @return <code>Session</code>
      */
-    private static Session getMailSession(WikiEngine engine)
+    private static Session getMailSession(Properties props)
     {
         Session result = null;
-        Properties props = engine.getWikiProperties();
         String jndiName = props.getProperty(PROP_MAIL_JNDI_NAME, DEFAULT_MAIL_JNDI_NAME).trim();
 
         if (c_useJndi)
@@ -381,8 +384,7 @@ public final class MailUtil
      * @param props the properties that contain mail session properties
      * @return the initialized JavaMail Session
      */
-    protected static Session getStandaloneMailSession( Properties props )
-    {
+    protected static Session getStandaloneMailSession( Properties props ) {
         // Read the JSPWiki settings from the properties
         String host     = props.getProperty( PROP_MAIL_HOST, DEFAULT_MAIL_HOST );
         String port     = props.getProperty( PROP_MAIL_PORT, DEFAULT_MAIL_PORT );
@@ -460,8 +462,7 @@ public final class MailUtil
      * Simple {@link javax.mail.Authenticator} subclass that authenticates a user to
      * an SMTP server.
      */
-    protected static class SmtpAuthenticator extends Authenticator
-    {
+    protected static class SmtpAuthenticator extends Authenticator {
 
         private static final String BLANK = "";
         private final String m_pass;

@@ -28,6 +28,7 @@ import java.util.Properties;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import net.sf.ehcache.CacheManager;
 
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.wiki.TestEngine;
@@ -47,9 +48,9 @@ public class CachingProviderTest extends TestCase
         throws Exception
     {
         TestEngine.emptyWorkDir();
+        CacheManager.getInstance().removeAllCaches();
 
-        Properties props2 = new Properties();
-        props2.load( TestEngine.findTestProperties() );
+        Properties props2 = TestEngine.getTestProperties();
         testEngine = new TestEngine(props2);
         PropertyConfigurator.configure(props2);
     }
@@ -66,8 +67,7 @@ public class CachingProviderTest extends TestCase
     public void testInitialization()
         throws Exception
     {
-        Properties props = new Properties();
-        props.load( TestEngine.findTestProperties() );
+        Properties props = TestEngine.getTestProperties();
 
         props.setProperty( "jspwiki.usePageCache", "true" );
         props.setProperty( "jspwiki.pageProvider", "org.apache.wiki.providers.CounterProvider" );
@@ -80,20 +80,17 @@ public class CachingProviderTest extends TestCase
         assertEquals("init", 1, p.m_initCalls);
         assertEquals("getAllPages", 1, p.m_getAllPagesCalls);
         assertEquals("pageExists", 0, p.m_pageExistsCalls);
-        assertEquals("getPage", 2, p.m_getPageCalls); // These two are for non-existant pages (with and without s)
         assertEquals("getPageText", 4, p.m_getPageTextCalls);
 
         engine.getPage( "Foo" );
 
         assertEquals("pageExists2", 0, p.m_pageExistsCalls);
-        assertEquals("getPage2", 2, p.m_getPageCalls);
     }
 
     public void testSneakyAdd()
         throws Exception
     {
-        Properties props = new Properties();
-        props.load( TestEngine.findTestProperties() );
+        Properties props = TestEngine.getTestProperties();
 
         props.setProperty( "jspwiki.cachingProvider.cacheCheckInterval", "2" );
         

@@ -45,7 +45,7 @@ public abstract class WikiTagBase
 
     public static final String ATTR_CONTEXT = "jspwiki.context";
 
-    static    Logger    log = Logger.getLogger( WikiTagBase.class );
+    private static final Logger log = Logger.getLogger( WikiTagBase.class );
 
     protected WikiContext m_wikiContext;
 
@@ -107,8 +107,9 @@ public abstract class WikiTagBase
         return EVAL_PAGE;
     }
 
-    public void doCatch(Throwable arg0) throws Throwable
+    public void doCatch( Throwable th ) throws Throwable
     {
+    	log.error( th.getMessage(), th );
     }
 
     public void doFinally()

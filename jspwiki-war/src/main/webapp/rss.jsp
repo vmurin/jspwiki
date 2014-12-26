@@ -19,22 +19,34 @@
 
 <?xml version="1.0" encoding="UTF-8"?>
 
-<%@ page import="java.util.*,org.apache.wiki.*" %>
+<%@ page import="java.util.*" %>
 <%@ page import="org.apache.log4j.*" %>
 <%@ page import="java.text.*" %>
+<%@ page import="org.apache.wiki.*" %>
 <%@ page import="org.apache.wiki.preferences.Preferences" %>
 <%@ page import="org.apache.wiki.rss.*" %>
 <%@ page import="org.apache.wiki.util.*" %>
-<%@ page import="com.opensymphony.oscache.base.*" %>
-<%@ taglib uri="http://www.opensymphony.com/oscache" prefix="oscache" %>
+<%@ page import="net.sf.ehcache.Cache" %>
+<%@ page import="net.sf.ehcache.Element" %>
+<%@ page import="net.sf.ehcache.CacheManager" %>
 
 <%!
-    Logger log = Logger.getLogger("JSPWiki");
-    Cache m_cache = new Cache( true, false, false, true, 
-                               "com.opensymphony.oscache.base.algorithm.LRUCache", 256 );
+    private Logger log = Logger.getLogger("JSPWiki");
+    private CacheManager m_cacheManager = CacheManager.getInstance();
+    private String cacheName = "jspwiki.rssCache";
+    private Cache m_rssCache;
+    private int m_expiryPeriod = 24*60*60;
+    private int cacheCapacity = 1000;
 %>
 
 <%
+    if (m_cacheManager.cacheExists(cacheName)) {
+        m_rssCache = m_cacheManager.getCache(cacheName);
+    } else {
+        log.info("cache with name " + cacheName +  " not found in ehcache.xml, creating it with defaults.");
+        m_rssCache = new Cache(cacheName, cacheCapacity, false, false, m_expiryPeriod, m_expiryPeriod);
+        m_cacheManager.addCache(m_rssCache);
+    }
     WikiEngine wiki = WikiEngine.getInstance( getServletConfig() );
     // Create wiki context and check for authorization
     WikiContext wikiContext = wiki.createContext( request, "rss" );
@@ -83,8 +95,8 @@
     SimpleDateFormat iso8601fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
     Properties properties = wiki.getWikiProperties();
-    String channelDescription = WikiEngine.getRequiredProperty( properties, RSSGenerator.PROP_CHANNEL_DESCRIPTION );
-    String channelLanguage    = WikiEngine.getRequiredProperty( properties, RSSGenerator.PROP_CHANNEL_LANGUAGE );
+    String channelDescription = TextUtil.getRequiredProperty( properties, RSSGenerator.PROP_CHANNEL_DESCRIPTION );
+    String channelLanguage    = TextUtil.getRequiredProperty( properties, RSSGenerator.PROP_CHANNEL_LANGUAGE );
 
     //
     //  Now, list items.
@@ -114,7 +126,7 @@
     {
         WikiPage p = (WikiPage) i.next();
 
-        if( !HttpUtil.checkFor304( request, p ) ) hasChanged = true;
+        if( !HttpUtil.checkFor304( request, p.getName(), p.getLastModified() ) ) hasChanged = true;
         if( p.getLastModified().after( latest ) ) latest = p.getLastModified();
     }
 
@@ -126,7 +138,7 @@
     }
 
     response.addDateHeader("Last-Modified",latest.getTime());
-    response.addHeader("ETag", HttpUtil.createETag(wikipage) );
+    response.addHeader("ETag", HttpUtil.createETag( wikipage.getName(), wikipage.getLastModified() ) );
     
     //
     //  Try to get the RSS XML from the cache.  We build the hashkey
@@ -139,22 +151,15 @@
     String hashKey = wikipage.getName()+";"+mode+";"+type+";"+latest.getTime();
     
     String rss = "";
-    
-    try
-    {
-        rss = (String)m_cache.getFromCache(hashKey);
+
+    Element element = m_rssCache.get(hashKey);
+    if (element != null) {
+      rss = (String) element.getObjectValue();
     }
-    catch( NeedsRefreshException e )
+    else
     { 
-        try
-        {
-            rss = wiki.getRSSGenerator().generateFeed( wikiContext, changed, mode, type );
-            m_cache.putInCache(hashKey,rss);
-        }
-        catch( Exception e1 )
-        {
-            m_cache.cancelUpdate(hashKey);            
-        }
+        rss = wiki.getRSSGenerator().generateFeed( wikiContext, changed, mode, type );
+        m_rssCache.put(new Element(hashKey,rss));
     }
     
     out.println(rss);

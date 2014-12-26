@@ -24,7 +24,19 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.security.Principal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.TimeZone;
+import java.util.TreeSet;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -34,9 +46,12 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+import org.apache.wiki.api.engine.AdminBeanManager;
 import org.apache.wiki.api.engine.FilterManager;
 import org.apache.wiki.api.engine.PluginManager;
 import org.apache.wiki.api.exceptions.FilterException;
+import org.apache.wiki.api.exceptions.NoSuchVariableException;
+import org.apache.wiki.api.exceptions.ProviderException;
 import org.apache.wiki.api.exceptions.WikiException;
 import org.apache.wiki.attachment.Attachment;
 import org.apache.wiki.attachment.AttachmentManager;
@@ -48,11 +63,14 @@ import org.apache.wiki.auth.acl.DefaultAclManager;
 import org.apache.wiki.auth.authorize.GroupManager;
 import org.apache.wiki.content.PageRenamer;
 import org.apache.wiki.diff.DifferenceManager;
-import org.apache.wiki.event.*;
+import org.apache.wiki.event.WikiEngineEvent;
+import org.apache.wiki.event.WikiEventListener;
+import org.apache.wiki.event.WikiEventManager;
+import org.apache.wiki.event.WikiPageEvent;
+import org.apache.wiki.event.WikiPageRenameEvent;
 import org.apache.wiki.i18n.InternationalizationManager;
 import org.apache.wiki.parser.MarkupParser;
 import org.apache.wiki.parser.WikiDocument;
-import org.apache.wiki.providers.ProviderException;
 import org.apache.wiki.providers.WikiPageProvider;
 import org.apache.wiki.render.RenderingManager;
 import org.apache.wiki.rss.RSSGenerator;
@@ -62,14 +80,20 @@ import org.apache.wiki.ui.Command;
 import org.apache.wiki.ui.CommandResolver;
 import org.apache.wiki.ui.EditorManager;
 import org.apache.wiki.ui.TemplateManager;
-import org.apache.wiki.ui.admin.AdminBeanManager;
 import org.apache.wiki.ui.progress.ProgressManager;
 import org.apache.wiki.url.URLConstructor;
 import org.apache.wiki.util.ClassUtil;
-import org.apache.wiki.util.PageSorter;
+import org.apache.wiki.util.PropertyReader;
 import org.apache.wiki.util.TextUtil;
-import org.apache.wiki.util.WatchDog;
-import org.apache.wiki.workflow.*;
+import org.apache.wiki.util.comparators.PageTimeComparator;
+import org.apache.wiki.workflow.Decision;
+import org.apache.wiki.workflow.DecisionRequiredException;
+import org.apache.wiki.workflow.Fact;
+import org.apache.wiki.workflow.Task;
+import org.apache.wiki.workflow.Workflow;
+import org.apache.wiki.workflow.WorkflowBuilder;
+import org.apache.wiki.workflow.WorkflowManager;
+
 
 /**
  *  Provides Wiki services to the JSP page.
@@ -427,15 +451,15 @@ public class WikiEngine
         m_properties = props;
 
         //
-        //  Initialized log4j.  However, make sure that
-        //  we don't initialize it multiple times.  Also, if
-        //  all of the log4j statements have been removed from
-        //  the property file, we do not do any property setting
-        //  either.q
+        //  Initialize log4j.  However, make sure that we don't initialize it multiple times.
+        //  By default we load the log4j config statements from jspwiki.properties, unless
+        //  the property jspwiki.use.external.logconfig=true, in that case we let log4j figure out the
+        //  logging configuration.
         //
         if( !c_configured )
         {
-            if( props.getProperty("log4j.rootCategory") != null )
+            String useExternalLogConfig = props.getProperty("jspwiki.use.external.logconfig");
+            if( useExternalLogConfig == null || useExternalLogConfig.equals("false"))
             {
                 PropertyConfigurator.configure( props );
             }
@@ -494,8 +518,8 @@ public class WikiEngine
         }
         catch( SecurityException e )
         {
-            log.fatal("Unable to find or create the working directory: "+m_workDir,e);
-            throw new IllegalArgumentException("Unable to find or create the working dir: "+m_workDir);
+            log.fatal( "Unable to find or create the working directory: "+m_workDir, e );
+            throw new IllegalArgumentException( "Unable to find or create the working dir: " + m_workDir, e );
         }
 
         log.info("JSPWiki working directory is '"+m_workDir+"'");
@@ -531,7 +555,7 @@ public class WikiEngine
         //        of a better way to do the startup-sequence.
         try
         {
-            Class urlclass = ClassUtil.findClass( "org.apache.wiki.url",
+            Class< ? > urlclass = ClassUtil.findClass( "org.apache.wiki.url",
                     TextUtil.getStringProperty( props, PROP_URLCONSTRUCTOR, "DefaultURLConstructor" ) );
             m_urlConstructor = (URLConstructor) urlclass.newInstance();
             m_urlConstructor.initialize( this, props );
@@ -609,33 +633,29 @@ public class WikiEngine
         {
             // RuntimeExceptions may occur here, even if they shouldn't.
             log.fatal( "Failed to start managers.", e );
-            e.printStackTrace();
-            throw new WikiException( "Failed to start managers: "+e.getMessage(), e );
+            throw new WikiException( "Failed to start managers: " + e.getMessage(), e );
         }
         catch (ClassNotFoundException e)
         {
-            log.fatal( "JSPWiki could not start, URLConstructor was not found: ",e );
-            e.printStackTrace();
+            log.fatal( "JSPWiki could not start, URLConstructor was not found: " + e.getMessage(), e );
             throw new WikiException(e.getMessage(), e );
         }
         catch (InstantiationException e)
         {
-            log.fatal( "JSPWiki could not start, URLConstructor could not be instantiated: ",e );
-            e.printStackTrace();
+            log.fatal( "JSPWiki could not start, URLConstructor could not be instantiated: " + e.getMessage(), e );
             throw new WikiException(e.getMessage(), e );
         }
         catch (IllegalAccessException e)
         {
-            log.fatal( "JSPWiki could not start, URLConstructor cannot be accessed: ",e );
-            e.printStackTrace();
+            log.fatal( "JSPWiki could not start, URLConstructor cannot be accessed: " + e.getMessage(), e );
             throw new WikiException(e.getMessage(), e );
         }
         catch( Exception e )
         {
             // Final catch-all for everything
             log.fatal( "JSPWiki could not start, due to an unknown exception when starting.",e );
-            e.printStackTrace();
-            throw new WikiException("Failed to start; please check log files for better information.", e );
+            throw new WikiException( "Failed to start. Caused by: " + e.getMessage() + 
+                                     "; please check log files for better information.", e );
         }
         
         //
@@ -716,26 +736,6 @@ public class WikiEngine
         }
     }
 
-
-    /**
-     * Throws an exception if a property is not found.
-     *
-     * @param props A set of properties to search the key in.
-     * @param key   The key to look for.
-     * @return The required property
-     *
-     * @throws NoRequiredPropertyException If the search key is not
-     *         in the property set.
-     * @deprecated will be removed in 2.10 scope. Consider using {@link TextUtil#getRequiredProperty(Properties, String)} 
-     * instead
-     */
-    @Deprecated
-    public static String getRequiredProperty( Properties props, String key )
-        throws NoRequiredPropertyException
-    {
-        return TextUtil.getRequiredProperty( props, key );
-    }
-
     /**
      *  Returns the set of properties that the WikiEngine was initialized
      *  with.  Note that this method returns a direct reference, so it's possible
@@ -759,18 +759,6 @@ public class WikiEngine
     public String getWorkDir()
     {
         return m_workDir;
-    }
-
-    /**
-     *  Don't use.
-     *  @since 1.8.0
-     *  @deprecated
-     *  @return Something magical.
-     */
-    public String getPluginSearchPath()
-    {
-        // FIXME: This method should not be here, probably.
-        return TextUtil.getStringProperty( m_properties, PluginManager.PROP_SEARCHPATH, null );
     }
 
     /**
@@ -1024,21 +1012,21 @@ public class WikiEngine
      *
      *  @return A Collection of Strings.
      */
-    public Collection getAllInterWikiLinks()
+    public Collection< String > getAllInterWikiLinks()
     {
-        Vector<String> v = new Vector<String>();
+    	ArrayList< String > list = new ArrayList< String >();
 
-        for( Enumeration i = m_properties.propertyNames(); i.hasMoreElements(); )
+        for( Enumeration< ? > i = m_properties.propertyNames(); i.hasMoreElements(); )
         {
-            String prop = (String) i.nextElement();
+            String prop = ( String )i.nextElement();
 
             if( prop.startsWith( PROP_INTERWIKIREF ) )
             {
-                v.add( prop.substring( prop.lastIndexOf(".")+1 ) );
+                list.add( prop.substring( prop.lastIndexOf( "." ) + 1 ) );
             }
         }
 
-        return v;
+        return list;
     }
 
     /**
@@ -1051,9 +1039,9 @@ public class WikiEngine
         Properties props    = getWikiProperties();
         ArrayList<String>  ptrnlist = new ArrayList<String>();
 
-        for( Enumeration e = props.propertyNames(); e.hasMoreElements(); )
+        for( Enumeration< ? > e = props.propertyNames(); e.hasMoreElements(); )
         {
-            String name = (String) e.nextElement();
+            String name = ( String )e.nextElement();
 
             if( name.startsWith( PROP_INLINEIMAGEPTRN ) )
             {
@@ -1288,7 +1276,7 @@ public class WikiEngine
         }
         catch( UnsupportedEncodingException e )
         {
-            throw new InternalWikiException("ISO-8859-1 not a supported encoding!?!  Your platform is borked.");
+            throw new InternalWikiException( "ISO-8859-1 not a supported encoding!?!  Your platform is borked." );
         }
     }
 
@@ -1565,11 +1553,10 @@ public class WikiEngine
      *  @param pagedata The page contents
      *  @return a Collection of Strings
      */
-    public Collection scanWikiLinks( WikiPage page, String pagedata )
-    {
+    public Collection< String > scanWikiLinks( WikiPage page, String pagedata ) {
         LinkCollector localCollector = new LinkCollector();
 
-        textToHTML( new WikiContext(this,page),
+        textToHTML( new WikiContext( this, page ),
                     pagedata,
                     localCollector,
                     null,
@@ -1685,10 +1672,11 @@ public class WikiEngine
         }
         catch( IOException e )
         {
-            log.error("Failed to scan page data: ", e);
+            log.error( "Failed to scan page data: ", e );
         }
         catch( FilterException e )
         {
+        	log.error( "page filter threw exception: ", e );
             // FIXME: Don't yet know what to do
         }
 
@@ -1943,7 +1931,7 @@ public class WikiEngine
         }
         catch( ProviderException e )
         {
-            log.error("FIXME");
+            log.error( "FIXME", e );
         }
 
         return c;
@@ -2333,13 +2321,12 @@ public class WikiEngine
     }
 
     /**
-     *  Returns the current AdminBeanManager.
+     *  Returns the current {@link AdminBeanManager}.
      *
-     *  @return The current AdminBeanManager
+     *  @return The current {@link AdminBeanManager}.
      *  @since  2.6
      */
-    public AdminBeanManager getAdminBeanManager()
-    {
+    public AdminBeanManager getAdminBeanManager() {
         return m_adminBeanManager;
     }
 

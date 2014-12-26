@@ -18,16 +18,11 @@
  */
 package org.apache.wiki;
 
-import java.io.IOException;
 import java.security.Permission;
 import java.security.Principal;
 import java.util.HashMap;
-import java.util.Locale;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
 
@@ -37,9 +32,13 @@ import org.apache.wiki.auth.UserManager;
 import org.apache.wiki.auth.WikiPrincipal;
 import org.apache.wiki.auth.permissions.AllPermission;
 import org.apache.wiki.auth.user.UserDatabase;
-import org.apache.wiki.preferences.Preferences;
 import org.apache.wiki.tags.WikiTagBase;
-import org.apache.wiki.ui.*;
+import org.apache.wiki.ui.Command;
+import org.apache.wiki.ui.CommandResolver;
+import org.apache.wiki.ui.GroupCommand;
+import org.apache.wiki.ui.Installer;
+import org.apache.wiki.ui.PageCommand;
+import org.apache.wiki.ui.WikiCommand;
 
 /**
  *  <p>Provides state information throughout the processing of a page.  A
@@ -778,53 +777,6 @@ public class WikiContext
     }
 
     /**
-     * Checks whether the current user has access to this wiki context,
-     * by obtaining the required Permission ({@link #requiredPermission()})
-     * and delegating the access check to
-     * {@link org.apache.wiki.auth.AuthorizationManager#checkPermission(WikiSession, Permission)}.
-     * If the user is allowed, this method returns <code>true</code>;
-     * <code>false</code> otherwise. If access is allowed,
-     * the wiki context will be added to the request as an attribute
-     * with the key name {@link org.apache.wiki.tags.WikiTagBase#ATTR_CONTEXT}.
-     * Note that this method will automatically redirect the user to
-     * a login or error page, as appropriate, if access fails. This is
-     * NOT guaranteed to be default behavior in the future.
-     * @param response the http response
-     * @return the result of the access check
-     * @throws IOException In case something goes wrong
-     * @deprecated will be removed in 2.10 scope. Consider using
-     * {@link org.apache.wiki.auth.AuthorizationManager#hasAccess(WikiContext, HttpServletResponse)}
-     * instead
-     */
-    @Deprecated
-    public boolean hasAccess( HttpServletResponse response ) throws IOException
-    {
-        return m_engine.getAuthorizationManager().hasAccess( this, response, true );
-    }
-
-    /**
-     * Checks whether the current user has access to this wiki context (and
-     * optionally redirects if not), by obtaining the required Permission ({@link #requiredPermission()})
-     * and delegating the access check to
-     * {@link org.apache.wiki.auth.AuthorizationManager#checkPermission(WikiSession, Permission)}.
-     * If the user is allowed, this method returns <code>true</code>;
-     * <code>false</code> otherwise. If access is allowed,
-     * the wiki context will be added to the request as attribute
-     * with the key name {@link org.apache.wiki.tags.WikiTagBase#ATTR_CONTEXT}.
-     * @return the result of the access check
-     * @param response The servlet response object
-     * @param redirect If true, makes an automatic redirect to the response
-     * @throws IOException If something goes wrong
-     * @deprecated will be removed in 2.10 scope. Consider using 
-     * {@link org.apache.wiki.auth.AuthorizationManager#hasAccess(WikiContext, HttpServletResponse, boolean)} instead
-     */
-    @Deprecated
-    public boolean hasAccess( HttpServletResponse response, boolean redirect ) throws IOException
-    {
-        return m_engine.getAuthorizationManager().hasAccess( this, response, redirect );
-    }
-
-    /**
      *  Returns true, if the current user has administrative permissions (i.e. the omnipotent
      *  AllPermission).
      *
@@ -926,43 +878,6 @@ public class WikiContext
         {
             m_command = m_command.targetedCommand( m_page );
         }
-    }
-
-    /**
-     *  Locates the i18n ResourceBundle given.  This method interprets
-     *  the request locale, and uses that to figure out which language the
-     *  user wants.
-     *  @see org.apache.wiki.i18n.InternationalizationManager
-     *  @param bundle The name of the bundle you are looking for.
-     *  @return A resource bundle object
-     *  @throws MissingResourceException If the bundle cannot be found
-     *  @deprecated will be removed in 2.10 scope. Consider using 
-     *  {@link Preferences#getBundle(WikiContext,String)} instead.
-     */
-    @Deprecated
-    // FIXME: This method should really cache the ResourceBundles or something...
-    public ResourceBundle getBundle( String bundle ) throws MissingResourceException
-    {
-        Locale loc = Preferences.getLocale( this );
-       
-        ResourceBundle b = m_engine.getInternationalizationManager().getBundle(bundle, loc);
-
-        return b;
-    }
-
-    /**
-     *  Returns the locale of the HTTP request if available,
-     *  otherwise returns the default Locale of the server.
-     *
-     *  @return A valid locale object
-     *  @param context The WikiContext
-     *  @deprecated will be removed in 2.10 scope. Consider using {@link Preferences#getLocale(WikiContext)} 
-     * instead
-     */
-    @Deprecated
-    public static Locale getLocale( WikiContext context )
-    {
-        return Preferences.getLocale( context );
     }
 
 }

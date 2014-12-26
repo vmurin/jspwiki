@@ -29,36 +29,24 @@ import junit.framework.TestSuite;
 
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.wiki.TestEngine;
-import org.apache.wiki.WikiException;
 import org.apache.wiki.api.engine.FilterManager;
 import org.apache.wiki.api.filters.PageFilter;
 
-public class DefaultFilterManagerTest extends TestCase
-{
-    Properties props = new Properties();
+public class DefaultFilterManagerTest extends TestCase {
+    Properties props = TestEngine.getTestProperties();
 
     TestEngine engine;
 
-    public DefaultFilterManagerTest( String s )
-    {
+    public DefaultFilterManagerTest( String s ) {
         super( s );
     }
 
-    public void setUp()
-        throws Exception
-    {
-        props.load( TestEngine.findTestProperties() );
+    public void setUp() throws Exception {
         PropertyConfigurator.configure(props);
         engine = new TestEngine(props);
     }
 
-    public void tearDown()
-    {
-    }
-
-    public void testInitFilters()
-        throws Exception
-    {
+    public void testInitFilters() throws Exception {
         FilterManager m = new DefaultFilterManager( engine, props );
 
         List l = m.getFilterList();
@@ -75,9 +63,7 @@ public class DefaultFilterManagerTest extends TestCase
         assertTrue("Not a Testfilter", f2 instanceof TestFilter);
     }
 
-    public void testInitParams()
-        throws Exception
-    {
+    public void testInitParams() throws Exception {
         FilterManager m = new DefaultFilterManager( engine, props );
 
         List l = m.getFilterList();
@@ -93,8 +79,7 @@ public class DefaultFilterManagerTest extends TestCase
         assertEquals("no blatblaa", "5", p.getProperty( "blatblaa" ) );
     }
 
-    public static Test suite()
-    {
+    public static Test suite() {
         return new TestSuite( DefaultFilterManagerTest.class );
     }
 

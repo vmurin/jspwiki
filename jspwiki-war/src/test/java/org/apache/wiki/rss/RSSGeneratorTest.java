@@ -27,16 +27,17 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+import net.sf.ehcache.CacheManager;
+
 import org.apache.wiki.TestEngine;
 import org.apache.wiki.WikiContext;
 import org.apache.wiki.WikiEngine;
 import org.apache.wiki.plugin.WeblogEntryPlugin;
 import org.apache.wiki.plugin.WeblogPlugin;
 import org.apache.wiki.providers.FileSystemProvider;
-
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 /**
  *
@@ -45,7 +46,7 @@ import junit.framework.TestSuite;
 public class RSSGeneratorTest extends TestCase
 {
     TestEngine m_testEngine;
-    Properties props = new Properties();
+    Properties props = TestEngine.getTestProperties();
 
     public RSSGeneratorTest( String arg0 )
     {
@@ -54,10 +55,9 @@ public class RSSGeneratorTest extends TestCase
 
     protected void setUp() throws Exception
     {
-        props.load( TestEngine.findTestProperties() );
-
         props.setProperty( WikiEngine.PROP_BASEURL, "http://localhost/" );
         props.setProperty( RSSGenerator.PROP_GENERATE_RSS, "true" );
+        CacheManager.getInstance().removeAllCaches();
         m_testEngine = new TestEngine(props);
     }
 
@@ -84,10 +84,10 @@ public class RSSGeneratorTest extends TestCase
 
         WeblogPlugin blogplugin = new WeblogPlugin();
 
-        List entries = blogplugin.findBlogEntries( m_testEngine.getPageManager(),
-                                                   "TestBlog",
-                                                   new Date(0),
-                                                   new Date(Long.MAX_VALUE) );
+        List< ? > entries = blogplugin.findBlogEntries( m_testEngine.getPageManager(),
+                                                       "TestBlog",
+                                                        new Date(0),
+                                                        new Date(Long.MAX_VALUE) );
 
         Feed feed = new RSS10Feed( context );
         String blog = gen.generateBlogRSS( context, entries, feed );
@@ -114,10 +114,10 @@ public class RSSGeneratorTest extends TestCase
 
         WeblogPlugin blogplugin = new WeblogPlugin();
 
-        List entries = blogplugin.findBlogEntries( m_testEngine.getPageManager(),
-                                                   "TestBlog",
-                                                   new Date(0),
-                                                   new Date(Long.MAX_VALUE) );
+        List< ? > entries = blogplugin.findBlogEntries( m_testEngine.getPageManager(),
+                                                       "TestBlog",
+                                                        new Date(0),
+                                                        new Date(Long.MAX_VALUE) );
 
         Feed feed = new RSS20Feed( context );
         String blog = gen.generateBlogRSS( context, entries, feed );

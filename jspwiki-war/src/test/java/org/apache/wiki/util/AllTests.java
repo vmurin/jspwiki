@@ -16,36 +16,37 @@
     specific language governing permissions and limitations
     under the License.  
  */
-
 package org.apache.wiki.util;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import org.apache.wiki.PropertyReaderTest;
 
-public class AllTests extends TestCase
-{
-    public AllTests( String s )
-    {
+
+public class AllTests extends TestCase {
+
+    public AllTests( String s ) {
         super( s );
     }
 
-    public static Test suite()
-    {
+    public static Test suite() {
         TestSuite suite = new TestSuite("Utility suite tests");
 
+        suite.addTest( ByteUtilsTest.suite() );
         suite.addTest( ClassUtilTest.suite() );
         suite.addTest( CommentedPropertiesTest.suite() );
         suite.addTest( CryptoUtilTest.suite() );
         suite.addTest( FileUtilTest.suite() );
         suite.addTest( org.apache.wiki.util.comparators.AllTests.suite() );
         suite.addTest( MailUtilTest.suite() );
-        suite.addTest( PageSorterTest.suite() );
         suite.addTest( PriorityListTest.suite() );
+        suite.addTest( PropertyReaderTest.suite() );
         suite.addTest( SerializerTest.suite() );
         suite.addTest( TextUtilTest.suite() );
         suite.addTest( TimedCounterListTest.suite() );
+        suite.addTest( XmlUtilTest.suite() );
         
         return suite;
     }

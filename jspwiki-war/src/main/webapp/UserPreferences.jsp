@@ -33,7 +33,7 @@
 <%@ page import="org.apache.wiki.ui.TemplateManager" %>
 <%@ page import="org.apache.wiki.workflow.DecisionRequiredException" %>
 <%@ page errorPage="/Error.jsp" %>
-<%@ taglib uri="http://incubator.apache.org/jspwiki/tags" prefix="wiki" %>
+<%@ taglib uri="http://jspwiki.apache.org/tags" prefix="wiki" %>
 
 <%! 
     Logger log = Logger.getLogger("JSPWiki"); 
@@ -78,7 +78,7 @@
                 // User collision! (full name or wiki name already taken)
                 wikiSession.addMessage( "profile", wiki.getInternationalizationManager()
                                                        .get( InternationalizationManager.CORE_BUNDLE,
-                                                    		 WikiContext.getLocale( wikiContext ), 
+                                                    		 Preferences.getLocale( wikiContext ), 
                                                              due.getMessage(), due.getArgs() ) );
             }
             catch( DecisionRequiredException e )

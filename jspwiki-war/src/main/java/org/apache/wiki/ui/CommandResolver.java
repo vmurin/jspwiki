@@ -27,14 +27,13 @@ import java.util.Properties;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.log4j.Logger;
-
 import org.apache.wiki.InternalWikiException;
 import org.apache.wiki.WikiEngine;
 import org.apache.wiki.WikiPage;
 import org.apache.wiki.WikiProvider;
+import org.apache.wiki.api.exceptions.ProviderException;
 import org.apache.wiki.auth.GroupPrincipal;
 import org.apache.wiki.parser.MarkupParser;
-import org.apache.wiki.providers.ProviderException;
 import org.apache.wiki.util.TextUtil;
 
 /**
@@ -117,14 +116,12 @@ public final class CommandResolver
         // the "special page" prefix. Create maps that allow us
         // look up the correct Command based on special page name.
         // If a matching command isn't found, create a RedirectCommand.
-        for( Iterator i = properties.entrySet().iterator(); i.hasNext(); )
+        for(String key : properties.stringPropertyNames())
         {
-            Map.Entry entry = (Map.Entry) i.next();
-            String key = (String) entry.getKey();
             if ( key.startsWith( PROP_SPECIALPAGE ) )
             {
                 String specialPage = key.substring( PROP_SPECIALPAGE.length() );
-                String jsp = (String) entry.getValue();
+                String jsp = (String) properties.getProperty(key);
                 if ( specialPage != null && jsp != null )
                 {
                     specialPage = specialPage.trim();

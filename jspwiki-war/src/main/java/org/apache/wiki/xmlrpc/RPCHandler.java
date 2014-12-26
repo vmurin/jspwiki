@@ -19,7 +19,12 @@
 package org.apache.wiki.xmlrpc;
 
 import java.io.UnsupportedEncodingException;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Vector;
 
 import org.apache.log4j.Logger;
 import org.apache.wiki.LinkCollector;
@@ -278,10 +283,10 @@ public class RPCHandler
         //
         //  Add local links.
         //
-        for( Iterator i = localCollector.getLinks().iterator(); i.hasNext(); )
+        for( Iterator< String > i = localCollector.getLinks().iterator(); i.hasNext(); )
         {
-            String link = (String) i.next();
-            Hashtable<String, String> ht = new Hashtable<String, String>();
+            String link = i.next();
+            Hashtable< String, String > ht = new Hashtable<String, String>();
             ht.put( "page", toRPCString( link ) );
             ht.put( "type", LINK_LOCAL );
 
@@ -311,15 +316,15 @@ public class RPCHandler
         //
         // Add links to inline attachments
         //
-        for( Iterator i = attCollector.getLinks().iterator(); i.hasNext(); )
+        for( Iterator< String > i = attCollector.getLinks().iterator(); i.hasNext(); )
         {
-            String link = (String) i.next();
+            String link = i.next();
 
-            Hashtable<String, String> ht = new Hashtable<String, String>();
+            Hashtable< String, String > ht = new Hashtable< String, String >();
 
             ht.put( "page", toRPCString( link ) );
             ht.put( "type", LINK_LOCAL );
-            ht.put( "href", context.getURL(WikiContext.ATTACH,link) );
+            ht.put( "href", context.getURL( WikiContext.ATTACH, link ) );
 
             result.add( ht );
         }
@@ -329,11 +334,11 @@ public class RPCHandler
         // simply because URLs are by definition ASCII.
         //
 
-        for( Iterator i = extCollector.getLinks().iterator(); i.hasNext(); )
+        for( Iterator< String > i = extCollector.getLinks().iterator(); i.hasNext(); )
         {
-            String link = (String) i.next();
+            String link = i.next();
 
-            Hashtable<String, String> ht = new Hashtable<String, String>();
+            Hashtable< String, String > ht = new Hashtable< String, String >();
 
             ht.put( "page", link );
             ht.put( "type", LINK_EXTERNAL );

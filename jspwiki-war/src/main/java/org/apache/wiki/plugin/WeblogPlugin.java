@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 import org.apache.log4j.Logger;
 import org.apache.wiki.*;
 import org.apache.wiki.api.exceptions.PluginException;
+import org.apache.wiki.api.exceptions.ProviderException;
 import org.apache.wiki.api.plugin.ParserStagePlugin;
 import org.apache.wiki.api.plugin.WikiPlugin;
 import org.apache.wiki.auth.AuthorizationManager;
@@ -35,7 +36,6 @@ import org.apache.wiki.auth.permissions.PagePermission;
 import org.apache.wiki.parser.PluginContent;
 import org.apache.wiki.preferences.Preferences;
 import org.apache.wiki.preferences.Preferences.TimeFormat;
-import org.apache.wiki.providers.ProviderException;
 import org.apache.wiki.util.TextUtil;
 
 /**
@@ -263,9 +263,9 @@ public class WeblogPlugin
 
             sb.append("<div class=\"weblog\">\n");
             
-            for( Iterator i = blogEntries.iterator(); i.hasNext() && maxEntries-- > 0 ; )
+            for( Iterator< WikiPage > i = blogEntries.iterator(); i.hasNext() && maxEntries-- > 0 ; )
             {
-                WikiPage p = (WikiPage) i.next();
+                WikiPage p = i.next();
 
                 if( mgr.checkPermission( context.getWikiSession(), 
                                          new PagePermission(p, PagePermission.VIEW_ACTION) ) )
@@ -434,38 +434,10 @@ public class WeblogPlugin
 
             if( pageName.startsWith( baseName ) )
             {
-                //
-                //  Check the creation date from the page name.
-                //  We do this because RCSFileProvider is very slow at getting a
-                //  specific page version.
-                //
                 try
                 {
-                    //log.debug("Checking: "+pageName);
-                    int firstScore = pageName.indexOf('_',baseName.length()-1 );
-                    if( firstScore != -1 && firstScore+1 < pageName.length() )
-                    {
-                        int secondScore = pageName.indexOf('_', firstScore+1);
-
-                        if( secondScore != -1 )
-                        {
-                            String creationDate = pageName.substring( firstScore+1, secondScore );
-
-                            //log.debug("   Creation date: "+creationDate);
-
-                            Date pageDay = fmt.parse( creationDate );
-
-                            //
-                            //  Add the first version of the page into the list.  This way
-                            //  the page modified date becomes the page creation date.
-                            //
-                            if( pageDay != null && pageDay.after(start) && pageDay.before(end) )
-                            {
-                                WikiPage firstVersion = mgr.getPageInfo( pageName, 1 );
-                                result.add( firstVersion );
-                            }
-                        }
-                    }
+                    WikiPage firstVersion = mgr.getPageInfo( pageName, 1 );
+                    result.add( firstVersion );
                 }
                 catch( Exception e )
                 {

@@ -18,14 +18,17 @@
  */
 package org.apache.wiki.tags;
 
-import java.util.*;
-
 import java.io.IOException;
-import javax.servlet.jsp.JspException;
-import javax.servlet.ServletException;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.apache.wiki.providers.ProviderException;
-import org.apache.wiki.*;
+import javax.servlet.ServletException;
+import javax.servlet.jsp.JspException;
+
+import org.apache.log4j.Logger;
+import org.apache.wiki.WikiContext;
+import org.apache.wiki.api.exceptions.ProviderException;
+
 
 /**
  *  Is used as a "super include" tag, which can include the proper context
@@ -33,10 +36,10 @@ import org.apache.wiki.*;
  *
  *  @since 2.2
  */
-public class ContentTag
-    extends WikiTagBase
-{
+public class ContentTag extends WikiTagBase {
+
     private static final long serialVersionUID = 0L;
+    private static final Logger log = Logger.getLogger( ContentTag.class );
     
     private Map<String, String> m_mappings = new HashMap<String, String>();
 

@@ -31,8 +31,8 @@ import javax.security.auth.spi.LoginModule;
 import junit.framework.TestCase;
 import net.sourceforge.stripes.mock.MockHttpServletRequest;
 
-import org.apache.wiki.NoRequiredPropertyException;
 import org.apache.wiki.TestEngine;
+import org.apache.wiki.api.exceptions.NoRequiredPropertyException;
 import org.apache.wiki.auth.WikiPrincipal;
 import org.apache.wiki.auth.authorize.Role;
 import org.apache.wiki.auth.user.UserDatabase;
@@ -112,8 +112,7 @@ public class WebContainerLoginModuleTest extends TestCase
      */
     protected void setUp() throws Exception
     {
-        Properties props = new Properties();
-        props.load( TestEngine.findTestProperties() );
+        Properties props = TestEngine.getTestProperties();
         props.put(XMLUserDatabase.PROP_USERDATABASE, "target/test-classes/userdatabase.xml" );
         m_engine = new TestEngine(props);
         m_db = new XMLUserDatabase();

@@ -18,20 +18,25 @@
  */
 package org.apache.wiki.ui;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.text.MessageFormat;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.wiki.PageManager;
-import org.apache.wiki.PropertyReader;
 import org.apache.wiki.WikiEngine;
 import org.apache.wiki.WikiSession;
-import org.apache.wiki.auth.*;
+import org.apache.wiki.auth.NoSuchPrincipalException;
+import org.apache.wiki.auth.UserManager;
+import org.apache.wiki.auth.WikiPrincipal;
+import org.apache.wiki.auth.WikiSecurityException;
 import org.apache.wiki.auth.authorize.Group;
 import org.apache.wiki.auth.authorize.GroupManager;
 import org.apache.wiki.auth.user.UserDatabase;
@@ -39,7 +44,6 @@ import org.apache.wiki.auth.user.UserProfile;
 import org.apache.wiki.i18n.InternationalizationManager;
 import org.apache.wiki.providers.BasicAttachmentProvider;
 import org.apache.wiki.providers.FileSystemProvider;
-import org.apache.wiki.util.CommentedProperties;
 import org.apache.wiki.util.TextUtil;
 
 /**
@@ -53,15 +57,17 @@ public class Installer
     public static final String ADMIN_ID = "admin";
     public static final String ADMIN_NAME = "Administrator";
     public static final String INSTALL_INFO = "Installer.Info";
-    public static final String INSTALL_WARNING = "Installer.Warning";
     public static final String INSTALL_ERROR = "Installer.Error";
+    public static final String INSTALL_WARNING = "Installer.Warning";
     public static final String APP_NAME = WikiEngine.PROP_APPNAME;
     public static final String BASE_URL = WikiEngine.PROP_BASEURL;
     public static final String STORAGE_DIR = BasicAttachmentProvider.PROP_STORAGEDIR;
-    public static final String LOG_DIR = "log4j.appender.FileLog.File";
+    public static final String LOG_FILE = "log4j.appender.FileLog.File";
     public static final String PAGE_DIR = FileSystemProvider.PROP_PAGEDIR;
     public static final String WORK_DIR = WikiEngine.PROP_WORKDIR;
     public static final String ADMIN_GROUP = "Admin";
+    public static final String PROPFILENAME = "jspwiki-custom.properties" ;
+    public static final String TMP_DIR = System.getProperty("java.io.tmpdir");
     private final WikiSession m_session;
     private final File m_propertyFile;
     private final Properties m_props;
@@ -69,17 +75,14 @@ public class Installer
     private HttpServletRequest m_request;
     private boolean m_validated;
     
-    public Installer( HttpServletRequest request, ServletConfig config )
-    {
+    public Installer( HttpServletRequest request, ServletConfig config ) throws IOException {
         // Get wiki session for this user
         m_engine = WikiEngine.getInstance( config );
         m_session = WikiSession.getWikiSession( m_engine, request );
         
-        // Get the servlet context, and file for properties
-        ServletContext context = config.getServletContext();
-        String path = context.getRealPath("/");
-        m_propertyFile = new File( path, PropertyReader.DEFAULT_PROPERTYFILE );
-        m_props = new CommentedProperties();
+        // Get the file for properties
+        m_propertyFile = new File(TMP_DIR, PROPFILENAME);
+        m_props = new Properties();
         
         // Stash the request
         m_request = request;
@@ -109,7 +112,7 @@ public class Installer
     }
     
     /**
-     * Creates an adminstrative user and returns the new password.
+     * Creates an administrative user and returns the new password.
      * If the admin user exists, the password will be <code>null</code>.
      * @return the password
      * @throws WikiSecurityException
@@ -164,14 +167,19 @@ public class Installer
     }
     
     /**
-     * Returns the properties file as a string
+     * Returns the properties as a "key=value" string separated by newlines
      * @return the string
      */
-    public String getProperties()
+    public String getPropertiesList()
     {
-        return m_props.toString();
+        StringBuilder result = new StringBuilder();
+        Set<String> keys = m_props.stringPropertyNames();
+        for (String key:keys) {
+            result.append(key + " = " + m_props.getProperty(key) + "\n");
+        }
+        return result.toString();
     }
-    
+
     public String getPropertiesPath()
     {
         return m_propertyFile.getAbsolutePath();
@@ -187,37 +195,13 @@ public class Installer
         return m_props.getProperty( key );
     }
     
-    @SuppressWarnings("deprecation")
     public void parseProperties () throws Exception
     {
         ResourceBundle rb = ResourceBundle.getBundle( InternationalizationManager.CORE_BUNDLE,
                                                       m_session.getLocale() );
         m_validated = false;
         
-        try
-        {
-            InputStream in = null; 
-            try
-            {
-                // Load old properties from disk
-                in = new FileInputStream( m_propertyFile ); 
-                m_props.load( in );
-            }
-            finally
-            {
-                if( in != null ) 
-                {
-                    in.close();
-                }
-            }
-        }
-        catch( IOException e )
-        {
-            Object[] args = { e.getMessage() };
-            m_session.addMessage( INSTALL_ERROR, MessageFormat.format( 
-                                        rb.getString( "install.installer.unable.read.props" ), args ) );
-        }
-        
+
         // Get application name
         String nullValue = m_props.getProperty( APP_NAME, rb.getString( "install.installer.default.appname" ) );
         parseProperty( APP_NAME, nullValue );
@@ -234,29 +218,23 @@ public class Installer
         sanitizePath( PAGE_DIR );
         
         // Get/sanitize log directory
-        nullValue = m_props.getProperty( LOG_DIR, "/tmp/" );
-        parseProperty( LOG_DIR, nullValue );
-        sanitizePath( LOG_DIR );
+        nullValue = m_props.getProperty( LOG_FILE, TMP_DIR + File.separator + "jspwiki.log" );
+        parseProperty( LOG_FILE, nullValue );
+        sanitizePath( LOG_FILE );
         
         // Get/sanitize work directory
-        nullValue = m_props.getProperty( WORK_DIR, "/tmp/" );
+        nullValue = m_props.getProperty( WORK_DIR, TMP_DIR );
         parseProperty( WORK_DIR, nullValue );
         sanitizePath( WORK_DIR );
-        
-        // Get/sanitize security property
-        nullValue = m_props.getProperty( AuthenticationManager.PROP_SECURITY, AuthenticationManager.SECURITY_JAAS );
-        parseProperty( AuthenticationManager.PROP_SECURITY, nullValue );
         
         // Set a few more default properties, for easy setup
         m_props.setProperty( STORAGE_DIR, m_props.getProperty( PAGE_DIR ) );
         m_props.setProperty( PageManager.PROP_PAGEPROVIDER, "VersioningFileProvider" );
-        m_props.setProperty( WikiEngine.PROP_ENCODING, "UTF-8" );
     }
     
     public void saveProperties()
     {
-        ResourceBundle rb = ResourceBundle.getBundle( InternationalizationManager.CORE_BUNDLE,
-                                                      m_session.getLocale() );
+        ResourceBundle rb = ResourceBundle.getBundle( InternationalizationManager.CORE_BUNDLE, m_session.getLocale() );
         // Write the file back to disk
         try
         {
@@ -273,28 +251,25 @@ public class Installer
                     out.close();
                 }
             }
-            m_session.addMessage( INSTALL_INFO,
-                rb.getString( "install.installer.props.saved" ) );
+            m_session.addMessage( INSTALL_INFO, MessageFormat.format(rb.getString("install.installer.props.saved"), m_propertyFile) );
         }
         catch( IOException e )
         {
             Object[] args = { e.getMessage(), m_props.toString() };
-            m_session.addMessage( INSTALL_ERROR, 
-                                  MessageFormat.format( rb.getString( "install.installer.props.notsaved" ), args ) );
+            m_session.addMessage( INSTALL_ERROR, MessageFormat.format( rb.getString( "install.installer.props.notsaved" ), args ) );
         }
     }
     
     public boolean validateProperties() throws Exception
     {
-        ResourceBundle rb = ResourceBundle.getBundle( InternationalizationManager.CORE_BUNDLE,
-                                                      m_session.getLocale() );
+        ResourceBundle rb = ResourceBundle.getBundle( InternationalizationManager.CORE_BUNDLE, m_session.getLocale() );
         m_session.clearMessages( INSTALL_ERROR );
         parseProperties();
         validateNotNull( BASE_URL, rb.getString( "install.installer.validate.baseurl" ) );
         validateNotNull( PAGE_DIR, rb.getString( "install.installer.validate.pagedir" ) );
         validateNotNull( APP_NAME, rb.getString( "install.installer.validate.appname" ) );
         validateNotNull( WORK_DIR, rb.getString( "install.installer.validate.workdir" ) );
-        validateNotNull( LOG_DIR, rb.getString( "install.installer.validate.logdir" ) );
+        validateNotNull( LOG_FILE, rb.getString( "install.installer.validate.logfile" ) );
         
         if ( m_session.getMessages( INSTALL_ERROR ).length == 0 )
         {
@@ -306,7 +281,6 @@ public class Installer
     /**
      * Sets a property based on the value of an HTTP request parameter.
      * If the parameter is not found, a default value is used instead.
-     * @param request the HTTP request
      * @param param the parameter containing the value we will extract
      * @param defaultValue the default to use if the parameter was not passed
      * in the request
@@ -318,13 +292,13 @@ public class Installer
         {
             value = defaultValue;
         }
-        m_props.put( param, value );
+        m_props.put(param, value);
     }
     
     /**
      * Simply sanitizes any path which contains backslashes (sometimes Windows
      * users may have them) by expanding them to double-backslashes
-     * @param s the key of the property to sanitize
+     * @param key the key of the property to sanitize
      */
     private void sanitizePath( String key )
     {
@@ -337,7 +311,7 @@ public class Installer
     /**
      * Simply sanitizes any URL which contains backslashes (sometimes Windows
      * users may have them)
-     * @param s the key of the property to sanitize
+     * @param key the key of the property to sanitize
      */
     private void sanitizeURL( String key )
     {

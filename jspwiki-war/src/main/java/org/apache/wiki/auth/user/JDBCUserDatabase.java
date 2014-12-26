@@ -18,19 +18,29 @@
  */
 package org.apache.wiki.auth.user;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.Serializable;
 import java.security.Principal;
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
-import org.apache.wiki.NoRequiredPropertyException;
+import org.apache.commons.lang.StringUtils;
 import org.apache.wiki.WikiEngine;
+import org.apache.wiki.api.exceptions.NoRequiredPropertyException;
 import org.apache.wiki.auth.NoSuchPrincipalException;
 import org.apache.wiki.auth.WikiPrincipal;
 import org.apache.wiki.auth.WikiSecurityException;
@@ -450,7 +460,7 @@ public class JDBCUserDatabase extends AbstractUserDatabase
      * @see org.apache.wiki.auth.user.UserDatabase#initialize(org.apache.wiki.WikiEngine,
      *      java.util.Properties)
      */
-    public void initialize( WikiEngine engine, Properties props ) throws NoRequiredPropertyException
+    public void initialize( WikiEngine engine, Properties props ) throws NoRequiredPropertyException, WikiSecurityException
     {
         String userTable;
         String role;
@@ -542,8 +552,8 @@ public class JDBCUserDatabase extends AbstractUserDatabase
         }
         catch( SQLException e )
         {
-            log.error( "JDBCUserDatabase initialization error: " + e.getMessage() );
-            throw new NoRequiredPropertyException( PROP_DB_DATASOURCE, "JDBCUserDatabase initialization error: " + e.getMessage() );
+            log.error( "DB connectivity error: " + e.getMessage() );
+            throw new WikiSecurityException("DB connectivity error: " + e.getMessage(), e );
         }
         finally
         {
@@ -572,7 +582,6 @@ public class JDBCUserDatabase extends AbstractUserDatabase
         catch( SQLException e )
         {
             log.warn( "JDBCUserDatabase warning: user database doesn't seem to support transactions. Reason: " + e.getMessage() );
-            throw new NoRequiredPropertyException( PROP_DB_DATASOURCE, "JDBCUserDatabase initialization error: " + e.getMessage() );
         }
         finally
         {
@@ -701,7 +710,7 @@ public class JDBCUserDatabase extends AbstractUserDatabase
         }
 
         // If password changed, hash it before we save
-        if( !password.equals( existingPassword ) )
+        if( !StringUtils.equals( password, existingPassword ) )
         {
             password = getHash( password );
         }

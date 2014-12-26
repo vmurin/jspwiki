@@ -1,4 +1,4 @@
-/* 
+/*
     Licensed to the Apache Software Foundation (ASF) under one
     or more contributor license agreements.  See the NOTICE file
     distributed with this work for additional information
@@ -14,12 +14,16 @@
     "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
     KIND, either express or implied.  See the License for the
     specific language governing permissions and limitations
-    under the License.  
+    under the License.
  */
 
 package org.apache.wiki;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.Locale;
 import java.util.Properties;
 
@@ -30,7 +34,9 @@ import net.sourceforge.stripes.mock.MockHttpServletRequest;
 import net.sourceforge.stripes.mock.MockHttpSession;
 import net.sourceforge.stripes.mock.MockServletContext;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.wiki.api.exceptions.ProviderException;
 import org.apache.wiki.api.exceptions.WikiException;
 import org.apache.wiki.attachment.Attachment;
 import org.apache.wiki.auth.AuthenticationManager;
@@ -41,8 +47,8 @@ import org.apache.wiki.event.WikiPageEvent;
 import org.apache.wiki.providers.AbstractFileProvider;
 import org.apache.wiki.providers.BasicAttachmentProvider;
 import org.apache.wiki.providers.FileSystemProvider;
-import org.apache.wiki.providers.ProviderException;
 import org.apache.wiki.util.FileUtil;
+import org.apache.wiki.util.PropertyReader;
 import org.apache.wiki.util.TextUtil;
 
 /**
@@ -56,11 +62,14 @@ public class TestEngine extends WikiEngine
     private WikiSession m_janneWikiSession = null;
     private WikiSession m_guestWikiSession = null;
 
+    // combined properties file (jspwiki.properties + custom override, if any)
+    private static Properties combinedProperties = null;
+
     /**
      * Creates WikiSession with the privileges of the administrative user.
      * For testing purposes, obviously.
      * @return the wiki session
-     * @throws WikiSecurityException 
+     * @throws WikiSecurityException
      */
     public WikiSession adminSession() throws WikiSecurityException
     {
@@ -96,7 +105,7 @@ public class TestEngine extends WikiEngine
      * Creates WikiSession with the privileges of the Janne.
      * For testing purposes, obviously.
      * @return the wiki session
-     * @throws WikiSecurityException 
+     * @throws WikiSecurityException
      */
     public WikiSession janneSession() throws WikiSecurityException
     {
@@ -116,19 +125,18 @@ public class TestEngine extends WikiEngine
         throws WikiException
     {
         super( new MockServletContext( "test" ), "test", cleanTestProps( props ) );
-        
+
         // Stash the WikiEngine in the servlet context
         ServletContext servletContext = this.getServletContext();
         servletContext.setAttribute("org.apache.wiki.WikiEngine", this);
     }
-    
+
     /**
      * Creates a correctly-instantiated mock HttpServletRequest with an associated
      * HttpSession.
      * @return the new request
      */
-    public MockHttpServletRequest newHttpRequest()
-    {
+    public MockHttpServletRequest newHttpRequest() {
         return newHttpRequest( "/Wiki.jsp" );
     }
 
@@ -138,36 +146,67 @@ public class TestEngine extends WikiEngine
      * @param path the path relative to the wiki context, for example "/Wiki.jsp"
      * @return the new request
      */
-    public MockHttpServletRequest newHttpRequest( String path )
-    {
+    public MockHttpServletRequest newHttpRequest( String path ) {
         MockHttpServletRequest request = new MockHttpServletRequest( "/JSPWiki", path );
         request.setSession( new MockHttpSession( this.getServletContext() ) );
         request.addLocale( new Locale( "" ) );
         return request;
     }
-    
-    public static void emptyWorkDir()
-    {
-        Properties properties = new Properties();
 
-        try
-        {
-            properties.load( findTestProperties() );
-
-            String workdir = properties.getProperty( WikiEngine.PROP_WORKDIR );
-            if( workdir != null )
-            {
-                File f = new File( workdir );
-
-                if( f.exists() && f.isDirectory() && new File( f, "refmgr.ser" ).exists() )
-                {
-                    deleteAll( f );
-                }
-            }
-        }
-        catch( IOException e ) {} // Fine
+    public static void emptyWorkDir() {
+        emptyWorkDir( null );
     }
 
+    public static void emptyWorkDir(Properties properties) {
+        if (properties == null) {
+            properties = getTestProperties();
+        }
+
+        String workdir = properties.getProperty( WikiEngine.PROP_WORKDIR );
+        if ( workdir != null ) {
+            File f = new File( workdir );
+
+            if (f.exists() && f.isDirectory() && new File( f, "refmgr.ser" ).exists()) {
+                // System.out.println( "Deleting " + f.getAbsolutePath() );
+                deleteAll( f );
+            }
+        }
+    }
+
+    public static void emptyWikiDir() {
+        emptyWikiDir( null );
+    }
+
+    public static void emptyWikiDir(Properties properties) {
+        if (properties == null) {
+            properties = getTestProperties();
+        }
+
+        String wikidir = properties.getProperty( AbstractFileProvider.PROP_PAGEDIR );
+        if ( wikidir != null ) {
+            File f = new File( wikidir );
+
+            if (f.exists() && f.isDirectory()) {
+                deleteAll( f );
+            }
+        }
+    }
+
+    public static final Properties getTestProperties() {
+        if (combinedProperties == null) {
+            combinedProperties = PropertyReader.getCombinedProperties(PropertyReader.CUSTOM_JSPWIKI_CONFIG);
+        }
+        // better to make a copy via putAll instead of Properties(properties)
+        // constructor, see http://stackoverflow.com/a/2004900
+        Properties propCopy = new Properties();
+        propCopy.putAll(combinedProperties);
+        return propCopy;
+    }
+
+    public static final Properties getTestProperties(String customPropFile) {
+        return PropertyReader.getCombinedProperties(customPropFile);
+    }
+/*
     public static final InputStream findTestProperties()
     {
         return findTestProperties( "/jspwiki.properties" );
@@ -181,7 +220,7 @@ public class TestEngine extends WikiEngine
 
         return in;
     }
-
+*/
     /**
      *  Deletes all files under this directory, and does them recursively.
      */
@@ -232,11 +271,10 @@ public class TestEngine extends WikiEngine
      */
     public void deleteTestPage( String name )
     {
-        Properties properties = new Properties();
+        Properties properties = getTestProperties();
 
         try
         {
-            properties.load( findTestProperties() );
             String files = properties.getProperty( FileSystemProvider.PROP_PAGEDIR );
 
             File f = new File( files, mangleName(name)+FileSystemProvider.FILE_EXT );
@@ -248,7 +286,7 @@ public class TestEngine extends WikiEngine
 
             if( f.exists() )
                 f.delete();
-            
+
             deleteAttachments( name );
             firePageEvent( WikiPageEvent.PAGE_DELETED, name );
         }
@@ -263,11 +301,10 @@ public class TestEngine extends WikiEngine
      */
     public static void deleteAttachments( String page )
     {
-        Properties properties = new Properties();
+        Properties properties = getTestProperties();
 
         try
         {
-            properties.load( findTestProperties() );
             String files = properties.getProperty( BasicAttachmentProvider.PROP_STORAGEDIR );
 
             File f = new File( files, TextUtil.urlEncodeUTF8( page ) + BasicAttachmentProvider.DIR_EXTENSION );
@@ -316,6 +353,7 @@ public class TestEngine extends WikiEngine
      * Convenience method that saves a wiki page by constructing a fake
      * WikiContext and HttpServletRequest. We always want to do this using a
      * WikiContext whose subject contains Role.ADMIN.
+     * Note: the WikiPage author will have the default value of "Guest".
      * @param pageName
      * @param content
      * @throws WikiException
@@ -348,6 +386,7 @@ public class TestEngine extends WikiEngine
 
         // Create page and wiki context
         WikiPage page = new WikiPage( this, pageName );
+        page.setAuthor(Users.JANNE);
         WikiContext context = new WikiContext( this, request, page );
         saveText( context, content );
     }
@@ -363,7 +402,7 @@ public class TestEngine extends WikiEngine
             e.printStackTrace();
         }
     }
-    
+
     /**
      * Supplies a clean set of test properties for the TestEngine constructor.
      * @param props the properties supplied by callers
@@ -371,7 +410,11 @@ public class TestEngine extends WikiEngine
      */
     private static Properties cleanTestProps( Properties props )
     {
+        String pageDir = props.getProperty( "jspwiki.fileSystemProvider.pageDir" );
         props.put( AuthenticationManager.PROP_LOGIN_THROTTLING, "false" );
+        props.setProperty( "jspwiki.fileSystemProvider.pageDir",
+                           pageDir.replaceAll( "\\d", StringUtils.EMPTY )
+                           + System.currentTimeMillis() );
         return props;
     }
 

@@ -97,7 +97,7 @@ public class JDBCUserDatabaseTest extends TestCase
             // ignore
         }
         Context ctx = (Context) initCtx.lookup( "java:comp/env" );
-        DataSource ds = new TestJDBCDataSource( new File( "target/test-classes/jdbc.properties" ) );
+        DataSource ds = new TestJDBCDataSource( new File( "target/test-classes/jspwiki-custom.properties" ) );
         ctx.bind( JDBCUserDatabase.DEFAULT_DB_JNDI_NAME, ds );
 
         // Get the JDBC connection and init tables
@@ -125,10 +125,8 @@ public class JDBCUserDatabaseTest extends TestCase
         }
         catch( SQLException e )
         {
-            System.err.println("Looks like your database could not be connected to - "+
-                               "please make sure that you have started your database, exception: " + e);
-
-            throw (SQLException) e.fillInStackTrace();
+            fail("Looks like your database could not be connected to - "+
+                  "please make sure that you have started your database, exception: " + e.getMessage());
         }
     }
     

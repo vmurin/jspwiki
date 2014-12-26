@@ -20,23 +20,27 @@ package org.apache.wiki.util;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.JarURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.wiki.api.engine.PluginManager;
 import org.apache.wiki.api.exceptions.WikiException;
-import org.jdom2.Document;
 import org.jdom2.Element;
-import org.jdom2.input.SAXBuilder;
-import org.jdom2.xpath.XPath;
 
 /**
  *  Contains useful utilities for class file manipulation.  This is a static class,
@@ -44,120 +48,116 @@ import org.jdom2.xpath.XPath;
  *
  *  @since 2.1.29.
  */
-public final class ClassUtil
-{
+public final class ClassUtil {
+
     private static final Logger log = Logger.getLogger(ClassUtil.class);
     /**
      *  The location of the classmappings.xml document. It will be searched for
      *  in the classpath.  It's value is "{@value}".
      */
-    public  static final String MAPPINGS = "/ini/classmappings.xml";
+    public  static final String MAPPINGS = "ini/classmappings.xml";
     
     private static Map<String, String> c_classMappings = new Hashtable<String, String>();
+
+    private static boolean classLoaderSetup = false;
+    private static ClassLoader loader = null;
+
 
     /**
      *  Initialize the class mappings document.
      */
-    static
-    {
-        try
-        {
-            InputStream is = ClassUtil.class.getResourceAsStream( MAPPINGS );
-    
-            if( is != null )
-            {
-                Document doc = new SAXBuilder().build( is );
-        
-                XPath xpath = XPath.newInstance("/classmappings/mapping");
-    
-                List nodes = xpath.selectNodes( doc );
+    static {
+    	List< Element > nodes = XmlUtil.parse( MAPPINGS, "/classmappings/mapping" );
+
+        if( nodes.size() > 0 ) {
+            for( Iterator< Element > i = nodes.iterator(); i.hasNext(); ) {
+                Element f = i.next();
             
-                for( Iterator i = nodes.iterator(); i.hasNext(); )
-                {
-                    Element f = (Element) i.next();
+                String key = f.getChildText("requestedClass");
+                String className = f.getChildText("mappedClass");
                 
-                    String key = f.getChildText("requestedClass");
-                    String className = f.getChildText("mappedClass");
-                    
-                    c_classMappings.put( key, className );
-                    
-                    log.debug("Mapped class '"+key+"' to class '"+className+"'");
-                }
+                c_classMappings.put( key, className );
+                
+                log.debug("Mapped class '"+key+"' to class '"+className+"'");
             }
-            else
-            {
-                log.info("Didn't find class mapping document in "+MAPPINGS);
-            }
-        }
-        catch( Exception ex )
-        {
-            log.error("Unable to parse mappings document!",ex);
+        } else {
+            log.info("Didn't find class mapping document in "+MAPPINGS);
         }
     }
 
     /**
      * Private constructor to prevent direct instantiation.
      */
-    private ClassUtil()
-    {
-    }
+    private ClassUtil() {}
     
     /**
      *  Attempts to find a class from a collection of packages.  This will first
      *  attempt to find the class based on just the className parameter, but
      *  should that fail, will iterate through the "packages" -list, prefixes
      *  the package name to the className, and then tries to find the class
-     *  again. If that still fails, we try the old (pre-2.9) com.ecyrd.jspwiki package.
+     *  again.
      *
-     *  @param packages A List of Strings, containing different package names.
+     * @param packages A List of Strings, containing different package names.
      *  @param className The name of the class to find.
-     *  @return The class, if it was found.
+     * @return The class, if it was found.
      *  @throws ClassNotFoundException if this particular class cannot be found
      *          from the list.
      */
-    public static Class findClass( List packages, String className )
-        throws ClassNotFoundException
-    {
-        ClassLoader loader = ClassUtil.class.getClassLoader();
-
-        try
-        {
-            return loader.loadClass( className );
+    public static Class<?> findClass( List< String > packages,  List< String > externaljars, String className ) throws ClassNotFoundException {
+        if (!classLoaderSetup) {
+            loader = setupClassLoader(externaljars);
         }
-        catch( ClassNotFoundException e )
-        {
-            for( Iterator i = packages.iterator(); i.hasNext(); )
-            {
-                String packageName = (String)i.next();
 
-                try
-                {
+        try {
+            return loader.loadClass( className );
+        } catch( ClassNotFoundException e ) {
+            for( Iterator< String > i = packages.iterator(); i.hasNext(); ) {
+                String packageName = i.next();
+                try {
                     return loader.loadClass( packageName + "." + className );
-                }
-                catch( ClassNotFoundException ex )
-                {
+                } catch( ClassNotFoundException ex ) {
                     // This is okay, we go to the next package.
                 }
             }
 
-            // try the old (pre 2.9) package name for compatibility :
-            try
-            {
-                className = className.replaceFirst( "com\\.ecyrd\\.jspwiki", "org.apache.wiki" );
-                return loader.loadClass( className );
-            }
-            catch( ClassNotFoundException ex )
-            {
-                // This is okay, if we fail we throw our own CNFE..
-            }
-
         }
 
-        throw new ClassNotFoundException("Class '"+className+"' not found in search path!");
+        throw new ClassNotFoundException( "Class '" + className + "' not found in search path!" );
     }
-    
+
     /**
-     *  A shortcut for findClass when you only have a singular package to search.
+     * Setup the plugin classloader.
+     * Check if there are external JARS to add via property {@link org.apache.wiki.api.engine.PluginManager#PROP_EXTERNALJARS}
+     *
+     * @return the classloader that can load classes from the configured external jars or
+     *         ,if not specified, the classloader that loaded this class.
+     * @param externaljars
+     */
+    private static ClassLoader setupClassLoader(List<String> externaljars) {
+        classLoaderSetup = true;
+        log.info("setting up classloaders for external (plugin) jars");
+        if (externaljars.size() == 0) {
+            log.info("no external jars configured, using standard classloading");
+            return ClassUtil.class.getClassLoader();
+        }
+        URL[] urls = new URL[externaljars.size()];
+        int i = 0;
+        try {
+            for (String externaljar : externaljars) {
+                File jarFile = new File(externaljar);
+                URL ucl = jarFile.toURI().toURL();
+                urls[i++] = ucl;
+                log.info("added " + ucl + " to list of external jars");
+            }
+        } catch (MalformedURLException e) {
+            log.error("exception while setting up classloaders for external jars via property" + PluginManager.PROP_EXTERNALJARS + ", continuing without external jars.");
+            return ClassUtil.class.getClassLoader();
+        }
+        return new URLClassLoader(urls, ClassUtil.class.getClassLoader());
+    }
+
+    /**
+     *
      *  It will first attempt to instantiate the class directly from the className,
      *  and will then try to prefix it with the packageName.
      *
@@ -167,13 +167,12 @@ public final class ClassUtil
      *  @throws ClassNotFoundException if this particular class cannot be found.
      */
 
-    public static Class findClass( String packageName, String className )
-        throws ClassNotFoundException
-    {
-        ArrayList<String> list = new ArrayList<String>();
-        list.add( packageName );
-
-        return findClass( list, className );
+    public static Class<?> findClass(String packageName, String className) throws ClassNotFoundException {
+        try {
+            return ClassUtil.class.getClassLoader().loadClass(className);
+        } catch (ClassNotFoundException e) {
+            return ClassUtil.class.getClassLoader().loadClass(packageName + "." + className);
+        }
     }
     
     /**
@@ -233,7 +232,7 @@ public final class ClassUtil
     {
         log.debug( "scanning [" + file.getName() +"]" );
         if( file.isDirectory() ) {
-            @SuppressWarnings( "unchecked" )Iterator< File > files = FileUtils.iterateFiles( file, null, true );
+            Iterator< File > files = FileUtils.iterateFiles( file, null, true );
             while( files.hasNext() ) 
             {
                 File subfile = files.next();
@@ -338,7 +337,7 @@ public final class ClassUtil
         {
             Class<?> cl = getMappedClass( requestedClass );
          
-            Constructor[] ctors = cl.getConstructors();
+            Constructor<?>[] ctors = cl.getConstructors();
             
             //
             //  Try to find the proper constructor by comparing the

@@ -30,9 +30,9 @@ import junit.framework.TestSuite;
 
 import org.apache.wiki.TestEngine;
 import org.apache.wiki.WikiPage;
+import org.apache.wiki.api.exceptions.ProviderException;
 import org.apache.wiki.auth.WikiPrincipal;
 import org.apache.wiki.auth.permissions.PermissionFactory;
-import org.apache.wiki.providers.ProviderException;
 
 public class DefaultAclManagerTest
     extends TestCase
@@ -47,8 +47,7 @@ public class DefaultAclManagerTest
     public void setUp()
         throws Exception
     {
-        Properties props = new Properties();
-        props.load( TestEngine.findTestProperties() );
+        Properties props = TestEngine.getTestProperties();
         m_engine = new TestEngine(props);
 
         String text = "Foo";
@@ -130,7 +129,7 @@ public class DefaultAclManagerTest
         acl = "[{ALLOW view Alice}] Test text.";
         m = DefaultAclManager.ACL_PATTERN.matcher( acl );
         assertTrue ( m.find() );
-        System.out.println( m.group() );
+//        System.out.println( m.group() );
         assertEquals( 2, m.groupCount() );
         assertEquals( "[{ALLOW view Alice}]", m.group(0) );
         assertEquals( "view", m.group(1) );
@@ -140,7 +139,7 @@ public class DefaultAclManagerTest
         acl = "Test text   [{   ALLOW   view   Alice  }]  Test text.";
         m = DefaultAclManager.ACL_PATTERN.matcher( acl );
         assertTrue ( m.find() );
-        System.out.println( m.group() );
+//        System.out.println( m.group() );
         assertEquals( 2, m.groupCount() );
         assertEquals( "[{   ALLOW   view   Alice  }]", m.group(0) );
         assertEquals( "view", m.group(1) );
@@ -150,7 +149,7 @@ public class DefaultAclManagerTest
         acl = "Test text   [{   ALLOW   view  Alice  ,  Bob  }]  Test text.";
         m = DefaultAclManager.ACL_PATTERN.matcher( acl );
         assertTrue ( m.find() );
-        System.out.println( m.group() );
+//        System.out.println( m.group() );
         assertEquals( 2, m.groupCount() );
         assertEquals( "[{   ALLOW   view  Alice  ,  Bob  }]", m.group(0) );
         assertEquals( "view", m.group(1) );
@@ -160,7 +159,7 @@ public class DefaultAclManagerTest
         acl = "Test text   [{   ALLOW   view  Alice  ,  Bob  }]  Test text  [{ALLOW edit Betty}].";
         m = DefaultAclManager.ACL_PATTERN.matcher( acl );
         assertTrue ( m.find() );
-        System.out.println( m.group() );
+//        System.out.println( m.group() );
         assertEquals( 2, m.groupCount() );
         assertEquals( "[{   ALLOW   view  Alice  ,  Bob  }]", m.group(0) );
         assertEquals( "view", m.group(1) );

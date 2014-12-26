@@ -18,11 +18,17 @@
  */
 package org.apache.wiki.providers;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Properties;
+import java.util.Vector;
 
-import org.apache.log4j.*;
-
-import org.apache.wiki.*;
+import org.apache.log4j.Logger;
+import org.apache.wiki.WikiEngine;
+import org.apache.wiki.WikiPage;
+import org.apache.wiki.api.exceptions.ProviderException;
+import org.apache.wiki.search.QueryItem;
 
 /**
  *  A provider who counts the hits to different parts.
@@ -75,10 +81,12 @@ public class CounterProvider
     {
         m_pageExistsCalls++;
 
-        //System.out.println("PAGE="+page);
-        //TestEngine.trace();
-
         return findPage( page ) != null;
+    }
+
+    public boolean pageExists( String page, int version )
+    {
+        return pageExists (page);
     }
 
     public Collection findPages( QueryItem[] query )

@@ -23,6 +23,8 @@ import java.util.Collection;
 import java.util.Date;
 
 import org.apache.wiki.*;
+import org.apache.wiki.api.exceptions.ProviderException;
+import org.apache.wiki.search.QueryItem;
 
 /**
  *  Each Wiki page provider should implement this interface.
@@ -62,6 +64,16 @@ public interface WikiPageProvider
      */
 
     boolean pageExists( String page );
+
+    /**
+     * Return true, if page with a particular version exists.
+     *
+     * @param page    The page name to check for
+     * @param version The version to check
+     * @return True, if page exists; false otherwise.
+     */
+
+    public boolean pageExists(String page, int version);
 
     /**
      *  Finds pages based on the query.   Only applicable to providers

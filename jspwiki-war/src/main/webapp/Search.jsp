@@ -23,9 +23,10 @@
 <%@ page import="org.apache.wiki.auth.permissions.*" %>
 <%@ page import="org.apache.wiki.preferences.Preferences" %>
 <%@ page import="org.apache.wiki.util.TextUtil" %>
+<%@ page import="org.apache.wiki.search.*" %>
 <%@ page import="java.util.*" %>
 <%@ page errorPage="/Error.jsp" %>
-<%@ taglib uri="http://incubator.apache.org/jspwiki/tags" prefix="wiki" %>
+<%@ taglib uri="http://jspwiki.apache.org/tags" prefix="wiki" %>
 
 <%! 
     Logger log = Logger.getLogger("JSPWikiSearch");

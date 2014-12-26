@@ -18,9 +18,12 @@
  */
 package org.apache.wiki.xmlrpc;
 
-import java.util.*;
-
-import org.apache.xmlrpc.XmlRpcException;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Vector;
 
 import org.apache.wiki.LinkCollector;
 import org.apache.wiki.WikiContext;
@@ -29,6 +32,7 @@ import org.apache.wiki.WikiPage;
 import org.apache.wiki.attachment.Attachment;
 import org.apache.wiki.auth.permissions.PagePermission;
 import org.apache.wiki.auth.permissions.PermissionFactory;
+import org.apache.xmlrpc.XmlRpcException;
 
 /**
  *  Provides handlers for all RPC routines.  These routines are used by
@@ -233,10 +237,10 @@ public class RPCHandlerUTF8
         //
         //  Add local links.
         //
-        for( Iterator i = localCollector.getLinks().iterator(); i.hasNext(); )
+        for( Iterator< String > i = localCollector.getLinks().iterator(); i.hasNext(); )
         {
-            String link = (String) i.next();
-            Hashtable<String, String> ht = new Hashtable<String, String>();
+            String link = i.next();
+            Hashtable< String, String > ht = new Hashtable< String, String >();
             ht.put( "page", link );
             ht.put( "type", LINK_LOCAL );
 

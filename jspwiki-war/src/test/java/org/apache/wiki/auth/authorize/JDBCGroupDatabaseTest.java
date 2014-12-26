@@ -57,8 +57,7 @@ public class JDBCGroupDatabaseTest extends TestCase
         super.setUp();
 
         m_hu.setUp();
-        Properties props = new Properties();
-        props.load( TestEngine.findTestProperties() );
+        Properties props = TestEngine.getTestProperties();
         WikiEngine engine = new TestEngine( props );
         m_wiki = engine.getApplicationName();
 
@@ -74,7 +73,7 @@ public class JDBCGroupDatabaseTest extends TestCase
             // ignore
         }
         Context ctx = (Context) initCtx.lookup( "java:comp/env" );
-        DataSource ds = new TestJDBCDataSource( new File( "target/test-classes/jdbc.properties" ) );
+        DataSource ds = new TestJDBCDataSource( new File( "target/test-classes/jspwiki-custom.properties" ) );
         ctx.bind( JDBCGroupDatabase.DEFAULT_GROUPDB_DATASOURCE, ds );
 
         // Get the JDBC connection and init tables
@@ -85,10 +84,8 @@ public class JDBCGroupDatabaseTest extends TestCase
         }
         catch( SQLException e )
         {
-            System.err.println("Looks like your database could not be connected to - "+
-                               "please make sure that you have started your database, exception: " + e);
-
-            throw (SQLException) e.fillInStackTrace();
+            fail("Looks like your database could not be connected to - "+
+                  "please make sure that you have started your database, exception: " + e.getMessage());
         }
 
         // Initialize the user database

@@ -22,19 +22,29 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Properties;
+
+import net.sf.ehcache.Cache;
+import net.sf.ehcache.CacheManager;
+import net.sf.ehcache.Element;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.wiki.*;
+import org.apache.wiki.PageManager;
+import org.apache.wiki.WikiContext;
+import org.apache.wiki.WikiEngine;
+import org.apache.wiki.WikiPage;
+import org.apache.wiki.WikiProvider;
+import org.apache.wiki.api.exceptions.NoRequiredPropertyException;
+import org.apache.wiki.api.exceptions.ProviderException;
 import org.apache.wiki.api.exceptions.WikiException;
 import org.apache.wiki.parser.MarkupParser;
-import org.apache.wiki.providers.ProviderException;
 import org.apache.wiki.providers.WikiAttachmentProvider;
 import org.apache.wiki.util.ClassUtil;
-
-import com.opensymphony.oscache.base.Cache;
-import com.opensymphony.oscache.base.NeedsRefreshException;
 
 /**
  *  Provides facilities for handling attachments.  All attachment
@@ -71,6 +81,14 @@ public class AttachmentManager
     static Logger log = Logger.getLogger( AttachmentManager.class );
     private WikiAttachmentProvider m_provider;
     private WikiEngine             m_engine;
+    private CacheManager m_cacheManager = CacheManager.getInstance();
+
+    private Cache m_dynamicAttachments;
+    /** Name of the page cache. */
+    public static final String CACHE_NAME = "jspwiki.dynamicAttachmentCache";
+
+    /** The capacity of the cache, if you want something else, tweak ehcache.xml. */
+    public static final int   DEFAULT_CACHECAPACITY   = 1000;
 
     /**
      *  Creates a new AttachmentManager.  Note that creation will never fail,
@@ -119,16 +137,22 @@ public class AttachmentManager
         //
         //  Create and initialize the provider.
         //
-        try
-        {
-            Class<?> providerclass = ClassUtil.findClass( "org.apache.wiki.providers",
-                                                          classname );
+        String cacheName = engine.getApplicationName() + "." + CACHE_NAME;
+        try {
+            if (m_cacheManager.cacheExists(cacheName)) {
+                m_dynamicAttachments = m_cacheManager.getCache(cacheName);
+            } else {
+                log.info("cache with name " + cacheName + " not found in ehcache.xml, creating it with defaults.");
+                m_dynamicAttachments = new Cache(cacheName, DEFAULT_CACHECAPACITY, false, false, 0, 0);
+                m_cacheManager.addCache(m_dynamicAttachments);
+            }
 
-            m_provider = (WikiAttachmentProvider)providerclass.newInstance();
+            Class<?> providerclass = ClassUtil.findClass("org.apache.wiki.providers", classname);
 
-            m_provider.initialize( m_engine, props );
-        }
-        catch( ClassNotFoundException e )
+            m_provider = (WikiAttachmentProvider) providerclass.newInstance();
+
+            m_provider.initialize(m_engine, props);
+        } catch( ClassNotFoundException e )
         {
             log.error( "Attachment provider class not found",e);
         }
@@ -392,7 +416,7 @@ public class AttachmentManager
         return m_provider.getAttachmentData( att );
     }
 
-    private Cache m_dynamicAttachments = new Cache( true, false, false );
+
 
     /**
      *  Stores a dynamic attachment.  Unlike storeAttachment(), this just stores
@@ -403,7 +427,7 @@ public class AttachmentManager
      */
     public void storeDynamicAttachment( WikiContext ctx, DynamicAttachment att )
     {
-        m_dynamicAttachments.putInCache( att.getName(),  att );
+        m_dynamicAttachments.put(new Element(att.getName(), att));
     }
 
     /**
@@ -415,18 +439,15 @@ public class AttachmentManager
      *  @see #getAttachmentInfo(String)
      */
 
-    public DynamicAttachment getDynamicAttachment( String name )
-    {
-        try
-        {
-            return (DynamicAttachment) m_dynamicAttachments.getFromCache( name );
-        }
-        catch( NeedsRefreshException e )
-        {
+    public DynamicAttachment getDynamicAttachment(String name) {
+        Element element = m_dynamicAttachments.get(name);
+        if (element != null) {
+            return (DynamicAttachment) element.getObjectValue();
+        } else {
             //
             //  Remove from cache, it has expired.
             //
-            m_dynamicAttachments.putInCache( name, null );
+            m_dynamicAttachments.put(new Element(name, null));
 
             return null;
         }
@@ -482,7 +503,7 @@ public class AttachmentManager
 
         //
         //  Checks if the actual, real page exists without any modifications
-        //  or aliases.  We cannot store an attachment to a non-existant page.
+        //  or aliases.  We cannot store an attachment to a non-existent page.
         //
         if( !m_engine.getPageManager().pageExists( att.getParentName() ) )
         {

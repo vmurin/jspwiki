@@ -19,7 +19,6 @@
 package org.apache.wiki.tags;
 
 import java.io.IOException;
-
 import java.util.Calendar;
 import java.util.Date;
 import java.text.SimpleDateFormat;
@@ -28,10 +27,11 @@ import java.text.ParseException;
 import javax.servlet.jsp.JspWriter;
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.log4j.Logger;
 import org.apache.wiki.WikiEngine;
 import org.apache.wiki.WikiPage;
 import org.apache.wiki.WikiContext;
-import org.apache.wiki.providers.ProviderException;
+import org.apache.wiki.api.exceptions.ProviderException;
 import org.apache.wiki.util.TextUtil;
 
 
@@ -53,11 +53,10 @@ import org.apache.wiki.util.TextUtil;
  */
 
 // FIXME: This class is extraordinarily lacking.
+public class CalendarTag extends WikiTagBase {
 
-public class CalendarTag
-    extends WikiTagBase
-{
     private static final long serialVersionUID = 0L;
+    private static final Logger log = Logger.getLogger( CalendarTag.class );
     
     private SimpleDateFormat m_pageFormat = null;
     private SimpleDateFormat m_urlFormat = null;

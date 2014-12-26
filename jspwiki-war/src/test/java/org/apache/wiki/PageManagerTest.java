@@ -26,13 +26,11 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import org.apache.log4j.PropertyConfigurator;
-
-import org.apache.wiki.PageManager;
 import org.apache.wiki.providers.CachingProvider;
 
 public class PageManagerTest extends TestCase
 {
-    Properties props = new Properties();
+    Properties props = TestEngine.getTestProperties();
 
     TestEngine engine;
 
@@ -44,7 +42,6 @@ public class PageManagerTest extends TestCase
     public void setUp()
         throws Exception
     {
-        props.load( TestEngine.findTestProperties() );
         PropertyConfigurator.configure(props);
         engine = new TestEngine(props);
     }

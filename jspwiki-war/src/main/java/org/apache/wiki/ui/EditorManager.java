@@ -18,25 +18,27 @@
  */
 package org.apache.wiki.ui;
 
-import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 import javax.servlet.jsp.PageContext;
 
 import org.apache.log4j.Logger;
-import org.jdom2.Document;
-import org.jdom2.Element;
-import org.jdom2.JDOMException;
-import org.jdom2.input.SAXBuilder;
-import org.jdom2.xpath.XPath;
-
-import org.apache.wiki.NoSuchVariableException;
 import org.apache.wiki.WikiContext;
 import org.apache.wiki.WikiEngine;
+import org.apache.wiki.api.exceptions.NoSuchVariableException;
 import org.apache.wiki.modules.ModuleManager;
 import org.apache.wiki.modules.WikiModuleInfo;
-import org.apache.wiki.plugin.DefaultPluginManager;
 import org.apache.wiki.preferences.Preferences;
+import org.apache.wiki.util.XmlUtil;
+import org.jdom2.Element;
+
 
 /**
  *  Defines an editor manager.  An editor can be added by adding a
@@ -58,8 +60,8 @@ import org.apache.wiki.preferences.Preferences;
  *
  *  @since 2.4
  */
-public class EditorManager extends ModuleManager
-{
+public class EditorManager extends ModuleManager {
+
     /** The property name for setting the editor.  Current value is "jspwiki.editor" */
     /* not used anymore -- replaced by defaultpref.template.editor */
     public static final String       PROP_EDITORTYPE = "jspwiki.editor";
@@ -103,68 +105,28 @@ public class EditorManager extends ModuleManager
      *  Any editors found are put in the registry.
      *
      */
-    private void registerEditors()
-    {
+    private void registerEditors() {
         log.info( "Registering editor modules" );
-
         m_editors = new HashMap<String, WikiEditorInfo>();
-        SAXBuilder builder = new SAXBuilder();
 
-        try
-        {
-            //
-            // Register all editors which have created a resource containing its properties.
-            //
-            // Get all resources of all modules
-            //
+        //
+        // Register all editors which have created a resource containing its properties.
+        //
+        // Get all resources of all modules
+        //
+        List< Element > editors = XmlUtil.parse( PLUGIN_RESOURCE_LOCATION, "/modules/editor" );
 
-            Enumeration resources = getClass().getClassLoader().getResources( PLUGIN_RESOURCE_LOCATION );
+        for( Iterator< Element > i = editors.iterator(); i.hasNext(); ) {
+            Element pluginEl = i.next();
+            String name = pluginEl.getAttributeValue( "name" );
+            WikiEditorInfo info = WikiEditorInfo.newInstance( name, pluginEl );
 
-            while( resources.hasMoreElements() )
-            {
-                URL resource = (URL) resources.nextElement();
-
-                try
-                {
-                    log.debug( "Processing XML: " + resource );
-
-                    Document doc = builder.build( resource );
-
-                    List plugins = XPath.selectNodes( doc, "/modules/editor");
-
-                    for( Iterator i = plugins.iterator(); i.hasNext(); )
-                    {
-                        Element pluginEl = (Element) i.next();
-
-                        String name = pluginEl.getAttributeValue("name");
-
-                        WikiEditorInfo info = WikiEditorInfo.newInstance(name, pluginEl);
-
-                        if( checkCompatibility(info) )
-                        {
-                            m_editors.put( name, info );
-
-                            log.debug("Registered editor "+name);
-                        }
-                        else
-                        {
-                            log.info("Editor '"+name+"' not compatible with this version of JSPWiki.");
-                        }
-                    }
-                }
-                catch( java.io.IOException e )
-                {
-                    log.error( "Couldn't load " + DefaultPluginManager.PLUGIN_RESOURCE_LOCATION + " resources: " + resource, e );
-                }
-                catch( JDOMException e )
-                {
-                    log.error( "Error parsing XML for plugin: "+DefaultPluginManager.PLUGIN_RESOURCE_LOCATION );
-                }
+            if( checkCompatibility(info) ) {
+                m_editors.put( name, info );
+                log.debug( "Registered editor " + name );
+            } else {
+                log.info( "Editor '" + name + "' not compatible with this version of JSPWiki." );
             }
-        }
-        catch( java.io.IOException e )
-        {
-            log.error( "Couldn't load all " + PLUGIN_RESOURCE_LOCATION + " resources", e );
         }
     }
 

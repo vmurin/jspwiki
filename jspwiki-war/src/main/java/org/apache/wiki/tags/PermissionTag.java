@@ -91,7 +91,7 @@ public class PermissionTag
     }
 
     /**
-     * Sets the permissions to look for (case sensitive) attribute.  See above for the format.
+     * Sets the permissions to look for (case sensitive).  See above for the format.
      * 
      * @param permission A list of permissions
      */
@@ -114,7 +114,7 @@ public class PermissionTag
      *  Checks a single permission.
      *  
      *  @param permission
-     *  @return
+     *  @return true if granted, false if not
      */
     private boolean checkPermission( String permission )
     {
