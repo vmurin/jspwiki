@@ -627,7 +627,7 @@ public class XMLUserDatabase extends AbstractUserDatabase {
 
         // check if we have to do a case insensitive compare
         boolean caseSensitiveCompare = true;
-        if (matchAttribute.equals(EMAIL))
+        if (matchAttribute.equals(EMAIL) || matchAttribute.equals(LOGIN_NAME))
         {
             caseSensitiveCompare = false;
         }

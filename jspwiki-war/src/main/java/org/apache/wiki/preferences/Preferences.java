@@ -31,6 +31,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.wiki.InternalWikiException;
 import org.apache.wiki.WikiContext;
+import org.apache.wiki.WikiEngine;
+import org.apache.wiki.WikiSession;
 import org.apache.wiki.i18n.InternationalizationManager;
 import org.apache.wiki.util.HttpUtil;
 import org.apache.wiki.util.PropertyReader;
@@ -256,6 +258,25 @@ public class Preferences
         Locale loc = getLocale( context );
         InternationalizationManager i18n = context.getEngine().getInternationalizationManager();
         return i18n.getBundle( bundle, loc );
+    }
+    
+    /**
+     *  Locates the i18n ResourceBundle given.  This method interprets
+     *  the request locale, and uses that to figure out which language the
+     *  user wants.
+     *  @see org.apache.wiki.i18n.InternationalizationManager
+     *  
+     * @param engine {@link WikiEngine}
+     * @param session {@link WikiSession}
+     * @param bundle The name of the bundle you are looking for.
+     * @return
+     */
+    public static ResourceBundle getBundle( WikiEngine engine, WikiSession session, String bundle ) 
+    		throws MissingResourceException 
+    {
+        Locale loc = session.getLocale();
+        InternationalizationManager i18n = engine.getInternationalizationManager();
+        return i18n.getBundle( bundle, loc );    	
     }
 
     /**

@@ -42,7 +42,7 @@ import org.apache.wiki.event.WikiEventManager;
 import org.apache.wiki.event.WikiPageEvent;
 import org.apache.wiki.url.DefaultURLConstructor;
 import org.apache.wiki.util.TextUtil;
-import org.apache.wiki.util.WatchDog;
+import org.apache.wiki.WatchDog;
 
 /**
  * This filter goes through the generated page response prior and

@@ -363,6 +363,7 @@ public class UserManager {
             // If the profile requires approval, redirect user to message page
             if ( approvalRequired )
             {
+            	notifyAdmin(session, profile);
                 throw new DecisionRequiredException( "This profile must be approved before it becomes active" );
             }
 
@@ -410,6 +411,39 @@ public class UserManager {
                 fireEvent( WikiSecurityEvent.PROFILE_SAVE, session, profile );
             }
         }
+    }
+
+	/**
+	 * Inform admin that new user requires an approval
+	 * 
+	 * @param context the current wiki context
+	 * @param profile new user profile
+	 * 
+	 * @throws WikiSecurityException
+	 * @throws MessagingException
+	 */
+    private void notifyAdmin(WikiSession session, UserProfile profile) 
+    {
+        ResourceBundle rb = Preferences.getBundle( m_engine, session, InternationalizationManager.CORE_BUNDLE );
+        UserProfile admin = null;
+		try {
+			admin = m_database.findByLoginName( "Admin" );
+		} catch (NoSuchPrincipalException e1) {
+			log.info("Administrator 'admin' is not found. Notification won't sent");
+			return;
+		}
+        
+        Object[] args = {m_engine.getApplicationName()}; 
+        String messageSubject = MessageFormat.format( rb.getString( "login.approve.subject" ), args);
+        
+        args = new Object[]{ profile.getFullname(), profile.getEmail(), m_engine.getURLConstructor().makeURL( WikiContext.NONE, "Workflow.jsp", true, "" )};
+        String messageBody = MessageFormat.format( rb.getString( "login.approve.message" ), args); 
+        
+        try {
+			MailUtil.sendMessage( m_engine.getWikiProperties(), admin.getEmail(), messageSubject,messageBody);
+		} catch (MessagingException e) {
+			log.error("Can not notify admin about new user profile approval: " + e.getMessage());
+		}
     }
 
     /**
